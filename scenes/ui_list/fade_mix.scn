@@ -1,0 +1,914 @@
+{
+  "title": "ui.ListView fade · Sprite/Button/Label children",
+  "width": 640,
+  "height": 360,
+  "seed": 1,
+  "entities": [
+    {
+      "name": "bg",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 320.0,
+          "y": 180.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 640.0,
+          "height": 360.0,
+          "r": 0.045,
+          "g": 0.055,
+          "b": 0.075
+        }
+      ]
+    },
+    {
+      "name": "panel",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 320.0,
+          "y": 167.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 576.0,
+          "height": 270.0,
+          "r": 0.025,
+          "g": 0.035,
+          "b": 0.055
+        }
+      ]
+    },
+    {
+      "name": "title",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 342.0
+        },
+        {
+          "type": "scn.Label",
+          "text": "ListView fade · Sprite + Button + Label children",
+          "font_size": 20.0,
+          "r": 0.95,
+          "g": 0.96,
+          "b": 1.0,
+          "a": 1.0,
+          "z": 200
+        }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 318.0
+        },
+        {
+          "type": "scn.Label",
+          "text": "12 rows · fade_unit=Percent · top/bottom 25% · wheel/drag to scroll",
+          "font_size": 13.0,
+          "r": 0.55,
+          "g": 0.68,
+          "b": 0.82,
+          "a": 1.0,
+          "z": 200
+        }
+      ]
+    },
+    {
+      "name": "foot",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 12.0
+        },
+        {
+          "type": "scn.Label",
+          "text": "fade test: button + sprite + text all inherit the ListView alpha mask",
+          "font_size": 12.0,
+          "r": 0.35,
+          "g": 0.42,
+          "b": 0.52,
+          "a": 1.0,
+          "z": 200
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 32.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 576.0,
+            "y": 270.0
+          }
+        },
+        {
+          "type": "ui.ListView",
+          "text": "",
+          "item_count": 12,
+          "item_extent": 44.0,
+          "spacing": 4.0,
+          "font_size": 16.0,
+          "padding": {
+            "x": 14.0,
+            "y": 14.0,
+            "z": 14.0,
+            "w": 14.0
+          },
+          "clip_content": true,
+          "scroll_pos": 0.0,
+          "wheel_step": 48.0,
+          "show_scrollbar": true,
+          "show_scroll_percent": true,
+          "fade_top": 25.0,
+          "fade_bottom": 25.0,
+          "fade_unit": "FadeUnit::Percent",
+          "content_alpha": 1.0
+        }
+      ],
+      "children": [
+        {
+          "name": "row_00",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -32.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_00",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.21,
+                  "g": 0.28,
+                  "b": 0.44
+                }
+              ]
+            },
+            {
+              "name": "icon_00",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.25,
+                  "g": 0.55,
+                  "b": 0.95
+                }
+              ]
+            },
+            {
+              "name": "txt_00",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 00  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_01",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -80.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_01",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.27,
+                  "g": 0.34,
+                  "b": 0.5
+                }
+              ]
+            },
+            {
+              "name": "icon_01",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.29,
+                  "g": 0.55,
+                  "b": 0.9199999999999999
+                }
+              ]
+            },
+            {
+              "name": "txt_01",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 01  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_02",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -128.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_02",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.24,
+                  "g": 0.32,
+                  "b": 0.47
+                }
+              ]
+            },
+            {
+              "name": "icon_02",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.33,
+                  "g": 0.55,
+                  "b": 0.8899999999999999
+                }
+              ]
+            },
+            {
+              "name": "txt_02",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 02  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_03",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -176.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_03",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.21,
+                  "g": 0.28,
+                  "b": 0.44
+                }
+              ]
+            },
+            {
+              "name": "icon_03",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.37,
+                  "g": 0.55,
+                  "b": 0.86
+                }
+              ]
+            },
+            {
+              "name": "txt_03",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 03  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_04",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -224.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_04",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.27,
+                  "g": 0.34,
+                  "b": 0.5
+                }
+              ]
+            },
+            {
+              "name": "icon_04",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.41000000000000003,
+                  "g": 0.55,
+                  "b": 0.83
+                }
+              ]
+            },
+            {
+              "name": "txt_04",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 04  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_05",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -272.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_05",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.24,
+                  "g": 0.32,
+                  "b": 0.47
+                }
+              ]
+            },
+            {
+              "name": "icon_05",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.45,
+                  "g": 0.55,
+                  "b": 0.7999999999999999
+                }
+              ]
+            },
+            {
+              "name": "txt_05",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 05  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_06",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -320.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_06",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.21,
+                  "g": 0.28,
+                  "b": 0.44
+                }
+              ]
+            },
+            {
+              "name": "icon_06",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.49,
+                  "g": 0.55,
+                  "b": 0.77
+                }
+              ]
+            },
+            {
+              "name": "txt_06",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 06  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_07",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -368.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_07",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.27,
+                  "g": 0.34,
+                  "b": 0.5
+                }
+              ]
+            },
+            {
+              "name": "icon_07",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.53,
+                  "g": 0.55,
+                  "b": 0.74
+                }
+              ]
+            },
+            {
+              "name": "txt_07",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 07  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_08",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -416.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_08",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.24,
+                  "g": 0.32,
+                  "b": 0.47
+                }
+              ]
+            },
+            {
+              "name": "icon_08",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.5700000000000001,
+                  "g": 0.55,
+                  "b": 0.71
+                }
+              ]
+            },
+            {
+              "name": "txt_08",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 08  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_09",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -464.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_09",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.21,
+                  "g": 0.28,
+                  "b": 0.44
+                }
+              ]
+            },
+            {
+              "name": "icon_09",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.61,
+                  "g": 0.55,
+                  "b": 0.6799999999999999
+                }
+              ]
+            },
+            {
+              "name": "txt_09",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 09  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_10",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -512.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_10",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.27,
+                  "g": 0.34,
+                  "b": 0.5
+                }
+              ]
+            },
+            {
+              "name": "icon_10",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.65,
+                  "g": 0.55,
+                  "b": 0.6499999999999999
+                }
+              ]
+            },
+            {
+              "name": "txt_10",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 10  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "row_11",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": -560.0
+            }
+          ],
+          "children": [
+            {
+              "name": "btn_11",
+              "components": [
+                {
+                  "type": "scn.Button",
+                  "x": 32.0,
+                  "y": 0.0,
+                  "width": 510.0,
+                  "height": 32.0,
+                  "z": 0,
+                  "label": "",
+                  "r": 0.24,
+                  "g": 0.32,
+                  "b": 0.47
+                }
+              ]
+            },
+            {
+              "name": "icon_11",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": 20.0,
+                  "y": 16.0
+                },
+                {
+                  "type": "scn.Sprite",
+                  "width": 16.0,
+                  "height": 16.0,
+                  "r": 0.69,
+                  "g": 0.55,
+                  "b": 0.62
+                }
+              ]
+            },
+            {
+              "name": "txt_11",
+              "components": [
+                {
+                  "type": "scn.Label",
+                  "x": 48.0,
+                  "y": 22.0,
+                  "z": 10,
+                  "text": "ROW 11  Sprite + Button + Label  ·  list child item",
+                  "font_size": 15.0,
+                  "r": 0.9,
+                  "g": 0.94,
+                  "b": 1.0,
+                  "a": 1.0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

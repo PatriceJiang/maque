@@ -512,6 +512,10 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              $<TARGET_FILE:maque_player>
              "${CMAKE_CURRENT_BINARY_DIR}/ui_list_fade_e2e"
              "${CMAKE_SOURCE_DIR}/scenes/ui_list/fade.scn")
+    add_test(NAME ui_list_fade_mix_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_list_fade_mix_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_CURRENT_BINARY_DIR}/ui_list_fade_mix_e2e"
+             "${CMAKE_SOURCE_DIR}/scenes/ui_list/fade_mix.scn")
 endif()
 
 # 热重载端到端（docs/08/14）：运行中改脚本 → 帧边界重载 → 世界演化与基线逐帧一致

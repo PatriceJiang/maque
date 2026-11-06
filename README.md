@@ -73,6 +73,7 @@ ctest --test-dir build --output-on-failure
 | `ui_list/list.scn` | **ListView**：120 行大文本，滚轮/拖拽 + 滚动条 + 视口裁剪 |
 | `ui_list/items.scn` | **ListView**：20 行 Button+Sprite+Label，滚动 + 视口裁剪 + 程序化边缘淡出 |
 | `ui_list/fade.scn` | **ListView**：Percent 边缘 fade + 一次性 `content_alpha` 淡入 |
+| `ui_list/fade_mix.scn` | **ListView fade 测试**：12 行 Sprite + Button + Label，Percent 上下边缘淡出 |
 > | `text/text.scn` | 文本：Label / TextLabel / RichText（富文本标记、换行、像素级精确） |
 > | `nodes/nodes.scn` | 节点/组件/事件/补间/定时器 API |
 > | `canvas/canvas.scn` | 画布与分辨率策略（同一 UI 适配不同窗口/显示器） |
