@@ -425,7 +425,9 @@ void Engine::extract_shader_graphs(std::vector<mq_renderer_shader_graph_pass>& o
     const float ry = canvas.window_h > 0.0F ? (float)TH / canvas.window_h : render_scale_req;
     const float mx = (canvas.offset_x + mouse_x * canvas.scale_x) * rx;
     const float my = (canvas.offset_y + ((float)H - mouse_y) * canvas.scale_y) * ry;
-    const bool pressed = input && mq_input_pointer_down(input, 0) != 0;
+    bool pressed = false;
+    if (input) for (uint32_t pid = 0; pid < 16; ++pid)
+        if (mq_input_pointer_down(input, pid)) { pressed = true; break; }
     float keys[4] = { 0.0F, 0.0F, 0.0F, 0.0F };
     if (input) {
         keys[0] = mq_input_key_down(input, MQ_KEY_BACKSPACE) ? 1.0F : 0.0F;
@@ -457,7 +459,9 @@ void Engine::extract_shader_graph_sprites(std::vector<mq_renderer_shader_graph_s
         shader_graph_swap_frame = frame;
         shader_graph_swap_targets();
     }
-    const bool pressed = input && mq_input_pointer_down(input, 0) != 0;
+    bool pressed = false;
+    if (input) for (uint32_t pid = 0; pid < 16; ++pid)
+        if (mq_input_pointer_down(input, pid)) { pressed = true; break; }
     float keys[4] = { 0.0F, 0.0F, 0.0F, 0.0F };
     if (input) {
         keys[0] = mq_input_key_down(input, MQ_KEY_BACKSPACE) ? 1.0F : 0.0F;

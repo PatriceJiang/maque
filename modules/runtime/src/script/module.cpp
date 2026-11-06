@@ -35,6 +35,15 @@ static const char* module_read_cb(void* user, const char* key, size_t* out_len) 
     const std::string prefix = eng->module_pkg.key + "/";
     if (std::strncmp(key, prefix.c_str(), prefix.size()) != 0) return nullptr;
     const std::string rel = std::string(key + prefix.size());
+    if (eng->module_pkg.root_dir.rfind("asset://", 0) == 0) {
+        const std::string path = eng->module_pkg.root_dir + rel;
+        void* d = nullptr; size_t n = 0;
+        if (mq_vfs_read(eng->vfs, path.c_str(), &d, &n) != MQ_VFS_OK || !d) return nullptr;
+        eng->module_src_pool.emplace_back((char*)d, (char*)d + n);
+        mq_vfs_free(d);
+        if (out_len) *out_len = eng->module_src_pool.back().size();
+        return eng->module_src_pool.back().c_str();
+    }
     std::ifstream f(std::filesystem::path(eng->module_pkg.root_dir) / rel, std::ios::binary);
     if (!f) return nullptr;
     eng->module_src_pool.emplace_back((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
@@ -63,7 +72,61 @@ bool Engine::detect_package() {
     /* P0 只支持本地包（远程场景的包根/读取另做）。 */
     const bool remote = scn_dir.rfind("http://", 0) == 0 || scn_dir.rfind("https://", 0) == 0;
     std::filesystem::path root;
-    if (!remote && !scn_dir.empty()) {
+    /* Android/APK 场景：scn_dir = "asset://td/"，不是宿主文件系统路径。
+     * 包清单位于 VFS 的 asset://.../maque.package.json；用 VFS 向上找，
+     * 否则会误走"每脚本 VM"路径，把 ESM 脚本当普通脚本 eval → script eval failed。 */
+    if (!remote && scn_dir.rfind("asset://", 0) == 0) {
+        std::string dir = scn_dir;
+        for (int depth = 0; depth < 12; ++depth) {
+            const std::string manifest = dir + "maque.package.json";
+            void* md = nullptr; size_t mn = 0;
+            if (mq_vfs_read(vfs, manifest.c_str(), &md, &mn) == MQ_VFS_OK && md && mn > 0) {
+                std::string text((char*)md, mn);
+                mq_vfs_free(md);
+                mq_json* dom = mq_json_parse(text.c_str(), text.size());
+                if (dom) {
+                    const char* id = mq_json_str(mq_json_get(dom, "id"), "");
+                    const char* ver = mq_json_str(mq_json_get(dom, "version"), "0");
+                    bool has_backend = true;
+                    const mq_json* backends = mq_json_get(dom, "backends");
+                    if (backends && mq_json_len(backends) > 0) {
+                        has_backend = false;
+                        for (uint32_t i = 0; i < mq_json_len(backends); ++i) {
+                            const char* b = mq_json_str(mq_json_at(backends, i), "");
+                            if (std::strcmp(b, "js") == 0 || std::strcmp(b, "lua") == 0 ||
+                                std::strcmp(b, "native") == 0)
+                                has_backend = true;
+                        }
+                    }
+                    if (id && *id && has_backend) {
+                        next.active = true;
+                        next.id = id;
+                        next.version = ver;
+                        next.key = next.id + "@" + next.version;
+                        next.root_dir = dir;
+                        /* scene 相对包根：asset://pkg/sub/ → sub */
+                        std::string rel = scn_dir.substr(strlen("asset://"));
+                        std::string root_rel = dir.substr(strlen("asset://"));
+                        if (rel.rfind(root_rel, 0) == 0) rel = rel.substr(root_rel.size());
+                        while (!rel.empty() && rel.front() == '/') rel.erase(rel.begin());
+                        if (rel == ".") rel.clear();
+                        next.scene_rel = rel;
+                    }
+                    mq_json_free(dom);
+                }
+                break;
+            }
+            if (md) mq_vfs_free(md);
+            /* 去掉末尾一段：asset://a/b/ → asset://a/；asset://a/ → asset:// */
+            if (dir.size() <= 8) break;
+            std::string t = dir;
+            while (!t.empty() && t.back() == '/') t.pop_back();
+            const size_t slash = t.rfind('/');
+            if (slash == std::string::npos || slash + 1 < 8) break;
+            dir = t.substr(0, slash + 1);
+        }
+    }
+    if (!remote && next.active == false && !scn_dir.empty() && scn_dir.rfind("asset://", 0) != 0) {
         const std::filesystem::path scene_abs =
             std::filesystem::absolute(std::filesystem::path(scn_dir)).lexically_normal();
         std::filesystem::path dir = scene_abs;

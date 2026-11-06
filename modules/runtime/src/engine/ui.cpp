@@ -244,7 +244,13 @@ void Engine::ui_step() {
                     lv->scroll_pos += wheel_dy * lv->wheel_step / max_off;
                     lv->scroll_velocity = 0.0F;
                 }
-                const bool down = input && mq_input_pointer_down(input, 0) != 0;
+                /* Android 触摸指针 id 从 1 开始（平台 nativeTouch 统一 +1），
+                 * 只查 0 会让 ListView 把触摸当成"没按下"→拖不动。 */
+                bool down = false;
+                if (input) {
+                    for (uint32_t pid = 0; pid < 16; ++pid)
+                        if (mq_input_pointer_down(input, pid)) { down = true; break; }
+                }
                 const bool in_bar = bar.visible && mouse_x >= bar.x0 && mouse_x <= bar.x1 &&
                                     mouse_y >= bar.y0 && mouse_y <= bar.y1;
                 if (!down) {

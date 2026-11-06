@@ -3,6 +3,7 @@
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
 
+
 namespace maque::rt {
 
 /* 组件存在性标志：装配（loader）、快照恢复（decode）、动态挂载（attach_component）三处调用。
@@ -142,7 +143,10 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     std::string text;
     { void* d = nullptr; size_t n = 0;
       if (mq_vfs_read(vfs, scn_vfs.c_str(), &d, &n) == MQ_VFS_OK) { text.assign((char*)d, n); mq_vfs_free(d); } }
-    if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); return false; }
+    if (text.empty()) {
+        std::print("runtime: cannot read scene '{}'\n", scn_path);
+        return false;
+    }
 
     reflect = mq_reflect_create();
     mq_reflect_load_schema(reflect);
@@ -186,12 +190,17 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 #endif
     const char* backend = nullptr;
     rself = rapi->create(&backend);
-    if (!rself) { std::print("runtime: renderer create failed\n"); return false; }
+    if (!rself) {
+        std::print("runtime: renderer create failed\n");
+        return false;
+    }
     std::print("runtime: renderer '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
     audio_setup();                               // 音频实例先于场景：脚本 on_start 可 audio_play
     obs = mq_obs_create();                       // 场景装配期即可能产生事件（脚本错误等）
-    if (!load_scene_into(scn_path)) return false;
+    if (!load_scene_into(scn_path)) {
+        return false;
+    }
     /* 窗口标题：MAQUE_TITLE 覆盖场景标题（默认用场景 title） */
     std::string win_title = scene->desc.title;
     if (const char* ts = std::getenv("MAQUE_TITLE"); ts && *ts) win_title = ts;
@@ -377,9 +386,13 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     scene_chain.push_back(scn_vfs);
     building_instance = 0;
     building_base.clear();
-    if (create_instance(-1, -1, scn_vfs, 0) < 0) return false;   // 根实例固定 id=0
+    if (create_instance(-1, -1, scn_vfs, 0) < 0) {
+        return false;
+    }
     if (SceneInstanceRuntime* root = instance_at(0)) { root->state = 1; }
-    if (!scene->deserialize(*this, text)) return false;
+    if (!scene->deserialize(*this, text)) {
+        return false;
+    }
     scene->instantiate(*this);
     scene_chain.pop_back();
     scene->update_world(*this);
@@ -477,7 +490,9 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     else if (!scene->desc.script.empty()) load_list.push_back(scene->desc.script);
     SceneInstanceRuntime* root_inst = instance_at(0);
     if (!root_inst) return false;
-    if (!load_instance_scripts(*root_inst, load_list, true)) return false;
+    if (!load_instance_scripts(*root_inst, load_list, true)) {
+        return false;
+    }
 
     if (watcher) { mq_watcher_destroy(watcher); watcher = nullptr; }
     const bool remote_scene = scn_path.rfind("http://", 0) == 0 || scn_path.rfind("https://", 0) == 0;
