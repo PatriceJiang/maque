@@ -2211,7 +2211,7 @@ struct Light {
     float range = 10.0F;
     float inner_angle = 20.0F;
     float outer_angle = 30.0F;
-    render::ShadowMode shadow_mode = ShadowMode::Off;
+    render::ShadowMode shadow_mode = ShadowMode::Hard;
     float shadow_bias = 0.001F;
     float shadow_distance = 50.0F;
     uint32_t culling_mask = 4294967295;

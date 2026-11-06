@@ -1491,7 +1491,7 @@ role: `physics_body`
 | `range` | float | 10.0F | unit: m |
 | `inner_angle` | float | 20.0F | unit: deg |
 | `outer_angle` | float | 30.0F | unit: deg |
-| `shadow_mode` | ShadowMode | ShadowMode::Off |  |
+| `shadow_mode` | ShadowMode | ShadowMode::Hard |  |
 | `shadow_bias` | float | 0.001F |  |
 | `shadow_distance` | float | 50.0F | unit: m |
 | `culling_mask` | uint32_t | 4294967295 | bitmask |

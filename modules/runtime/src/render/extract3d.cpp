@@ -95,6 +95,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             L.color[0] = light->color.r; L.color[1] = light->color.g; L.color[2] = light->color.b;
             L.intensity = light->intensity;
             L.range = light->range;
+            L.flags = (light->shadow_mode != render::ShadowMode::Off) ? 1 : 0;   // bit0 cast_shadow
             constexpr float kDeg = 3.14159265F / 180.0F;
             L.inner_cos = std::cos(light->inner_angle * kDeg);
             L.outer_cos = std::cos(light->outer_angle * kDeg);
@@ -147,6 +148,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                                                  0.0F, 2000.0F);
                     }
                     L.range = gl.type == 0 ? 0.0F : gl.range;
+                    L.flags = 1;   // glTF 灯光沿用历史行为：方向光默认投阴影
                     L.inner_cos = gl.inner_cos;
                     L.outer_cos = gl.outer_cos;
                     out_lights.push_back(L);
@@ -672,6 +674,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             L.dir[0] = dx; L.dir[1] = dy; L.dir[2] = dz;
             L.color[0] = L.color[1] = L.color[2] = 1.0F;
             L.intensity = opt_sun_intensity;
+            L.flags = 1;                       // 默认太阳投阴影（与历史行为一致）
             out_lights.push_back(L);
             opt_last_sun = true;
         }

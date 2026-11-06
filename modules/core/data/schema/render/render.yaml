@@ -342,7 +342,7 @@
         - { name: range, type: float, default: 10.0F, attrs: { unit: m } }
         - { name: inner_angle, type: float, default: 20.0F, attrs: { unit: deg } }
         - { name: outer_angle, type: float, default: 30.0F, attrs: { unit: deg } }
-        - { name: shadow_mode, type: ShadowMode, default: "ShadowMode::Off" }
+        - { name: shadow_mode, type: ShadowMode, default: "ShadowMode::Hard" }   # 默认投硬阴影（与历史全局行为一致）；测试光照的模型可设 Off
         - { name: shadow_bias, type: float, default: 0.001F }
         - { name: shadow_distance, type: float, default: 50.0F, attrs: { unit: m } }
         - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }

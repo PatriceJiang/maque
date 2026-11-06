@@ -3849,7 +3849,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     if (light_count > 0) {
         const mq_renderer_light& L0 = f->lights[light_order[0]];
         if (L0.type == 0) {
-            has_shadow_light = true;
+            /* render.Light.shadow_mode=Off → 不建 shadow map（光照仍生效）。 */
+            has_shadow_light = (L0.flags & 1) != 0;
             ldir[0] = L0.dir[0]; ldir[1] = L0.dir[1]; ldir[2] = L0.dir[2];
             lcol[0] = L0.color[0] * L0.intensity;
             lcol[1] = L0.color[1] * L0.intensity;
