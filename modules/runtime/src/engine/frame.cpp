@@ -580,7 +580,7 @@ void Engine::step_frame(bool render_frame) {
                 mix(&fr.msaa_samples, sizeof fr.msaa_samples);
                 mix(&fr.env, sizeof fr.env);
                 mix(&fr.post, sizeof fr.post);      /* 后处理参数变化必须重画（否则面板调参无效果） */
-                mixv(views); mixv(draws);
+                mixv(views); mixv(draws); mixv(ui_masks);
                 mixv(views3d); mixv(lights3d); mixv(mats3d); mixv(draws3d);
                 mixv(skins3d); mixv(passes3d);
                 if (h == idle_render_hash && idle_render_frames < 60) {
@@ -599,6 +599,8 @@ void Engine::step_frame(bool render_frame) {
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();
+        fr.masks = ui_masks.data();
+        fr.mask_count = (uint32_t)ui_masks.size();
         fr.present_after_readback = direct_present && need_pixels ? 1 : 0;
         const bool present_frame = direct3d || fr.present_after_readback != 0;
         const int32_t rc = rapi->render_frame3d(rself, &fr);
@@ -638,6 +640,8 @@ void Engine::step_frame(bool render_frame) {
         f.present_h = 0;
         f.out = need_pixels ? pixels.data() : nullptr;
         f.out_size = (uint32_t)pixels.size();
+        f.masks = ui_masks.data();
+        f.mask_count = (uint32_t)ui_masks.size();
         f.present_after_readback = need_pixels ? 1 : 0;
         for (int i = 0; i < 4; ++i) f.bg[i] = bg[i];
         f.env.sky_mode = 1;                       /* M1：背景色直出（3D 天空盒在 M3） */
@@ -660,7 +664,7 @@ void Engine::step_frame(bool render_frame) {
                 };
                 auto mixv = [&](const auto& v) { mix(v.data(), v.size() * sizeof(v[0])); };
                 mix(&TW, sizeof TW); mix(&SHpx, sizeof SHpx); mix(bg, sizeof bg);
-                mixv(views); mixv(draws);
+                mixv(views); mixv(draws); mixv(ui_masks);
                 if (h == idle_render_hash && idle_render_frames < 60) {
                     skip2d = true;
                     ++idle_render_frames;

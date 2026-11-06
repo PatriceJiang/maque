@@ -109,8 +109,14 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                     m.y0 = (float)eng.H - (e.world_y + vh);
                     m.x1 = e.world_x + vw;
                     m.y1 = (float)eng.H - e.world_y;
-                    m.fade_l = lv->fade_left * s; m.fade_t = lv->fade_top * s;
-                    m.fade_r = lv->fade_right * s; m.fade_b = lv->fade_bottom * s;
+                    if (lv->fade_unit == ui::FadeUnit::Percent) {
+                        const float kx = vw / 100.0F, ky = vh / 100.0F;
+                        m.fade_l = lv->fade_left * kx; m.fade_t = lv->fade_top * ky;
+                        m.fade_r = lv->fade_right * kx; m.fade_b = lv->fade_bottom * ky;
+                    } else {
+                        m.fade_l = lv->fade_left * s; m.fade_t = lv->fade_top * s;
+                        m.fade_r = lv->fade_right * s; m.fade_b = lv->fade_bottom * s;
+                    }
                     m.opacity = lv->content_alpha;
                     m.curve = (int)lv->fade_curve;
                     m.next = parent_mask;

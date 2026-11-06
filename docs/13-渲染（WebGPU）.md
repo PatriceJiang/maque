@@ -155,6 +155,7 @@ UV 重映射后交给 `UiBatcher` 按状态合并 → 多张小图共享一次�
   `w/h<=0` = 不裁剪）+ v4 的 `mask` 索引（0=无 mask）。`mq_renderer_mask` 记录包含
   屏幕设计坐标、四边 fade、opacity、curve、next；`render_ui_views` 传 mask 数组。
   渲染器接口 **v2 → v3（clip）→ v4（mask）**（`maque.renderer.v4`）；旧调用方零初始化即"无裁剪/无 mask"。
+  `mq_renderer_frame3d` 尾部追加 `masks/mask_count`，直呈（SDL/wgpu swapchain）也带 mask。
 - **限制**：`MaskMode` 的圆角/纹理/stencil、`feather` 暂未实现（当前按矩形处理）；
   裁剪是硬边 scissor；旋转视图下裁剪矩形按变换后的 AABB（保守）。
 - 回归：**每个特性一个独立 scene + 独立 CTest**：
@@ -183,17 +184,18 @@ UV 重映射后交给 `UiBatcher` 按状态合并 → 多张小图共享一次�
 
 **程序化 alpha mask**：`fade_top/bottom/left/right` + `fade_curve` 在提取期生成 mask 记录链，
 每个图元携带 `mask` 索引；`solid`/`textured` shader 逐片元按屏幕设计坐标计算四边 smoothstep，
-嵌套 ListView 沿 `next` 相乘。`content_alpha` 可 tween 实现整体淡入/淡出；滚动条/百分比使用
-父 mask，不随内容淡出。`MAQUE_UI_ALPHA_MASK=0` 可关闭 mask 做 A/B。
+嵌套 ListView 沿 `next` 相乘。`fade_unit` 可选 **Pixels**（设计像素）或 **Percent**
+（top/bottom 相对视口高度、left/right 相对视口宽度）；`content_alpha` 可 tween 实现整体淡入/淡出；
+滚动条/百分比使用父 mask，不随内容淡出。`MAQUE_UI_ALPHA_MASK=0` 可关闭 mask 做 A/B。
 
 - 场景：`scenes/ui_list/list.scn`（120 行大文本）、`scenes/ui_list/items.scn`
   （20 行 Button+Sprite+Label 子节点，`item_count/item_extent` 定义内容长度 + 边缘 fade）、
-  `scenes/ui_list/fade.scn`（`content_alpha` 正弦淡入淡出）。
+  `scenes/ui_list/fade.scn`（Percent fade + 一次性 `content_alpha` 淡入，结束后保持 1）。
 - 回归：`ctest -R 'ui_list_e2e|ui_list_items_e2e'`（视口内像素变化、视口外零变化；
   滚轮/拖拽/滚动条拖动/惯性；视口外滚轮不滚动；子节点剔除 items 阈值）。
 - 限制：`item_template` 模板虚拟化仍是后续项；P0 用单个 Label 承载大文本。
-  3D `frame3d` 的 2D 覆盖层目前走 `render_mesh_views`（`masks=null`），ListView fade 只在
-  `render_ui_views` 的 2D 路径生效；`ui_masks` 已由 `Scene::extract` 产出，后续接 frame3d 即可。
+  `frame3d` 记录尾部带 `masks/mask_count`，直呈/离屏/RenderTexture 的 2D 覆盖层都走同一
+  `render_impl` mask 路径。
 
 ## 6. 离屏渲染与 AI 预览（关键）
 

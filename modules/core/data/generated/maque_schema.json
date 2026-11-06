@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 255,
+  "type_count": 256,
   "api_count": 325,
   "control_count": 62,
   "callback_count": 11,
@@ -14191,6 +14191,29 @@
       "fields": []
     },
     {
+      "name": "ui.FadeUnit",
+      "namespace": "ui",
+      "kind": "enum",
+      "type_id": 868027883,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "ui/ui.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Pixels",
+          "value": 0
+        },
+        {
+          "name": "Percent",
+          "value": 1
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "ui.FillMode",
       "namespace": "ui",
       "kind": "enum",
@@ -15264,6 +15287,15 @@
           "type": "FadeCurve",
           "kind": "enum",
           "type_id": 2555815200,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "fade_unit",
+          "type": "FadeUnit",
+          "kind": "enum",
+          "type_id": 868027883,
           "count": 0,
           "offset": null,
           "attrs": {}

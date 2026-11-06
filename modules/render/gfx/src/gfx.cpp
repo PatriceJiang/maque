@@ -3152,11 +3152,11 @@ static int32_t render_2d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat
         append_shader_graph_sprite_items(dv, f, items);
         return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                            items.data(), (uint32_t)items.size(), f->meshes, f->mesh_count,
-                           nullptr, 0, bg, nullptr, 0, target, format, clear_first);
+                           f->masks, f->mask_count, bg, nullptr, 0, target, format, clear_first);
     }
     return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                        f->items, f->item_count, f->meshes, f->mesh_count,
-                       nullptr, 0, bg, nullptr, 0, target, format, clear_first);
+                       f->masks, f->mask_count, bg, nullptr, 0, target, format, clear_first);
 }
 
 /* 场景本体（shader pass → 3D → 2D 覆盖层）画进给定目标；不含后处理。 */

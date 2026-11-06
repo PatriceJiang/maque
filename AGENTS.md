@@ -434,11 +434,12 @@ tools\win\build.cmd -Sanitize address -RunTests
     `clip_content=true` 时 `compute_ui_clip` 把子树裁到视口（与 `ui.Mask` 矩形集合求交），
     提取期剔除视口外图元/字形/Label 节点（`ui_batch` items 可验证）。**程序化 alpha mask**：
     `fade_top/bottom/left/right` + `fade_curve` 生成 mask 记录链，图元携带 `mask` 索引；
-    `solid`/`textured` shader 逐片元算四边 smoothstep，嵌套 ListView 相乘；`content_alpha`
-    可 tween 做整体淡入/淡出；滚动条/百分比不受内容 fade 影响。样例
+    `fade_unit` 可选 Pixels / Percent；`solid`/`textured` shader 逐片元算四边 smoothstep，
+    嵌套 ListView 相乘；`content_alpha` 可 tween 做整体淡入/淡出；滚动条/百分比不受内容
+    fade 影响。`frame3d.masks/mask_count` 让直呈路径也走同一 mask。样例
     `scenes/ui_list/{list,items}.scn`，回归 `ctest -R 'ui_list_e2e|ui_list_items_e2e'`
     （滚轮/拖拽/滚动条/惯性、视口外零像素变化、子节点剔除、fade A/B）。样例
-    `scenes/ui_list/fade.scn` 演示 `content_alpha` 正弦淡入淡出。`item_template`
+    `scenes/ui_list/fade.scn` 演示 Percent 边缘 fade + 一次性 `content_alpha` 淡入。`item_template`
     模板虚拟化仍是后续项。
 - **性能分析 Tracy（docs/29）**：默认**零开销**（客户端手动启动，普通运行不监听端口/不占线程）；
   游戏里 **F3** 启动客户端并拉起 profiler GUI，或 `MAQUE_TRACY=1` 启动即开（等外部连）。

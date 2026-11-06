@@ -50,6 +50,10 @@
       values:
         - { name: Linear, value: 0 }
         - { name: Smoothstep, value: 1 }
+    - enum: FadeUnit
+      values:
+        - { name: Pixels, value: 0 }
+        - { name: Percent, value: 1 }
     - enum: StretchMode
       values:
         - { name: Scale, value: 0 }
@@ -445,6 +449,8 @@
         - { name: fade_left, type: float, default: 0.0F, attrs: { unit: px, range: [0, 512] } }
         - { name: fade_right, type: float, default: 0.0F, attrs: { unit: px, range: [0, 512] } }
         - { name: fade_curve, type: FadeCurve, default: "FadeCurve::Smoothstep" }
+        # fade_top/bottom/left/right 的单位：Pixels = 设计像素；Percent = 视口宽/高的百分比。
+        - { name: fade_unit, type: FadeUnit, default: "FadeUnit::Pixels" }
         - { name: content_alpha, type: float, default: 1.0F, attrs: { range: [0, 1] } }
     - struct: Mask
       roles: [ui_mask]

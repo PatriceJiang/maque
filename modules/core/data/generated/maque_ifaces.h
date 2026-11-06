@@ -344,6 +344,8 @@ typedef struct mq_renderer_frame3d {
     uint32_t graph_pass_count;
     const mq_renderer_shader_graph_sprite* graph_sprites;
     uint32_t graph_sprite_count;
+    const mq_renderer_mask* masks;
+    uint32_t mask_count;
 } mq_renderer_frame3d;
 
 typedef struct mq_renderer_render_texture_desc {

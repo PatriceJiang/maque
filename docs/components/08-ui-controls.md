@@ -221,8 +221,10 @@
 - `clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的裁剪集合求交），
   因此内容不会越界；`clip_content=false` 可做溢出预览。
 - 提取期会剔除视口外的图元/文字/子节点 Label（`items` 统计可验证），只对可见行排版提交。
-- **淡入淡出**：`fade_top/fade_bottom/fade_left/fade_right`（设计像素）+ `fade_curve`
-  （Linear/Smoothstep）生成程序化 alpha mask；`content_alpha` 可 tween 做整体淡入/淡出。
+- **淡入淡出**：`fade_top/fade_bottom/fade_left/fade_right` + `fade_curve`
+  （Linear/Smoothstep）生成程序化 alpha mask；`fade_unit` 可选 **Pixels**（设计像素）或
+  **Percent**（top/bottom 按视口高度、left/right 按视口宽度）；`content_alpha` 可 tween
+  做整体淡入/淡出。
   嵌套 ListView 的 mask 链相乘；滚动条和百分比使用父 mask，不受内容淡出影响。
 - `item_template/data_source` 的模板虚拟化仍是后续项；当前 `item_count` 只用于长度，不实例化模板。
 - 脚本：`node_set_string(id,"ui.ListView","text",...)`、`node_set_number(id,"ui.ListView","scroll_pos",0.5)`。

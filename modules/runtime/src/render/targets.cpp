@@ -534,6 +534,8 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             fr.meshes = target_meshes.data(); fr.mesh_count = (uint32_t)target_meshes.size();
             fr.shader_sprites = target_sprites.data();
             fr.shader_sprite_count = (uint32_t)target_sprites.size();
+            fr.masks = ui_masks.data();
+            fr.mask_count = (uint32_t)ui_masks.size();
             const int32_t rc = rapi->render_to_texture(rself, rt.handle, &fr);
             if (rc != 0) { std::print(stderr, "runtime: RenderTexture '{}' 2D render rc={}\n", rt.uri, rc); continue; }
         } else {
@@ -557,6 +559,7 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             fr.skins = s3.data(); fr.skin_count = (uint32_t)s3.size();
             fr.items = target_items.data(); fr.item_count = (uint32_t)target_items.size();
             fr.meshes = target_meshes.data(); fr.mesh_count = (uint32_t)target_meshes.size();
+            fr.masks = ui_masks.data(); fr.mask_count = (uint32_t)ui_masks.size();
             fr.views2d = nullptr; fr.view2d_count = 0;
             fr.passes = passes.data(); fr.pass_count = (uint32_t)passes.size();
             fill_frame_environment(fr);

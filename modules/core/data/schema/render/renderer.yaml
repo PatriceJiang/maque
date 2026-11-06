@@ -424,6 +424,10 @@
         # 再当普通 2D 图元合成（与 shader_sprites 同层排序）。
         - { name: graph_sprites,        type: "const mq_renderer_shader_graph_sprite*" }
         - { name: graph_sprite_count,   type: uint32_t }
+        # 2D 覆盖层的程序化 alpha mask 链（尾部追加，v4；直呈/离屏/RenderTexture 共用）；
+        # 空/0 = 无 mask。
+        - { name: masks,                type: "const mq_renderer_mask*" }
+        - { name: mask_count,           type: uint32_t }
     # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
     # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
     # 没有 samples 字段是刻意的：多采样纹理不能被普通采样/回读 → 物理目标恒单采样，
