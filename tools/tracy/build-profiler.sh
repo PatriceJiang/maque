@@ -8,7 +8,7 @@
 #       也可用 `MAQUE_TRACY_PROFILER=<path>` 覆盖。
 #
 # 用法：
-#   tools/tracy/build-profiler.sh              # 自动：Wayland 会话且依赖齐全 → Wayland 后端，否则 X11
+#   tools/tracy/build-profiler.sh              # 自动：有 X11/DISPLAY 时优先 X11（有标题栏）；纯 Wayland 才用 Wayland
 #   tools/tracy/build-profiler.sh --wayland    # 强制 Wayland 后端（需 wayland/egl 开发包）
 #   tools/tracy/build-profiler.sh --legacy     # 强制 X11 后端（GLFW；缺则自动下载源码构建）
 #   tools/tracy/build-profiler.sh --force      # 已存在也重建
@@ -61,9 +61,17 @@ have_wayland() {
   command -v wayland-scanner >/dev/null 2>&1 &&
   pkg-config --exists wayland-client egl wayland-egl wayland-cursor xkbcommon wayland-protocols
 }
+have_x11() {
+  pkg-config --exists x11 xrandr xinerama xcursor xi
+}
 
 if [ "$MODE" = "auto" ]; then
-  if [ -n "${WAYLAND_DISPLAY:-}" ] && have_wayland; then MODE="wayland"; else MODE="legacy"; fi
+  # Tracy 的 Wayland 后端请求 server-side decoration；GNOME 等只支持 client-side decoration 的
+  # compositor 不给标题栏（F3 拉起的窗口没有头部、不能拖动/关闭）。XWayland 下优先 X11 后端，
+  # 由窗口管理器画标准标题栏；只有纯 Wayland（无 DISPLAY）才退回 Wayland 后端。
+  if [ -n "${DISPLAY:-}" ] && have_x11; then MODE="legacy"
+  elif [ -n "${WAYLAND_DISPLAY:-}" ] && have_wayland; then MODE="wayland"
+  else MODE="legacy"; fi
 fi
 if [ "$MODE" = "wayland" ] && ! have_wayland; then
   echo "tracy: Wayland 开发依赖不全（见脚本头部 apt 包名），改用 --legacy 或先装依赖" >&2
@@ -103,7 +111,8 @@ sed -i 's/set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)/set(CMAKE_INTERPROCEDURAL_O
 BUILD="$TRACY_SRC/build-profiler"
 EXTRA=()
 if [ "$MODE" = "legacy" ]; then
-  EXTRA+=("-DLEGACY=ON")
+  # X11 后端必须只编 X11：GLFW 同时编 Wayland 时运行期仍优先 Wayland（GNOME 下没有标题栏）。
+  EXTRA+=("-DLEGACY=ON" "-DGLFW_BUILD_WAYLAND=OFF" "-DGLFW_BUILD_X11=ON")
   if ! pkg-config --exists glfw3; then
     GLFW_SRC="$SRC/glfw-$GLFW_VER"
     if [ ! -d "$GLFW_SRC" ]; then

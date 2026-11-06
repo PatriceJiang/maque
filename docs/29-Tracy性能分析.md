@@ -16,6 +16,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\tracy\get-profiler.ps1
 #   Linux/macOS：从同一份源码构建 GUI（F3 用）与 capture CLI
 tools/tracy/build-profiler.sh
 tools/tracy/build-capture.sh
+#   Linux 后端选择：有 DISPLAY 时 GUI 默认编 X11（XWayland，窗口管理器给标准标题栏）；
+#   Tracy 的 Wayland 后端请求 server-side decoration，GNOME 等只支持 CSD 的 compositor
+#   下窗口没有头部。纯 Wayland 会话显式 `--wayland`（此时同样没有标题栏）。
 
 # ② 直接玩：游戏里按 F3 → 启动客户端 + 拉起 profiler GUI（GUI 会自动连上 127.0.0.1:8086）
 ./build/samples/player/maque_player scenes/ball.scn

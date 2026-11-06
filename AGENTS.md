@@ -466,6 +466,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   Linux/macOS 跑 `tools/tracy/build-profiler.sh`（F3 的 GUI）与 `build-capture.sh`（CI 抓 trace），
   都装到 `.deps/tracy/`
   （`MAQUE_TRACY_PROFILER=<exe>` 可覆盖路径；`MAQUE_TRACY_PORT` 改端口，默认 8086）。
+  Linux GUI 默认 X11 后端（XWayland 有标准标题栏）；Tracy 的 Wayland 后端在只支持 CSD 的
+  GNOME 下没有窗口头部，纯 Wayland 会话用 `build-profiler.sh --wayland` 显式构建。
   埋点**只用** `modules/core/tracy` 的 `MQ_TRACY_*` 宏（模块颜色/命名/开关一处管理，
   `#include "core/tracy/mq_tracy.h"`）；只加在**外层入口**，不要进热内循环；新增模块色改
   `mq_tracy.h` 的 `Module`/`color()`。`-DMAQUE_TRACY=OFF` 时全部宏 no-op。
