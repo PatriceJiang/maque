@@ -155,9 +155,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -172,13 +172,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -191,7 +191,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 00  Sprite + Button + Label  ·  list child item",
@@ -220,9 +220,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -237,13 +237,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -256,7 +256,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 01  Sprite + Button + Label  ·  list child item",
@@ -285,9 +285,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -302,13 +302,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -321,7 +321,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 02  Sprite + Button + Label  ·  list child item",
@@ -350,9 +350,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -367,13 +367,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -386,7 +386,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 03  Sprite + Button + Label  ·  list child item",
@@ -415,9 +415,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -432,13 +432,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -451,7 +451,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 04  Sprite + Button + Label  ·  list child item",
@@ -480,9 +480,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -497,13 +497,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -516,7 +516,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 05  Sprite + Button + Label  ·  list child item",
@@ -545,9 +545,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -562,13 +562,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -581,7 +581,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 06  Sprite + Button + Label  ·  list child item",
@@ -610,9 +610,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -627,13 +627,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -646,7 +646,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 07  Sprite + Button + Label  ·  list child item",
@@ -675,9 +675,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -692,13 +692,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -711,7 +711,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 08  Sprite + Button + Label  ·  list child item",
@@ -740,9 +740,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -757,13 +757,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -776,7 +776,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 09  Sprite + Button + Label  ·  list child item",
@@ -805,9 +805,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -822,13 +822,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -841,7 +841,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 10  Sprite + Button + Label  ·  list child item",
@@ -870,9 +870,9 @@
               "components": [
                 {
                   "type": "scn.Button",
-                  "x": 32.0,
+                  "x": 70.0,
                   "y": 0.0,
-                  "width": 510.0,
+                  "width": 472.0,
                   "height": 32.0,
                   "z": 0,
                   "label": "",
@@ -887,13 +887,13 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 16.0,
-                  "y": 16.0
+                  "x": 20.0,
+                  "y": 20.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 24.0,
-                  "height": 24.0,
+                  "width": 40.0,
+                  "height": 40.0,
                   "r": 1.0,
                   "g": 1.0,
                   "b": 1.0,
@@ -906,7 +906,7 @@
               "components": [
                 {
                   "type": "scn.Label",
-                  "x": 48.0,
+                  "x": 86.0,
                   "y": 22.0,
                   "z": 10,
                   "text": "ROW 11  Sprite + Button + Label  ·  list child item",
