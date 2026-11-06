@@ -1,0 +1,20 @@
+{
+  "title": "Battle City - HUD",
+  "script": "hud.lua",
+  "entities": [
+    { "name": "hud_panel", "components": [
+        { "type": "scn.Transform2D", "x": 536, "y": 240 },
+        { "type": "scn.Sprite", "width": 176, "height": 416,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/hud_bg.png" } ] },
+    { "name": "logo", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 360 },
+        { "type": "scn.Sprite", "width": 320, "height": 96,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/logo.png" } ] },
+    { "name": "dialog_bg", "components": [
+        { "type": "scn.Transform2D", "x": 224, "y": 240 },
+        { "type": "scn.Sprite", "width": 420, "height": 120,
+          "r": 0, "g": 0, "b": 0 } ] },
+    { "source": "../actors/title_tank.prefab.json", "name_prefix": "titleA_" },
+    { "source": "../actors/title_tank.prefab.json", "name_prefix": "titleB_" }
+  ]
+}

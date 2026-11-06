@@ -26,6 +26,7 @@
     - image.yaml
     - world/anim.yaml
     - script.yaml
+    - script_guest.yaml
     - asset.yaml
     - world/scene.yaml
     - ui/ui.yaml

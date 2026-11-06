@@ -11,6 +11,52 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(player_run PROPERTIES ENVIRONMENT "MAQUE_MAX_FRAMES=120")
 endif()
 
+# native 脚本 e2e（plans/26-cpp-scripts.md）：场景引用 .cpp，manifest 把源路径映射到
+# 构建出的 guest 产物；脚本调用 host.log/host.quit，证明 runtime → native 后端 → 总线全链路。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx AND TARGET maque_native_hello)
+    file(READ "${MAQUE_GEN_DIR}/maque_guest_api.h" _maque_guest_api_h)
+    string(REGEX MATCH "#define MQ_SCRIPT_API_VERSION ([0-9]+)u" _maque_api_ver "${_maque_guest_api_h}")
+    set(_maque_script_api_version "${CMAKE_MATCH_1}")
+    if(NOT _maque_script_api_version)
+        set(_maque_script_api_version 1)
+    endif()
+    set(_maque_native_manifest "${CMAKE_BINARY_DIR}/scenes/native/manifest.json")
+    file(GENERATE OUTPUT "${_maque_native_manifest}" CONTENT
+"{
+  \"api\": ${_maque_script_api_version},
+  \"target\": \"${MAQUE_TARGET_KEY}\",
+  \"scripts\": {
+    \"scripts/hello.cpp\": {
+      \"artifact\": \"$<TARGET_FILE_NAME:maque_native_hello>\",
+      \"kind\": \"shared\"
+    }
+  }
+}
+")
+    add_test(NAME native_script_e2e COMMAND "${CMAKE_COMMAND}" -E env
+        "MAQUE_NATIVE_MANIFEST=${_maque_native_manifest}"
+        "MAQUE_WINDOW=0x0"
+        "MAQUE_PRESENT=off"
+        "MAQUE_MAX_FRAMES=30"
+        $<TARGET_FILE:maque_player> "${CMAKE_SOURCE_DIR}/scenes/native/hello.scn")
+    set_tests_properties(native_script_e2e PROPERTIES
+        PASS_REGULAR_EXPRESSION "native: bye" TIMEOUT 60)
+endif()
+
+# 触摸手势（Android/iOS 的同一条 pointer 流）：单指环绕、双指平移/捏合。
+# 用 MAQUE_SIM_TOUCH_AT 注入 TOUCH 指针，MAQUE_TRACE_ORBIT 断言相机 orbit 真的变了。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME touch_orbit_e2e COMMAND "${CMAKE_COMMAND}" -E env
+        "MAQUE_SIM_TOUCH_AT=3:down:1:100:100;3:down:2:200:100;3:move:1:80:80;3:move:2:220:120;3:up:1:80:80;3:up:2:220:120"
+        "MAQUE_TRACE_ORBIT=1"
+        "MAQUE_WINDOW=0x0"
+        "MAQUE_PRESENT=off"
+        "MAQUE_MAX_FRAMES=6"
+        $<TARGET_FILE:maque_player> "${CMAKE_SOURCE_DIR}/scenes/pbr/cube.scn")
+    set_tests_properties(touch_orbit_e2e PROPERTIES
+        PASS_REGULAR_EXPRESSION "orbit touch count=2" TIMEOUT 60)
+endif()
+
 # 声明式脚本绑定面：schema 中每个 api 在 JS/Lua 都必须可调用。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx AND MAQUE_ENABLE_LUA)
     add_test(NAME bindings_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/bindings_e2e.sh"

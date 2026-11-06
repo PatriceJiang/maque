@@ -4,5 +4,6 @@
     <string name="previous_scene">Prev</string>
     <string name="next_scene">Next</string>
     <string name="open_scene">Open</string>
+    <string name="home">Home</string>
     <string name="scene_count_empty">0 scenes</string>
 </resources>

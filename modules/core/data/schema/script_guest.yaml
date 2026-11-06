@@ -1,0 +1,52 @@
+# script_guest —— C/C++ 编译型 guest 的 C ABI（plans/26-cpp-scripts.md）
+#
+# guest = 一个实现本 vtable 的动态库/静态注册项：
+#   · 动态：导出 mq_module_query；宿主用 mq_host_load/query 加载（与渲染插件同一机制）。
+#   · 静态：构建期注册；宿主按 key 查表。
+# 生命周期/事件名与 JS/Lua 完全一致；本文件只声明“跨边界形态”。
+- namespace: script_guest
+  version: 1
+  module_abi:
+    module: script_guest
+    version: 1
+    abi_name: "maque.script.guest"
+    includes:
+      - "<stddef.h>"
+      - "<stdint.h>"
+      - "\"core/module/mq_module.h\""
+      - "\"maque_guest_api.h\""
+    opaque: [ mq_script_guest, mq_script_guest_instance ]
+    structs:
+      # PropertyVariant 的 C POD 投影：P0 不用（mount.props=NULL）；P1 回灌 script.Script.exposed。
+      - name: mq_script_prop
+        fields:
+          - { name: name, type: "const char*" }
+          - { name: type, type: uint32_t, doc: "script.PropertyVariantType 的数值" }
+          - { name: num, type: "double[4]", doc: "数值/向量分量；string 用 str" }
+          - { name: str, type: "const char*" }
+      - name: mq_script_guest_mount
+        doc: "每挂载点实例的上下文（this/self）；由宿主在 instantiate 时传入"
+        fields:
+          - { name: struct_size, type: uint32_t }
+          - { name: node, type: int32_t, doc: "-1 = 场景级；否则实体 id" }
+          - { name: scene, type: int32_t, doc: "SceneInstance id" }
+          - { name: module_key, type: "const char*", doc: "pkg@ver/scripts/x.cpp；仅生命周期内有效" }
+          - { name: params, type: "const char*" }
+          - { name: props, type: "const mq_script_prop*", doc: "P0 = NULL" }
+          - { name: prop_count, type: uint32_t }
+      - name: mq_script_guest_vt
+        doc: "guest 导出/注册的版本化 vtable；首字段必须是 mq_api_header（mq_host_query 校验）"
+        fields:
+          - { name: header, type: mq_api_header }
+          - { name: create, type: "mq_script_guest* (*)(const mq_script_api_v1* api, void* host_ctx, char* err, int err_cap)",
+              doc: "校验 API 表并创建模块实例；失败写 err 返回 NULL" }
+          - { name: destroy, type: "void (*)(mq_script_guest* guest)" }
+          - { name: instantiate, type: "mq_script_guest_instance* (*)(mq_script_guest* guest, const mq_script_guest_mount* mount, char* err, int err_cap)" }
+          - { name: instance_destroy, type: "void (*)(mq_script_guest_instance* inst)" }
+          - { name: instance_has, type: "int (*)(mq_script_guest_instance* inst, const char* fn)" }
+          - { name: instance_call, type: "int (*)(mq_script_guest_instance* inst, const char* fn, int nnum, const double* nums, const char* text, double* ret, char* err, int err_cap)",
+              doc: "0=成功 1=未定义 2=执行错误（错误写 err）" }
+    fns:
+      - { fn: mq_script_guest_register_static, returns: int,
+          args: [ { name: key, type: "const char*" }, { name: vt, type: "const mq_script_guest_vt*" } ],
+          doc: "静态注册（构建期/测试）；key = 包内源码路径。成功 0，重复 key 返回 1" }

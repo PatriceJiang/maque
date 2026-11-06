@@ -223,6 +223,44 @@ if (imgui_enabled()) {
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 
+## 分辨率因子（F4：RenderFactor / ImGuiFactor）
+
+F4 顶部两个下拉框：
+
+- `RenderFactor (3D)`：**只影响 3D PBR/天空/3D shader**，取值 100% / 75% / 50% / 25%。
+  3D 先画到引擎自有的 `scene3d_tex`（`TW×TH × factor`），再作为一层全屏纹理合成到
+  全分辨率主 target。**2D/UI/字体/ImGui 仍按主 target 全分辨率渲染**，触控坐标也不变。
+  主 target 不重建、字体图集不重载；只释放/重配 3D 离屏目标。
+- `ImGuiFactor`：**只改变 ImGui 面板/字体的 UI 大小**，100% / 150% / 200% / 300% / 400% / 500%。
+  显示空间仍是主 target（`show = TW`、`scale = 1`），所以触控坐标与窗口位置一致；
+  改的是 `imgui_pixel_scale`（字体图集/内边距/面板尺寸），上下文会重建；
+  >400% 只烘固定面板文案 + ASCII（避免 CJK 全量图集超过 GPU 纹理上限），
+  任意中文脚本标签请用 ≤400%。
+- **图片合图**：UI 图集/字体图集都在全分辨率 UI 层，RenderFactor 不触碰它们；
+  3D 离屏目标只是被线性采样放大，PBR 贴图源分辨率不变。
+- **持久化**：两项写入 `MAQUE_ENGINE_OPTIONS_FILE`（Android =
+  `files/engine_options.ini`）；启动时在 F4 环境变量之后覆盖读取。
+- **极端组合**：`WindowBorderHoverPadding` 仍有 ≥1 保护（低分辨率窗口/极小 UI 断言）。
+
+## Android 触摸与坐标
+
+Android 的 `renderSurface` 不再把原始 `MotionEvent` 交给 SDL 的 Java touch 路径（旋转/沉浸式/
+多窗口下其本地坐标会偏，实测出现负坐标），而是由 `MaqueActivity.nativeTouch` 归一化后调
+`mq_platform_android_touch` 直接入引擎设备队列：
+
+- `imgui_input_feed` 对每个 pointer 事件**逐事件**入 ImGui 队列（同帧 down+up 不会只剩最终态）；
+- x/y 各乘 `显示空间/窗口逻辑尺寸`，不能只用一个 width 倍率；
+- `mq_imgui_begin_frame` 不能再用窗口坐标补一次指针事件，否则会覆盖换算后的坐标
+  （现象：面板 hover 不到、拖不动）；
+- 只有 ImGui `WantCaptureMouse` 命中的指针被覆盖层消费（脚本/场景 UI 清空）；
+  面板外空白仍归场景/UI，OrbitControls 也只处理没被面板命中的指针。
+- `io.ConfigWindowsMoveFromTitleBarOnly = false`：窗口内空白处即可拖动，不必抓标题栏。
+- Android 默认位置额外下移 `24dp × 像素倍率` 避开通知栏；`MAQUE_IMGUI_INI` 指向
+  内部存储 `files/imgui.ini`，面板位置/尺寸跨 F2/F4 关闭、跨 App 重启恢复。
+
+验证：Waydroid x86_64 全屏下 F2 stats / F4 engine options 标题可拖动、3D 复选框可切换，
+拖动时场景不动。Waydroid 构建：`./gradlew :app:assembleDebug -PmaqueAbis=x86_64`。
+
 ## 待办
 
 1. 样式 API（`push_style_color/var`）、弹窗（popup/modal）、拖放、剪贴板/IME。

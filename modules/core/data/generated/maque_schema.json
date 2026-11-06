@@ -5,7 +5,7 @@
   "api_count": 328,
   "control_count": 64,
   "callback_count": 11,
-  "module_count": 26,
+  "module_count": 27,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -12682,6 +12682,10 @@
         {
           "name": "V8",
           "value": 3
+        },
+        {
+          "name": "Native",
+          "value": 4
         }
       ],
       "fields": []
@@ -29145,7 +29149,7 @@
     {
       "module": "script",
       "abi_name": "maque.script",
-      "version": 3,
+      "version": 4,
       "language": "c",
       "header": "abi/script.h",
       "fns": [
@@ -29161,6 +29165,22 @@
             {
               "name": "lang",
               "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_vm_configure_native",
+          "returns": "int",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            },
+            {
+              "name": "cfg",
+              "type": "const mq_script_vm_native_config*",
               "doc": null
             }
           ]
@@ -30263,6 +30283,169 @@
               "name": "release_user",
               "type": "void*",
               "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_vm_native_config",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "api",
+              "type": "const struct mq_script_api_v1*",
+              "doc": "生成的主机 API 表"
+            },
+            {
+              "name": "host_ctx",
+              "type": "void*",
+              "doc": "Engine*；guest 只当不透明句柄"
+            },
+            {
+              "name": "resolver",
+              "type": "int (*)(void* user, const char* source_path, char* out_spec, int cap)",
+              "doc": "源路径 → so:/soname:/static:/wasm: 规格；0=成功"
+            },
+            {
+              "name": "resolver_user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "enums": []
+    },
+    {
+      "module": "script_guest",
+      "abi_name": "maque.script.guest",
+      "version": 1,
+      "language": "c",
+      "header": "abi/script_guest.h",
+      "fns": [
+        {
+          "name": "mq_script_guest_register_static",
+          "returns": "int",
+          "args": [
+            {
+              "name": "key",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "vt",
+              "type": "const mq_script_guest_vt*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_script_prop",
+          "fields": [
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "type",
+              "type": "uint32_t",
+              "doc": "script.PropertyVariantType 的数值"
+            },
+            {
+              "name": "num",
+              "type": "double[4]",
+              "doc": "数值/向量分量；string 用 str"
+            },
+            {
+              "name": "str",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_guest_mount",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "node",
+              "type": "int32_t",
+              "doc": "-1 = 场景级；否则实体 id"
+            },
+            {
+              "name": "scene",
+              "type": "int32_t",
+              "doc": "SceneInstance id"
+            },
+            {
+              "name": "module_key",
+              "type": "const char*",
+              "doc": "pkg@ver/scripts/x.cpp；仅生命周期内有效"
+            },
+            {
+              "name": "params",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "props",
+              "type": "const mq_script_prop*",
+              "doc": "P0 = NULL"
+            },
+            {
+              "name": "prop_count",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_guest_vt",
+          "fields": [
+            {
+              "name": "header",
+              "type": "mq_api_header",
+              "doc": null
+            },
+            {
+              "name": "create",
+              "type": "mq_script_guest* (*)(const mq_script_api_v1* api, void* host_ctx, char* err, int err_cap)",
+              "doc": "校验 API 表并创建模块实例；失败写 err 返回 NULL"
+            },
+            {
+              "name": "destroy",
+              "type": "void (*)(mq_script_guest* guest)",
+              "doc": null
+            },
+            {
+              "name": "instantiate",
+              "type": "mq_script_guest_instance* (*)(mq_script_guest* guest, const mq_script_guest_mount* mount, char* err, int err_cap)",
+              "doc": null
+            },
+            {
+              "name": "instance_destroy",
+              "type": "void (*)(mq_script_guest_instance* inst)",
+              "doc": null
+            },
+            {
+              "name": "instance_has",
+              "type": "int (*)(mq_script_guest_instance* inst, const char* fn)",
+              "doc": null
+            },
+            {
+              "name": "instance_call",
+              "type": "int (*)(mq_script_guest_instance* inst, const char* fn, int nnum, const double* nums, const char* text, double* ret, char* err, int err_cap)",
+              "doc": "0=成功 1=未定义 2=执行错误（错误写 err）"
             }
           ]
         }
@@ -35388,6 +35571,13 @@
       ]
     },
     {
+      "path": "script_guest.yaml",
+      "namespaces": [
+        "script_guest"
+      ],
+      "imports": []
+    },
+    {
       "path": "asset.yaml",
       "namespaces": [
         "asset"
@@ -35549,6 +35739,7 @@
         "image.yaml",
         "world/anim.yaml",
         "script.yaml",
+        "script_guest.yaml",
         "asset.yaml",
         "world/scene.yaml",
         "ui/ui.yaml",

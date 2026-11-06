@@ -168,7 +168,9 @@ bool Engine::load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::
     if (is_root) { this->bus = bus; }
     for (const std::string& rel : rels) {
         const char* want = mq_script_lang_for_path(rel.c_str());
-        mq_script_vm* one = mq_script_vm_create_lang(want);
+        const bool is_native = std::strcmp(want, "native") == 0;
+        const std::string vfs_path = vfs_join(inst.base, rel);
+        mq_script_vm* one = make_script_vm(want, vfs_path);
         if (!one) {
             std::print(stderr, "runtime: script backend '{}' unavailable for '{}' (instance {})\n",
                        want, rel, inst.id);
@@ -180,13 +182,11 @@ bool Engine::load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::
             return false;
         }
         std::print("runtime: script backend '{}' for '{}' (instance {})\n", mq_script_lang(one), rel, inst.id);
-        mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-        mq_bind_generated(one, this);
         std::string src;
-        const std::string vfs_path = vfs_join(inst.base, rel);
         { void* d = nullptr; size_t n = 0;
           if (mq_vfs_read(vfs, vfs_path.c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
-        if (src.empty()) {
+        /* native 的“源码”是可选的：只发布二进制的包没有 .cpp 也能加载（resolver 找产物）。 */
+        if (src.empty() && !is_native) {
             std::print("runtime: cannot read script '{}' (resolved '{}', instance {})\n", rel, vfs_path, inst.id);
             inst.error = "cannot read script";
             scene_last_error = inst.error;
@@ -196,16 +196,20 @@ bool Engine::load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::
             mq_script_bus_destroy(bus);
             return false;
         }
-        inst.script_hashes.push_back(mq_vfs_hash(src.data(), src.size()));
+        inst.script_hashes.push_back(src.empty() ? 0 : mq_vfs_hash(src.data(), src.size()));
         SceneInstanceRuntime* prev = active_instance;
         const bool prev_ov = in_overlay;
         active_instance = &inst;
         in_overlay = false;
-        const int rc = mq_script_eval(one, src.c_str(), rel.c_str());
+        const char* eval_name = is_native ? vfs_path.c_str() : rel.c_str();
+        const int rc = mq_script_eval(one, src.c_str(), eval_name);
         active_instance = prev;
         in_overlay = prev_ov;
         if (rc != 0) {
-            std::print("runtime: script error in '{}' (instance {})\n", rel, inst.id);
+            char ebuf[512] = { 0 };
+            if (mq_script_last_error(one, ebuf, (int)sizeof ebuf) != 0) ebuf[0] = '\0';
+            std::print(stderr, "runtime: script error in '{}' (instance {}): {}\n",
+                       rel, inst.id, ebuf[0] ? ebuf : "eval failed");
             inst.error = "script eval failed";
             scene_last_error = inst.error;
             mq_script_vm_destroy(one);
@@ -594,30 +598,38 @@ bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
     for (size_t i = 0; i < inst->scripts.size(); ++i)
         if (inst->scripts[i] == rel) { slot = (int)i; break; }    // 按文件增量：只重建该槽位
     if (slot < 0) return false;
+    const char* lang = mq_script_lang_for_path(rel.c_str());
+    const bool is_native = std::strcmp(lang, "native") == 0;
     void* d = nullptr; size_t n = 0;
     const std::string vpath = vfs_join(inst->base, rel);
-    if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK || !d) return false;
-    std::string src((char*)d, n);
-    mq_vfs_free(d);
-    const uint64_t h = mq_vfs_hash(src.data(), src.size());
-    if ((size_t)slot < inst->script_hashes.size() && inst->script_hashes[(size_t)slot] == h) return false;
-    const char* lang = mq_script_lang_for_path(rel.c_str());
-    mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+    const bool read_ok = mq_vfs_read(vfs, vpath.c_str(), &d, &n) == MQ_VFS_OK && d;
+    if (!read_ok && !is_native) return false;
+    std::string src = read_ok ? std::string((char*)d, n) : std::string();
+    if (read_ok) mq_vfs_free(d);
+    const uint64_t h = src.empty() ? 0 : mq_vfs_hash(src.data(), src.size());
+    if (!is_native && (size_t)slot < inst->script_hashes.size() && inst->script_hashes[(size_t)slot] == h)
+        return false;
+    mq_script_vm* fresh = make_script_vm(lang, vpath);
     if (!fresh) return false;
-    mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-    mq_bind_generated(fresh, this);
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_ov = in_overlay;
     active_instance = inst;
     in_overlay = false;
-    const int rc = mq_script_eval(fresh, src.c_str(), rel.c_str());
+    const char* eval_name = is_native ? vpath.c_str() : rel.c_str();
+    const int rc = mq_script_eval(fresh, src.c_str(), eval_name);
     active_instance = prev;
     in_overlay = prev_ov;
     if (rc != 0) {                                   // 原子：eval 失败保留旧 VM
         char ebuf[512] = { 0 };
         mq_script_last_error(fresh, ebuf, (int)sizeof ebuf);
-        std::print(stderr, "runtime: instance {} script hot reload failed '{}': {} (旧脚本保留)\n",
-                   inst->id, rel, ebuf);
+        if (inst->id == 0) {
+            std::print(stderr, "runtime: hot reload failed for '{}': {} (旧脚本保留)\n", rel, ebuf);
+            std::print(stderr, "runtime: instance 0 script hot reload failed '{}': {} (旧脚本保留)\n",
+                       rel, ebuf);
+        } else {
+            std::print(stderr, "runtime: instance {} script hot reload failed '{}': {} (旧脚本保留)\n",
+                       inst->id, rel, ebuf);
+        }
         mq_script_vm_destroy(fresh);
         return false;
     }
@@ -635,7 +647,14 @@ bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
     prev = active_instance; active_instance = inst;
     (void)mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr);
     active_instance = prev;
-    std::print("runtime: hot reload instance #{} script '{}' (slot {})\n", inst->id, rel, slot);
+    if (inst->id == 0) {
+        /* 根实例保留两条措辞：reload_script 的根路径（“hot reload script”）与
+         * 实例路径（“hot reload instance #0 script”）都是既有测试/工具依赖的诊断契约。 */
+        std::print("runtime: hot reload script '{}' ({} bytes, slot {})\n", rel, src.size(), slot);
+        std::print("runtime: hot reload instance #0 script '{}' (slot {})\n", rel, slot);
+    } else {
+        std::print("runtime: hot reload instance #{} script '{}' (slot {})\n", inst->id, rel, slot);
+    }
     mq_obs_event(obs, "runtime", 1, "instance_script_reloaded");
     return true;
 }

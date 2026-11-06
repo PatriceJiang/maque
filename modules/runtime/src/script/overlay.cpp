@@ -50,25 +50,26 @@ bool Engine::ensure_overlay_script(const std::string& rel) {
     /* 同一脚本：复用已有 VM（状态跨场景保留，只重新收 on_start）。 */
     if (overlay_bus && rel == overlay_rel) return true;
     unload_overlay();
+    const char* lang = mq_script_lang_for_path(rel.c_str());
+    const bool is_native = std::strcmp(lang, "native") == 0;
     void* d = nullptr; size_t n = 0;
     const std::string vpath = "/" + rel;
-    if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK || !d) {
+    const bool read_ok = mq_vfs_read(vfs, vpath.c_str(), &d, &n) == MQ_VFS_OK && d;
+    if (!read_ok && !is_native) {
         std::print(stderr, "runtime: overlay script not found '{}'\n", rel);
         mq_obs_event(obs, "runtime", 3, "overlay_script_missing");
         return false;
     }
-    std::string src((char*)d, n);
-    mq_vfs_free(d);
-    const char* lang = mq_script_lang_for_path(rel.c_str());
-    mq_script_vm* one = mq_script_vm_create_lang(lang);
+    std::string src = read_ok ? std::string((char*)d, n) : std::string();
+    if (read_ok) mq_vfs_free(d);
+    mq_script_vm* one = make_script_vm(lang, vpath);
     if (!one) {
         std::print(stderr, "runtime: overlay script backend '{}' unavailable for '{}'\n", lang, rel);
         mq_obs_event(obs, "runtime", 3, "overlay_script_backend");
         return false;
     }
-    mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-    mq_bind_generated(one, this);
-    if (mq_script_eval(one, src.c_str(), rel.c_str()) != 0) {
+    const char* eval_name = is_native ? vpath.c_str() : rel.c_str();
+    if (mq_script_eval(one, src.c_str(), eval_name) != 0) {
         char ebuf[512] = { 0 };
         mq_script_last_error(one, ebuf, (int)sizeof ebuf);
         std::print(stderr, "runtime: overlay script eval failed '{}': {}\n", rel, ebuf);
@@ -98,11 +99,12 @@ bool Engine::reload_overlay_script() {
     const uint64_t h = mq_vfs_hash(src.data(), src.size());
     if (h == overlay_hash) return false;
     const char* lang = mq_script_lang_for_path(overlay_rel.c_str());
-    mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+    const bool is_native = std::strcmp(lang, "native") == 0;
+    const std::string vpath = "/" + overlay_rel;
+    mq_script_vm* fresh = make_script_vm(lang, vpath);
     if (!fresh) return false;
-    mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-    mq_bind_generated(fresh, this);
-    if (mq_script_eval(fresh, src.c_str(), overlay_rel.c_str()) != 0) {
+    const char* eval_name = is_native ? vpath.c_str() : overlay_rel.c_str();
+    if (mq_script_eval(fresh, src.c_str(), eval_name) != 0) {
         char ebuf[512] = { 0 };
         std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
         mq_script_vm_destroy(fresh);                 // 保留旧 VM：写坏脚本不打断运行时

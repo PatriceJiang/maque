@@ -10,6 +10,7 @@
         - { name: Lua, value: 1 }
         - { name: Python, value: 2 }
         - { name: V8, value: 3 }
+        - { name: Native, value: 4, doc: "C/C++ 编译型 guest（.c/.cc/.cpp/.cxx）；见 plans/26-cpp-scripts.md" }
     - enum: ScriptCallback
       underlying: uint32_t
       values:
@@ -50,7 +51,7 @@
         - { name: init_err, type: uint16_t, default: 0, attrs: { transient: true, readonly: true } }
   module_abi:
     module: script
-    version: 3
+    version: 4
     abi_name: "maque.script"
     includes: [ "<stddef.h>", "<stdint.h>" ]
     opaque: [ mq_script_vm, mq_script_module, mq_script_instance, mq_script_bus ]
@@ -82,13 +83,29 @@
           - { name: size, type: "size_t" }
           - { name: release, type: "void (*)(void* user, void* data)" }
           - { name: release_user, type: "void*" }
+      # native guest 的每次 VM 配置（plans/26-cpp-scripts.md §4.6）：
+      # api 指向生成的 mq_script_api_v1（maque_guest_api.h）；resolver 把源路径映射为
+      # so:/soname:/static:/wasm: 规格。字段用内联函数指针，避免 module_abi 的
+      # “structs 先于 typedefs 输出”造成类型未声明。
+      - name: mq_script_vm_native_config
+        doc: "native 后端配置；只对 native VM 生效（JS/Lua 的 configure 返回 1）"
+        fields:
+          - { name: struct_size, type: uint32_t }
+          - { name: api, type: "const struct mq_script_api_v1*", doc: "生成的主机 API 表" }
+          - { name: host_ctx, type: "void*", doc: "Engine*；guest 只当不透明句柄" }
+          - { name: resolver, type: "int (*)(void* user, const char* source_path, char* out_spec, int cap)",
+              doc: "源路径 → so:/soname:/static:/wasm: 规格；0=成功" }
+          - { name: resolver_user, type: "void*" }
     fns:
       - { fn: mq_script_vm_create, returns: "mq_script_vm*", args: [  ],
           doc: "按默认后端创建 VM（等价 mq_script_vm_create_lang(NULL)）" }
       - { fn: mq_script_vm_create_lang, returns: "mq_script_vm*", args: [ { name: lang, type: "const char*" } ],
-          doc: "按语言创建 VM：js（默认）/ lua；未编入的后端返回 NULL" }
+          doc: "按语言创建 VM：js（默认）/ lua / native；未编入的后端返回 NULL" }
+      - { fn: mq_script_vm_configure_native, returns: "int",
+          args: [ { name: vm, type: "mq_script_vm*" }, { name: cfg, type: "const mq_script_vm_native_config*" } ],
+          doc: "配置 native VM（API 表/宿主上下文/源路径解析器）；非 native 或参数非法返回 1" }
       - { fn: mq_script_lang_for_path, returns: "const char*", args: [ { name: path, type: "const char*" } ],
-          doc: "按脚本文件扩展名选择语言 id（.lua → lua，其余 → js）" }
+          doc: "按脚本文件扩展名选择语言 id（.lua → lua，.c/.cc/.cpp/.cxx → native，其余 → js）" }
       - { fn: mq_script_backends, returns: "int", args: [ { name: out, type: "char*" }, { name: cap, type: "int" } ],
           doc: "已编入的后端列表（逗号分隔）" }
       - { fn: mq_script_lang, returns: "const char*", args: [ { name: vm, type: "mq_script_vm*" } ],

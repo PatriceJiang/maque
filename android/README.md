@@ -9,9 +9,30 @@
 - Gradle 把仓库 [`scenes/`](../scenes/) 的**全部内容**作为 APK assets 根目录打包。
 - `generateMaqueSceneIndex` 在构建前递归扫描所有 `*.scn`，生成
   `maque/scenes.json`；路径按字典序固定，构建结果可复现。
-- 首页罗列索引中的全部场景。点击任意条目立即启动。
-- 场景运行页底部保留 `Prev` / `Next`，按索引循环切换；最后一个场景的 `Next`
-  回到第一个，第一个场景的 `Prev` 回到最后一个。
+- 首页/场景列表默认**竖屏**；进入场景后运行页切到**横屏**（保持场景宽高比），
+  点左下角 `Home` 回到竖屏主页（保留当前场景索引）。
+- 场景运行页底部保留 `Home` / `Prev` / `Next`；`Prev`/`Next` 按索引循环切换。
+- 运行页右上角有触屏 `F2` / `F4`：F2 开关 stats 面板，F4 开关引擎选项面板
+  （与桌面同一条热键路径；Android 首次启动会把 `scenes/fonts/*.ttf` 复制到内部存储，
+  供 ImGui 加载中文字体）。
+- 触摸统一从 `renderSurface` 的 `MotionEvent` 归一化后走 JNI `nativeTouch` →
+  `mq_platform_android_touch` 入引擎队列，不经过 SDL 的本地坐标换算（旋转、沉浸式、
+  多窗口下会错位）；只有 ImGui **真正命中窗口**的指针会被面板消费，面板外空白仍交给
+  场景/UI；面板内空白区域也可拖动（不限于标题栏）。
+- F2/F4 的默认位置在 Android 上额外下移 24dp，避开通知栏/刘海；用户拖动后的
+  窗口位置写入内部存储 `files/imgui.ini`，跨面板关闭和 App 重启都会恢复。
+- F4 提供 **RenderFactor (3D)**（100% / 75% / 50% / 25%）与 **ImGuiFactor**
+  （100% / 150% / 200% / 300% / 400% / 500%）。前者只把 3D PBR 画到低分辨率离屏 target
+  再合成，2D/UI/字体/ImGui 保持全分辨率；后者只放大/缩小 ImGui 面板和字体（>400% 使用紧凑字形集）。
+  两者写入 `files/engine_options.ini`，重启恢复；触控坐标始终按主 target。
+- 真机默认 **wgpu 直呈**（不再每帧 GPU→CPU 回读；F2 实测 60fps / render ~1ms）。
+  直呈 attach/config 失败会回退离屏 CPU 路径；临时强制 CPU：
+  `adb shell setprop debug.maque.present software`（Waydroid 模拟器仍默认 CPU，
+  用同一属性可强制 wgpu）。
+- Waydroid 开发：默认 APK 是 `arm64-v8a`；在 x86_64 Waydroid 上构建/安装用
+  `./gradlew :app:assembleDebug -PmaqueAbis=x86_64`，再
+  `adb connect 192.168.240.112:5555`（首次需把宿主 `~/.android/adbkey.pub` 写进
+  Waydroid `/data/misc/adb/adb_keys`）。
 - APK 资源由 VFS 的 `asset://` 只读后端读取，场景引用的脚本、纹理、音频和子场景仍按
   场景目录解析。
 - 真机：SDL SurfaceView 只负责输入/生命周期，独立 RGBA Render SurfaceView 专供 wgpu；默认
@@ -22,6 +43,9 @@
   `ro.kernel.qemu=1` 明确使用 `ANativeWindow_lock` CPU fallback；保持窗口自动渲染分辨率，但将
   Surface 提交节流到约 15 Hz，用于功能调试，不代表真机性能。
 - Android 默认不启动 SDL 文本输入，因此不会自动弹软键盘；需要时显式设置 `MAQUE_TEXT_INPUT=1`。
+- 3D 场景的主相机支持触摸手势：**单指拖动环绕、双指拖动平移、双指捏合缩放**。
+  触摸事件仍走 `SDL_FINGER* → pointer_type=Touch`，2D 场景的脚本/UI pointer 回调不受影响；
+  `ctest -R touch_orbit_e2e` 是桌面/CI 的注入回归。
 
 ## 前置条件
 

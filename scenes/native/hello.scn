@@ -1,0 +1,16 @@
+{
+  "title": "native",
+  "script": "scripts/hello.cpp",
+  "width": 320,
+  "height": 240,
+  "seed": 12345,
+  "entities": [
+    {
+      "name": "Title",
+      "components": [
+        { "type": "scn.Label", "x": 8.0, "y": 210.0, "text": "C/C++ native guest",
+          "font_size": 14.0, "r": 0.9, "g": 0.8, "b": 0.4, "a": 1.0 }
+      ]
+    }
+  ]
+}

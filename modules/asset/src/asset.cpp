@@ -85,7 +85,10 @@ mq_asset_kind detect_kind(std::string_view path) noexcept {
     if (ends_with(path, ".ttf") || ends_with(path, ".otf")) return MQ_ASSET_KIND_FONT;
     if (ends_with(path, ".anim.json")) return MQ_ASSET_KIND_ANIMATION;
     if (ends_with(path, ".scn")) return MQ_ASSET_KIND_SCENE;
-    if (ends_with(path, ".js")) return MQ_ASSET_KIND_SCRIPT;
+    if (ends_with(path, ".js") || ends_with(path, ".lua") ||
+        ends_with(path, ".c") || ends_with(path, ".cc") ||
+        ends_with(path, ".cpp") || ends_with(path, ".cxx"))
+        return MQ_ASSET_KIND_SCRIPT;
     if (ends_with(path, ".wav") || ends_with(path, ".ogg") || ends_with(path, ".mp3")) {
         return MQ_ASSET_KIND_AUDIO;
     }

@@ -45,6 +45,16 @@ void Engine::text_setup() {
             "C:/Windows/Fonts/segoeui.ttf",
             "C:/Windows/Fonts/arial.ttf",
             "C:/Windows/Fonts/msyh.ttc",
+#if defined(__ANDROID__)
+            /* Android 没有 /usr/share；系统字体是唯一可直接交给 FreeType/ImGui 的 TTF/TTC。
+             * 没有这条时 text_setup() 退到 builtin 5x7，debug_panel 会把 "(builtin 5x7)"
+             * 当 TTF 传给 ImGui → AddFontFromFileTTF 断言（F2/F4 崩溃）。 */
+            "/system/fonts/NotoSansCJK-Regular.ttc",
+            "/system/fonts/NotoSansSC-Regular.otf",
+            "/system/fonts/NotoSansCJK.ttc",
+            "/system/fonts/DroidSansFallback.ttf",
+            "/system/fonts/Roboto-Regular.ttf",
+#endif
         };
         for (const char* c : kCandidates) {
             font = mq_font_load_file(c);
@@ -54,6 +64,19 @@ void Engine::text_setup() {
     if (!font) { font = mq_font_builtin(); font_path = "(builtin 5x7)"; }
     fonts.push_back({ font_path, font });
     std::print("runtime: text font '{}'\n", font_path);
+}
+
+/* RenderFactor 改变 → 字体图集的栅格化倍率（ss）变了。
+ * 字形位图缓存按 (font,size) 存、不记录 raster_scale，必须整体丢弃重载；
+ * 旧 GPU 纹理延迟一帧释放，避免本帧图元仍引用旧 id。 */
+void Engine::invalidate_text_fonts() {
+    for (auto& fe : fonts) if (fe.font) mq_font_destroy(fe.font);
+    fonts.clear();
+    font = nullptr;
+    font_path.clear();
+    for (auto& a : font_atlases) if (a.texture >= 0) retired_textures.push_back(a.texture);
+    font_atlases.clear();
+    pending_quads.clear();
 }
 
 /* 字体选择：标签的 font 字段（相对路径按 CWD 与场景目录解析）→ 缓存 */

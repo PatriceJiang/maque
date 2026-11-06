@@ -31,8 +31,9 @@ add_library(maque_runtime STATIC
     # 系统（动画/音频/粒子/导航/物理）
     src/systems/anim.cpp src/systems/audio.cpp src/systems/particles.cpp src/systems/nav.cpp
     src/systems/physics.cpp
-    # 脚本宿主（模块 VM / 热重载 / 覆盖层 / 全局脚本）与运行时控制
+    # 脚本宿主（模块 VM / 热重载 / 覆盖层 / 全局脚本 / native guest）与运行时控制
     src/script/module.cpp src/script/reload.cpp src/script/overlay.cpp src/script/global.cpp
+    src/script/native.cpp
     src/engine/run.cpp src/engine/crash.cpp
     # 场景（树 / 加载 / 实例 / 世界变换 / 快照编解码 / 2D 提取 / 3D 拾取）
     src/scene/tree.cpp src/scene/loader.cpp src/scene/instance.cpp

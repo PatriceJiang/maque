@@ -50,24 +50,24 @@ bool Engine::ensure_global_script(const std::string& rel) {
     }
     if (global_bus && rel == global_rel) return true;
     unload_global();
+    const char* lang = mq_script_lang_for_path(rel.c_str());
+    const bool is_native = std::strcmp(lang, "native") == 0;
     void* d = nullptr; size_t n = 0;
     const std::string vpath = "/" + rel;
-    if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK || !d) {
+    const bool read_ok = mq_vfs_read(vfs, vpath.c_str(), &d, &n) == MQ_VFS_OK && d;
+    if (!read_ok && !is_native) {
         std::print(stderr, "runtime: global script not found '{}'\n", rel);
         mq_obs_event(obs, "runtime", 3, "global_script_missing");
         return false;
     }
-    std::string src((char*)d, n);
-    mq_vfs_free(d);
-    const char* lang = mq_script_lang_for_path(rel.c_str());
-    mq_script_vm* one = mq_script_vm_create_lang(lang);
+    std::string src = read_ok ? std::string((char*)d, n) : std::string();
+    if (read_ok) mq_vfs_free(d);
+    mq_script_vm* one = make_script_vm(lang, vpath);
     if (!one) {
         std::print(stderr, "runtime: global script backend '{}' unavailable for '{}'\n", lang, rel);
         mq_obs_event(obs, "runtime", 3, "global_script_backend");
         return false;
     }
-    mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-    mq_bind_generated(one, this);
     /* 顶层代码（默认值/初始化）也在"全局脚本上下文"里执行：node_on 归属 -3，
      * 且不能误以为自己是某个场景实例。 */
     SceneInstanceRuntime* prev = active_instance;
@@ -76,7 +76,8 @@ bool Engine::ensure_global_script(const std::string& rel) {
     active_instance = nullptr;
     in_global = true;
     in_overlay = false;
-    const int rc = mq_script_eval(one, src.c_str(), rel.c_str());
+    const char* eval_name = is_native ? vpath.c_str() : rel.c_str();
+    const int rc = mq_script_eval(one, src.c_str(), eval_name);
     active_instance = prev;
     in_global = prev_g;
     in_overlay = prev_ov;
@@ -110,17 +111,18 @@ bool Engine::reload_global_script() {
     const uint64_t h = mq_vfs_hash(src.data(), src.size());
     if (h == global_hash) return false;
     const char* lang = mq_script_lang_for_path(global_rel.c_str());
-    mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+    const bool is_native = std::strcmp(lang, "native") == 0;
+    const std::string vpath = "/" + global_rel;
+    mq_script_vm* fresh = make_script_vm(lang, vpath);
     if (!fresh) return false;
-    mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-    mq_bind_generated(fresh, this);
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_g = in_global;
     const bool prev_ov = in_overlay;
     active_instance = nullptr;
     in_global = true;
     in_overlay = false;
-    const int rc = mq_script_eval(fresh, src.c_str(), global_rel.c_str());
+    const char* eval_name = is_native ? vpath.c_str() : global_rel.c_str();
+    const int rc = mq_script_eval(fresh, src.c_str(), eval_name);
     active_instance = prev;
     in_global = prev_g;
     in_overlay = prev_ov;

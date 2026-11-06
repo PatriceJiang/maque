@@ -36,7 +36,41 @@ int Engine::resolve_msaa(int target_override, bool is_render_texture) {
     return samples >= 4 ? 4 : 1;
 }
 
+void Engine::destroy_scene3d_target() {
+    if (scene3d_tex >= 0 && rapi && rself && rapi->destroy_texture)
+        rapi->destroy_texture(rself, scene3d_tex);
+    scene3d_tex = -1;
+    scene3d_w = scene3d_h = 0;
+}
+
+int Engine::ensure_scene3d_target(int w, int h) {
+    if (!rapi || !rself || w <= 0 || h <= 0) return -1;
+    if (!MQ_RENDERER_HAS(rapi, create_render_texture) ||
+        !MQ_RENDERER_HAS(rapi, configure_render_texture)) return -1;
+    if (scene3d_tex >= 0 && scene3d_w == w && scene3d_h == h) return scene3d_tex;
+    mq_renderer_render_texture_desc desc{};
+    desc.struct_size = sizeof desc;
+    desc.width = w; desc.height = h;
+    desc.pixel_format = 0;                    /* RGBA8 */
+    desc.filter = 1;                          /* linear：低分辨率 3D 上采样 */
+    desc.wrap_u = desc.wrap_v = 1;            /* clamp */
+    if (scene3d_tex < 0) {
+        int32_t handle = -1;
+        if (rapi->create_render_texture(rself, &desc, &handle) != 0 || handle < 0) return -1;
+        scene3d_tex = handle;
+    } else if (rapi->configure_render_texture(rself, scene3d_tex, &desc) != 0) {
+        destroy_scene3d_target();
+        int32_t handle = -1;
+        if (rapi->create_render_texture(rself, &desc, &handle) != 0 || handle < 0) return -1;
+        scene3d_tex = handle;
+    }
+    scene3d_w = w; scene3d_h = h;
+    std::print("runtime: engine 3D target {}x{} handle={}\n", scene3d_w, scene3d_h, scene3d_tex);
+    return scene3d_tex;
+}
+
 void Engine::destroy_render_textures() {
+    destroy_scene3d_target();
     for (auto& rt : render_textures) {
         auto erase_key = [&](const std::string& key) {
             auto it = tex_cache.find(key);

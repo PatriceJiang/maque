@@ -1,0 +1,13 @@
+{
+  "name": "muzzle",
+  "entities": [
+    {
+      "name": "body",
+      "components": [
+        { "type": "scn.Transform2D", "x": -9999, "y": -9999 },
+        { "type": "scn.Sprite", "width": 16, "height": 16,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/explosion0.png" }
+      ]
+    }
+  ]
+}

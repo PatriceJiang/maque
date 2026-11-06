@@ -323,6 +323,10 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         orbit_panning = false;
         orbit_inited = false;
         orbit_target[0] = orbit_target[1] = orbit_target[2] = 0.0F;
+        for (auto& t : orbit_touches) t = {};
+        orbit_touch_count = 0;
+        orbit_touch_dist = 0.0F;
+        orbit_touch_mid_x = orbit_touch_mid_y = 0.0F;
     }
     /* 场景来源挂载（本地目录 / http(s) URL 目录）——后挂载者优先 → 新场景来源生效 */
     std::string scn_vfs;

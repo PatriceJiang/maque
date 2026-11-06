@@ -3,6 +3,8 @@
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段 S5，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
 
+#include <fstream>
+
 namespace maque::rt {
 
 /* ---- F4 引擎选项（docs/28）----------------------------------------------------
@@ -72,15 +74,46 @@ void Engine::engine_options_log_post() {
                opt_post_include_2d ? "all" : "3d");
 }
 
+static std::string engine_options_file_path() {
+    const char* p = std::getenv("MAQUE_ENGINE_OPTIONS_FILE");
+    return p && *p ? std::string(p) : std::string();
+}
+
+void Engine::engine_options_save_file() {
+    const std::string path = engine_options_file_path();
+    if (path.empty()) return;
+    std::ofstream f(path, std::ios::trunc);
+    if (!f) return;
+    f << "render_factor=" << opt_render_factor << "\n";
+    f << "imgui_factor=" << opt_imgui_factor << "\n";
+}
+
+void Engine::engine_options_load_file() {
+    const std::string path = engine_options_file_path();
+    if (path.empty()) return;
+    std::ifstream f(path);
+    if (!f) return;
+    std::string line;
+    while (std::getline(f, line)) {
+        const size_t eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        const std::string key = line.substr(0, eq);
+        const std::string val = line.substr(eq + 1);
+        if (key == "render_factor") opt_render_factor = std::clamp((float)std::atof(val.c_str()), 0.25F, 1.0F);
+        else if (key == "imgui_factor") opt_imgui_factor = std::clamp((float)std::atof(val.c_str()), 1.0F, 5.0F);
+    }
+    if (opt_render_factor < 0.999F) render_factor_apply_pending = true;
+    if (opt_imgui_factor > 1.001F) imgui_rescale_pending = true;
+}
+
 void Engine::engine_options_parse_env() {
     if (opt_env_parsed) return;
     opt_env_parsed = true;
     const char* e = std::getenv("MAQUE_ENGINE_OPTIONS");
-    if (!e || !*e) return;
     /* 出现任何后处理键 → 自动打开总开关（只要没显式写 post=0）。 */
     bool post_touched = false;
     bool post_explicit = false;
-    std::string s(e), item;
+    std::string s(e && *e ? e : ""), item;
     for (size_t i = 0; i <= s.size(); ++i) {
         const char c = i < s.size() ? s[i] : ',';
         if (c != ',') { if (c != ' ' && c != '\t') item.push_back(c); continue; }
@@ -117,6 +150,10 @@ void Engine::engine_options_parse_env() {
         } else if (key == "far") {
             opt_cam_far = std::max((float)std::atof(val.c_str()), 1e-3F);
             opt_cam_override = true;
+        } else if (key == "render_factor") {
+            opt_render_factor = std::clamp((float)std::atof(val.c_str()), 0.25F, 1.0F);
+        } else if (key == "imgui_factor") {
+            opt_imgui_factor = std::clamp((float)std::atof(val.c_str()), 1.0F, 5.0F);
         } else if (key == "post") {
             opt_post_enabled = on;
             post_explicit = true;
@@ -181,6 +218,10 @@ void Engine::engine_options_parse_env() {
         std::print(" near={:.3f} far={:.3f}", (double)opt_cam_near, (double)opt_cam_far);
     std::print("\n");
     engine_options_log_post();
+    /* 用户上次在 F4 里调的分辨率因子优先于 env（持久化文件只存这两项）。 */
+    engine_options_load_file();
+    if (opt_render_factor < 0.999F) render_factor_apply_pending = true;
+    if (opt_imgui_factor > 1.001F) imgui_rescale_pending = true;
 }
 
 /* F4 面板内容。调用方保证本帧 ImGui 已 begin（`imgui_frame_begin`）。
@@ -188,18 +229,66 @@ void Engine::engine_options_parse_env() {
  * 位置/尺寸用 FirstUseEver 语义（`mq_imgui_begin_at`）→ 用户拖动/缩放后不会被每帧复位。 */
 void Engine::engine_options_panel(float show_w, float show_h) {
     const float pad = 8.0F * imgui_pixel_scale;
+    const float top = pad + imgui_safe_top();
     const float gap = 8.0F * imgui_pixel_scale;
     const float w = std::min(imgui_panel_w * 1.30F, std::max(show_w * 0.90F, 120.0F));
     /* 高度：常用项 + 后处理折叠头一行；展开后靠 ImGui 滚动条（窗口太矮时夹到 85%）。 */
     const float h = std::min(imgui_panel_h * 4.05F, std::max(show_h * 0.85F, 100.0F));
     float x = imgui_panel_w > 0.0F ? pad + imgui_panel_w + gap : pad;
     if (x + w > show_w - pad) x = std::max(pad, show_w - w - pad);
-    if (!mq_imgui_begin_at("engine options", x, pad, w, h)) { mq_imgui_end(); return; }
+    if (!mq_imgui_begin_at("engine options", x, top, w, h)) { mq_imgui_end(); return; }
     mq_imgui_push_small_font();
     mq_imgui_push_item_width(std::min(w * 0.50F, 150.0F * imgui_pixel_scale));
 
     mq_imgui_text("选项：只影响本机画面，不改场景");
     mq_imgui_text_disabled("F4 开关本面板 / F2 开关 stats");
+    /* RenderFactor 只压 3D PBR 离屏 target（UI/字体/ImGui 全分辨率不动）；
+     * ImGuiFactor 只放大/缩小 ImGui 面板与字体（100%..500%），不改 target。 */
+    static const float kRenderValues[4] = { 1.0F, 0.75F, 0.5F, 0.25F };
+    static const float kImguiValues[6] = { 1.0F, 1.5F, 2.0F, 3.0F, 4.0F, 5.0F };
+    static const char* kRenderItems = "100%,75%,50%,25%";
+    static const char* kImguiItems = "100%,150%,200%,300%,400%,500%";
+    auto render_index = [](float v) {
+        if (v >= 0.875F) return 0;
+        if (v >= 0.625F) return 1;
+        if (v >= 0.375F) return 2;
+        return 3;
+    };
+    auto imgui_index = [](float v) {
+        if (v >= 4.5F) return 5;
+        if (v >= 3.5F) return 4;
+        if (v >= 2.5F) return 3;
+        if (v >= 1.75F) return 2;
+        if (v >= 1.25F) return 1;
+        return 0;
+    };
+    const int render_sel = (int)mq_imgui_combo("RenderFactor (3D)", (float)render_index(opt_render_factor), kRenderItems);
+    if (render_sel >= 0 && render_sel < 4 && kRenderValues[render_sel] != opt_render_factor) {
+        opt_render_factor = kRenderValues[render_sel];
+        render_factor_apply_pending = true;
+        engine_options_save_file();
+        std::print("runtime: engine option render_factor={:.0f}% (3D only)\n",
+                   (double)(opt_render_factor * 100.0F));
+    }
+    const int imgui_sel = (int)mq_imgui_combo("ImGuiFactor", (float)imgui_index(opt_imgui_factor), kImguiItems);
+    if (imgui_sel >= 0 && imgui_sel < 6 && kImguiValues[imgui_sel] != opt_imgui_factor) {
+        opt_imgui_factor = kImguiValues[imgui_sel];
+        imgui_rescale_pending = true;
+        engine_options_save_file();
+        std::print("runtime: engine option imgui_factor={:.0f}%\n",
+                   (double)(opt_imgui_factor * 100.0F));
+    }
+    {
+        float show_w2 = 0, show_h2 = 0;
+        imgui_show_size(&show_w2, &show_h2);
+        char info[160];
+        const int lw = std::max(1, (int)std::lround((double)TW * std::clamp(opt_render_factor, 0.25F, 1.0F)));
+        const int lh = std::max(1, (int)std::lround((double)TH * std::clamp(opt_render_factor, 0.25F, 1.0F)));
+        std::snprintf(info, sizeof info, "main %dx%d  3D %dx%d  low=%d tex=%d  ui x%.2f",
+                      TW, TH, lw, lh, scene3d_low_active ? 1 : 0, scene3d_tex,
+                      (double)imgui_effective_factor);
+        mq_imgui_text_disabled(info);
+    }
     /* Linux perf 采样剖析（docs/35）：与 F5 / 控制面共用同一套 start/stop。
      * 放在面板顶部（折叠头默认收起）；录制中标题带状态，展开可看帧数/时长。 */
     const maque::profile::Status ps = maque::profile::status();

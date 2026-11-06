@@ -30,6 +30,7 @@ static ImFont *g_small_font = nullptr;   // 15px 小字号（stats 用）
 namespace {
 
 bool g_ready = false;
+bool g_compact_glyphs = false;      // >400%：只烘固定面板文案 + ASCII，避免 CJK 全量图集超纹理上限
 bool g_trace = false;                  // MAQUE_IMGUI_TRACE=1：打印每帧命令几何（排障用）
 float g_pixel_scale = 1.0F;
 uint64_t g_font_tex = 0;
@@ -45,7 +46,9 @@ float g_dpi = 1.0F;
 /* 输入状态（宿主每帧喂；ImGui 需要"持续下压"语义，所以这里保存） */
 float g_ptr_x = 0, g_ptr_y = 0;
 bool g_ptr_down = false;
+bool g_ptr_last_down = false;
 bool g_focused = true;
+std::string g_ini_path;                  // MAQUE_IMGUI_INI（Android 内部存储，跨启动记录面板位置）
 
 /* 字体图集的 RGBA32 副本（宿主上传用） */
 std::vector<uint8_t> g_font_rgba;
@@ -84,6 +87,10 @@ void adopt_font_texture() {
 
 extern "C" {
 
+void mq_imgui_set_compact_glyphs(int compact) {
+    g_compact_glyphs = compact != 0;
+}
+
 int mq_imgui_init(float font_size, float pixel_scale) {
     return mq_imgui_init_with_fonts(nullptr, font_size, 0.0F, pixel_scale);
 }
@@ -98,23 +105,37 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
     IMGUI_CHECKVERSION();
     if (!ImGui::CreateContext()) return 1;
     ImGuiIO &io = ImGui::GetIO();
-    io.IniFilename = nullptr;          // 不落盘：确定性 + 不污染工作目录
+    /* 默认不落盘（确定性 + 不污染工作目录）；Android 宿主显式给 MAQUE_IMGUI_INI，
+     * 用来跨 F2/F4 关闭、跨 App 重启记录面板位置。 */
+    g_ini_path.clear();
+    if (const char *ini = std::getenv("MAQUE_IMGUI_INI"); ini && *ini) g_ini_path = ini;
+    io.IniFilename = g_ini_path.empty() ? nullptr : g_ini_path.c_str();
+    io.IniSavingRate = 2.0F;
     io.LogFilename = nullptr;
     io.BackendPlatformName = "maque";
     /* 键盘导航默认关闭：调试面板不抢键盘焦点（除非用户点了输入框） */
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigWindowsMoveFromTitleBarOnly = true;
+    /* 触摸面板：窗口内空白区域也能拖（默认值；显式写死避免被误改回 title-only）。 */
+    io.ConfigWindowsMoveFromTitleBarOnly = false;
 
     /* 字号（逻辑像素；标题 / 正文两档）与 UI 缩放（样式尺寸一并缩放）。
      * 这样"屏幕分辨率决定 UI 大小、窗口大小不参与"——同一块屏上外观固定。 */
     const float title_px = title_size > 0.0F ? title_size : 15.0F;
     const float body_px = body_size > 0.0F ? body_size : title_px * 0.78F;
     g_pixel_scale = pixel_scale > 0.0F ? pixel_scale : 1.0F;
-    ImGui::GetStyle().ScaleAllSizes(g_pixel_scale);   // 内边距/间距/标题栏高度/滚动条…
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.ScaleAllSizes(g_pixel_scale);   // 内边距/间距/标题栏高度/滚动条…
+    /* 极端低分辨率（Render 25% × ImGui 25%）时 padding 会缩到 0；
+     * ImGui::ErrorCheckNewFrameSanityChecks 会直接断言。布局倍率仍保留。 */
+    style.WindowBorderHoverPadding = std::max(style.WindowBorderHoverPadding, 1.0F);
     /* 让字体图集直接用 **RGBA32**：宿主只处理一种纹理格式，引擎的 normal 混合即可正确工作
      *（Alpha8 需要后端自己扩成 RGBA，多一步且易错）。
      * 注：1.93 里这是**公开字段** TexDesiredFormat，不是 Set 方法。 */
     io.Fonts->TexDesiredFormat = ImTextureFormat_RGBA32;
+    /* 高倍率（>400%）时 CJK 字形更多，默认 8192² 会触发
+     * "Out of texture memory"；放宽图集上限（实际尺寸按需增长）。 */
+    io.Fonts->TexMaxWidth = 16384;
+    io.Fonts->TexMaxHeight = 16384;
 
     /* 字体：TTF（含 CJK）+ 常用简体中文范围和内建面板固定文案；没有 TTF 才退默认
      *（只有 ASCII → 中文会是 '?'）。一次烘**两档**：标题与正文，都乘 UI 缩放。 */
@@ -122,7 +143,12 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
      * 只增加实际字符，不切到全量 CJK。ranges 的生命周期必须覆盖两档字体的静态 Build。 */
     g_font_ranges.clear();
     ImFontGlyphRangesBuilder ranges;
-    ranges.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    if (!g_compact_glyphs) {
+        ranges.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    } else {
+        static const ImWchar kAscii[] = { 0x20, 0x7E, 0 };   /* 面板英文/数字/百分比 */
+        ranges.AddRanges(kAscii);
+    }
     ranges.AddText(
         "选项：只影响本机画面，不改场景"
         "F4 开关本面板 / F2 开关 stats"
@@ -165,6 +191,7 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
         ImFontConfig cfg;
         cfg.SizePixels = title_px * g_pixel_scale;
         cfg.GlyphRanges = g_font_ranges.Data;
+        cfg.Flags |= ImFontFlags_NoLoadError;   // 缺字体/不可读时返回 NULL，交给下面的 default fallback（Android 曾因断言崩溃）
         if (io.Fonts->AddFontFromFileTTF(ttf_path, cfg.SizePixels, &cfg)) {
             loaded = true;
             /* 第二档：正文小字号（stats 面板内容用）。**必须也乘 g_pixel_scale** ——
@@ -172,6 +199,7 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
             ImFontConfig small_cfg;
             small_cfg.SizePixels = body_px * g_pixel_scale;
             small_cfg.GlyphRanges = g_font_ranges.Data;
+            small_cfg.Flags |= ImFontFlags_NoLoadError;
             g_small_font = io.Fonts->AddFontFromFileTTF(ttf_path, small_cfg.SizePixels, &small_cfg);
         }
     }
@@ -201,11 +229,15 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
     g_font_w = g_font_h = 0;
     g_font_texdata = nullptr;
     g_ready = true;
+    g_ptr_x = g_ptr_y = 0.0F;
+    g_ptr_down = false;
+    g_ptr_last_down = false;
     return 0;
 }
 
 void mq_imgui_shutdown(void) {
     if (!g_ready) return;
+    if (!g_ini_path.empty()) ImGui::SaveIniSettingsToDisk(g_ini_path.c_str());
     /* ⚠️ 必须先关官方后端（它会把自己的 BackendRendererUserData 清掉），
      * 否则 DestroyContext 时命中断言 "Forgot to shutdown Renderer backend?"（实测退出崩溃）。 */
     if (mq_imgui_g_backend || mq_imgui_g_backend_pref) mq_imgui_backend_shutdown();
@@ -281,8 +313,18 @@ uint64_t mq_imgui_font_atlas_bytes(void) {
 void mq_imgui_input_pointer(float x, float y, int down, float wheel) {
     g_ptr_x = x;
     g_ptr_y = y;
-    g_ptr_down = down != 0;
-    if (wheel != 0.0F && g_ready) ImGui::GetIO().AddMouseWheelEvent(0.0F, wheel);
+    const bool pressed = down != 0;
+    g_ptr_down = pressed;
+    if (!g_ready) return;
+    ImGuiIO& io = ImGui::GetIO();
+    /* 每个事件都入 ImGui 的**事件队列**：Android 低帧率/一帧内 down+up 时只保存
+     * 最终状态会让 ImGui 永远看不到按下（面板点不中/拖不动）。 */
+    io.AddMousePosEvent(x, y);
+    if (pressed != g_ptr_last_down) {
+        io.AddMouseButtonEvent(0, pressed);
+        g_ptr_last_down = pressed;
+    }
+    if (wheel != 0.0F) io.AddMouseWheelEvent(0.0F, wheel);
 }
 
 /* 引擎规范键码（MQ_KEY_* / 大写 ASCII / F1..F12=1001..1012）→ ImGuiKey。
@@ -354,9 +396,9 @@ int mq_imgui_begin_frame(float show_w, float show_h, float target_w, float targe
     io.DeltaTime = dt > 0.0F ? dt : (1.0F / 60.0F);
     io.AddFocusEvent(g_focused);
 
-    /* 指针：ImGui 的坐标是**显示空间**；宿主给的是窗口像素 = 显示空间 → 直接用。 */
-    io.AddMousePosEvent(g_ptr_x, g_ptr_y);
-    io.AddMouseButtonEvent(0, g_ptr_down);
+    /* 指针事件由 `mq_imgui_input_pointer` 逐事件入队（宿主已换算到显示空间）；
+     * 这里**不要**再用窗口坐标补一次，否则会在事件队列末尾覆盖成未换算的坐标
+     * （Android 889x722 → 2670x1200 时面板永远 hover 不到）。 */
 
     ImGui::NewFrame();
 
@@ -500,6 +542,8 @@ int mq_imgui_want_keyboard(void) {
     if (!g_ready) return 0;
     return ImGui::GetIO().WantCaptureKeyboard ? 1 : 0;
 }
+
+
 
 int mq_imgui_hovered(void) {
     if (!g_ready) return 0;

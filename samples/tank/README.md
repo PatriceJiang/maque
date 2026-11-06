@@ -2,6 +2,8 @@
 
 ![标题](shot_title.png)
 
+> C/C++ native 迁移见 [samples/tank-native](../tank-native/)（根玩法 C++、HUD 仍 Lua；play/rules 复用同一套 e2e）。
+
 这是一个**完全用 Lua + `.scn` 资源实现**的《坦克大战》复刻：13×13 大格关卡、4 类敌人、
 老鹰基地、6 种道具、20 辆敌人/关、3 条命、星级升级、砖/钢/水/树/冰五种地形，
 以及标题、关卡演出、暂停、过关、GAME OVER 的完整流程。

@@ -2669,6 +2669,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
  * 窗口由 platform 提供原生句柄（Win32 HWND / X11 Window / Wayland wl_surface）；
  * swapchain 格式由 surface caps 决定（优先非 sRGB 的 RGBA8/BGRA8，保持既有 2D 输出观感），
  * 2D 管线按该格式重建；离屏/截图仍是 RGBA8（切换时 ensure_2d_pipelines 处理）。 */
+static void release_surface_frame(Device* dv) {
+    if (!dv) return;
+    if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
+    if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+}
+
 static bool configure_surface(Device* dv, int32_t w, int32_t h) {
     if (!dv->surface || w <= 0 || h <= 0) return false;
     WGPUSurfaceConfiguration cfg = WGPU_SURFACE_CONFIGURATION_INIT;
@@ -2690,8 +2696,7 @@ static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
     auto* dv = (Device*)self;
     if (!dv || !win) return -1;
     if (win->kind == 0) {
-        if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
-        if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+        release_surface_frame(dv);
         if (dv->surface) {
             wgpuSurfaceUnconfigure(dv->surface);
             wgpuSurfaceRelease(dv->surface);
@@ -2701,6 +2706,7 @@ static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
         return 0;
     }
     if (win->width <= 0 || win->height <= 0) return -2;
+    release_surface_frame(dv);
     if (dv->surface) {
         wgpuSurfaceUnconfigure(dv->surface);
         wgpuSurfaceRelease(dv->surface);
@@ -2742,14 +2748,27 @@ static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
         dv->surface = nullptr;
         return -5;
     }
+    if (!(caps.usages & WGPUTextureUsage_RenderAttachment)) {
+        wgpuSurfaceCapabilitiesFreeMembers(caps);
+        wgpuSurfaceRelease(dv->surface);
+        dv->surface = nullptr;
+        return -5;
+    }
     WGPUTextureFormat chosen = caps.formats[0];
     for (size_t i = 0; i < caps.formatCount; ++i) {
         const WGPUTextureFormat f = caps.formats[i];
         if (f == WGPUTextureFormat_RGBA8Unorm || f == WGPUTextureFormat_BGRA8Unorm) { chosen = f; break; }
     }
     dv->surfaceFormat = chosen;
-    dv->surfaceCopySrc = (caps.usages & WGPUTextureUsage_CopySrc) != 0;
+    const char* cap_env = std::getenv("MAQUE_CAPTURE_WGPU");
+    dv->surfaceCopySrc = (caps.usages & WGPUTextureUsage_CopySrc) != 0 &&
+                         cap_env && *cap_env;   /* 只有抓帧 CI 才申请 CopySrc，减少 swapchain 配置风险 */
     dv->surfaceAlphaMode = caps.alphaModeCount > 0 ? caps.alphaModes[0] : WGPUCompositeAlphaMode_Auto;
+    for (size_t i = 0; i < caps.alphaModeCount; ++i)
+        if (caps.alphaModes[i] == WGPUCompositeAlphaMode_Opaque) {
+            dv->surfaceAlphaMode = WGPUCompositeAlphaMode_Opaque;
+            break;
+        }
     wgpuSurfaceCapabilitiesFreeMembers(caps);
     if (!configure_surface(dv, win->width, win->height)) return -6;
     return 0;
@@ -2800,8 +2819,10 @@ static int32_t acquire_surface(Device* dv) {
         st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
         if (st.texture) wgpuTextureRelease(st.texture);
         if (st.status == WGPUSurfaceGetCurrentTextureStatus_Outdated ||
-            st.status == WGPUSurfaceGetCurrentTextureStatus_Lost)
+            st.status == WGPUSurfaceGetCurrentTextureStatus_Lost) {
+            release_surface_frame(dv);
             configure_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
+        }
 #if defined(__ANDROID__)
         __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "surface acquire failed status=%d", (int)st.status);
 #endif
@@ -2925,6 +2946,7 @@ static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
     if (!dv || !dv->surface) return -1;
     if (w <= 0 || h <= 0) return -2;
     if (w == dv->surfaceWidth && h == dv->surfaceHeight) return 0;
+    release_surface_frame(dv);
     return configure_surface(dv, w, h) ? 0 : -3;
 }
 

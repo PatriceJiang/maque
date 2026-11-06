@@ -249,6 +249,10 @@ namespace runtime {
 
 } // namespace runtime
 
+namespace script_guest {
+
+} // namespace script_guest
+
 namespace sim {
 
 } // namespace sim
@@ -852,6 +856,7 @@ enum class ScriptLanguage : int32_t {
     Lua    = 1,
     Python = 2,
     V8     = 3,
+    Native = 4,
 };
 
 struct PropertyVariant {

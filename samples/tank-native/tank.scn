@@ -1,0 +1,29 @@
+{
+  "title": "Battle City",
+  "script": "game.lua",
+  "width": 640,
+  "height": 480,
+  "seed": 1990,
+  "entities": [
+    { "name": "bg", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 240 },
+        { "type": "scn.Sprite", "width": 640, "height": 480,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/bg.png" } ] },
+    { "name": "field_bg", "components": [
+        { "type": "scn.Transform2D", "x": 224, "y": 240 },
+        { "type": "scn.Sprite", "width": 416, "height": 416,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/field.png" } ] },
+    { "name": "field_frame", "components": [
+        { "type": "scn.Transform2D", "x": 224, "y": 240 },
+        { "type": "scn.Sprite", "width": 432, "height": 432,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/frame.png" } ] },
+    { "name": "ActorsHost", "components": [
+        { "type": "scn.Transform2D", "x": 0, "y": 0 },
+        { "type": "scn.SceneInstance", "source": "actors/actors.scn" } ] },
+    { "name": "StageHost", "components": [
+        { "type": "scn.Transform2D", "x": 0, "y": 0 } ] },
+    { "name": "HudHost", "components": [
+        { "type": "scn.Transform2D", "x": 0, "y": 0 },
+        { "type": "scn.SceneInstance", "source": "ui/hud.scn" } ] }
+  ]
+}

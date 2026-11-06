@@ -30,7 +30,6 @@ void Engine::resolve_render_scale() {
         const float value = (float)std::atof(e);
         if (value > 0.0F) render_scale_req = value;
     }
-    render_scale_req = std::clamp(render_scale_req, 0.25F, 4.0F);
 #ifdef MQ_RENDERER_STATIC_NULL
     window_intent = false;
 #else
@@ -116,6 +115,17 @@ void Engine::update_main_views() {
     }
 }
 
+/* F4 RenderFactor 只影响 3D PBR 的离屏合成目标；主 target/2D/UI/ImGui 保持全分辨率。
+ * 帧首释放旧 3D 目标，下一帧按新尺寸创建；不重建主 target/不重载 UI 字体。 */
+void Engine::apply_render_factor() {
+    render_factor_apply_pending = false;
+    destroy_scene3d_target();
+    idle_render_hash = 0;
+    idle_render_frames = 0;
+    std::print("runtime: 3D render factor {:.0f}% (main target {}x{} unchanged)\n",
+               (double)(std::clamp(opt_render_factor, 0.25F, 1.0F) * 100.0F), TW, TH);
+}
+
 /* 窗口事件给逻辑尺寸；实际目标始终从 drawable 设备像素重算。 */
 void Engine::sync_window_size(int32_t log_w, int32_t log_h) {
     if (!platform || !window) return;
@@ -126,6 +136,13 @@ void Engine::sync_window_size(int32_t log_w, int32_t log_h) {
     if (win_last_w <= 0) {
         win_last_w = log_w; win_last_h = log_h;
         drawable_last_w = surface_w; drawable_last_h = surface_h;
+        /* 首帧平台可能还没建好 SurfaceView：初始 target 用了逻辑尺寸；
+         * drawable 一可用就按设备像素重建一次，避免 889x722 → 2670x1200 拉伸。 */
+        if (TW != surface_w || TH != surface_h) {
+            rebuild_render_target();
+            if (direct_present && rapi && rself && rapi->resize_surface)
+                (void)rapi->resize_surface(rself, surface_w, surface_h);
+        }
         return;
     }
     const bool logical_changed = log_w != win_last_w || log_h != win_last_h;
@@ -141,6 +158,21 @@ void Engine::sync_window_size(int32_t log_w, int32_t log_h) {
     win_h = log_h;
     rebuild_render_target();
 
+    /* Android 切场景/退出时 activity 会先换/销毁 ANativeWindow，随后才轮到
+     * sync_window_size。此时若直接对新尺寸调 resize_surface，会把**旧** surface
+     * 重新 configure（wgpu-native 在 Adreno 上直接 abort，tombstone:
+     * wgpuSurfaceConfigure）。句柄变化/原生窗口消失时先 detach，等下一段
+     * direct attach 用新窗口重新 attach。 */
+    if (direct_present && rapi && rself && rapi->attach_window) {
+        mq_platform_native_window nw{};
+        const bool have_native = mq_platform_get_native_window(platform, &nw) != 0 && nw.handle;
+        if (!have_native || nw.handle != direct_window_handle) {
+            mq_renderer_window none{};
+            (void)rapi->attach_window(rself, &none);
+            direct_present = false;
+            direct_window_handle = nullptr;
+        }
+    }
     if (direct_present && rapi && rself && rapi->resize_surface) {
         const int32_t rc = rapi->resize_surface(rself, surface_w, surface_h);
         if (rc != 0) std::print(stderr, "runtime: resize_surface({}x{}) 失败 rc={}\n",

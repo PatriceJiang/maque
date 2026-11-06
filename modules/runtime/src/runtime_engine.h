@@ -317,6 +317,7 @@ struct Engine {
      * 无窗口时指针本来就是目标像素 → 1:1。 */
     void  imgui_show_size(float* w, float* h) const;
     float imgui_show_scale() const;
+    float imgui_safe_top() const;   // Android 状态栏/刘海安全偏移（ImGui 像素）
     bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
     bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
     bool  imgui_f2_held = false;               // F2 是否按住（热键沿检测：按住只切一次）
@@ -325,6 +326,8 @@ struct Engine {
      * 同一块屏上 stats 字号/面板大小恒定；换显示器/换缩放才变。 */
     float imgui_ui_scale = 1.0F;               // 屏幕分辨率派生的 UI 缩放
     float imgui_pixel_scale = 1.0F;            // 实际像素倍率（字号 × 样式尺寸）
+    float imgui_effective_factor = 1.0F;       // ImGuiFactor 经最小字号保护后的有效倍率
+    bool  imgui_pending_up = false;             // 触摸 down+up 同帧时把 up 延后一帧（ImGui 点击需要）
     float imgui_content_scale = 1.0F;          // 窗口 绘制区/逻辑区 比（HiDPI）
     int   imgui_screen_w = 0, imgui_screen_h = 0;
     float imgui_title_size = 0.0F;             // 标题字号（逻辑像素，未乘 pixel_scale）
@@ -446,6 +449,10 @@ struct Engine {
     void  reset_instances();
     bool  build_instance(SceneInstanceRuntime& inst, int depth);
     bool  load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::string> rels, bool is_root);
+    /* 统一创建/绑定 VM（JS/Lua/native）；native 额外注入 API 表 + 源路径 resolver。 */
+    mq_script_vm* make_script_vm(const char* lang, const std::string& source_path);
+    /* native：把源路径（VFS）解析成 so:/soname:/static: 规格（manifest + target + 信任门）。 */
+    int native_resolve(const std::string& source_path, char* out, int cap);
     /* docs/34 P0：包清单 → 单 VM + 模块 + 每挂载点实例。 */
     bool  detect_package();
     bool  ensure_module_vm();
@@ -762,6 +769,17 @@ struct Engine {
     float orbit_fov_y = 45.0F;         // 最近一次 3D 提取的主相机 fov（平移速度按屏幕高度换算）
     float orbit_last_x = 0.0F, orbit_last_y = 0.0F;
     float orbit_pan_last_x = 0.0F, orbit_pan_last_y = 0.0F;
+    /* 触摸手势（Android/iOS）：单指环绕、双指拖动平移、双指捏合缩放。
+     * 触摸事件走同一 mq_platform_pointer_event 流（pointer_type=TOUCH）；这里只维护
+     * 引擎级 OrbitControls 状态，不改脚本的 pointer 事件。 */
+    struct OrbitTouch { uint32_t id = 0; float x = 0.0F, y = 0.0F; bool active = false; };
+    OrbitTouch orbit_touches[10];
+    int orbit_touch_count = 0;
+    float orbit_touch_dist = 0.0F;
+    float orbit_touch_mid_x = 0.0F, orbit_touch_mid_y = 0.0F;
+    void orbit_pan_by(float dx, float dy);
+    void orbit_zoom_by(float factor);
+    void orbit_touch_event(const mq_platform_pointer_event& pe);
 
     /* ---- 引擎选项（F4 ImGui 面板；docs/28）----
      * 运行期可热调的纯视图选项：
@@ -775,6 +793,16 @@ struct Engine {
     bool  opt_panel = false;                   // F4 面板开关
     bool  opt_f4_held = false;                 // F4 沿检测（按住只切换一次）
     bool  opt_opened_imgui = false;            // F4 自己打开的 ImGui（收起面板时恢复"关"→ 不残留 stats）
+    /* 分辨率因子（F4：100% / 75% / 50% / 25%）：
+     *   · render_factor：乘到 render_scale_req，决定主 target 像素（场景/2D/UI 一起）；
+     *   · imgui_factor：ImGui 自己的字体/面板像素倍率（独立于场景 target）。 */
+    float opt_render_factor = 1.0F;            // 只压 3D PBR 离屏 target（1.0..0.25）
+    float opt_imgui_factor = 1.0F;             // ImGui UI 大小倍率（1.0..5.0，不改 target）
+    bool  render_factor_apply_pending = false;
+    bool  imgui_rescale_pending = false;
+    int   scene3d_tex = -1;                    // 引擎自有的低分辨率 3D 合成目标
+    int   scene3d_w = 0, scene3d_h = 0;
+    bool  scene3d_low_active = false;           // 本帧 3D 是否真的走了低分辨率离屏
     int   opt_msaa = 0;                        // 0=跟随场景(MAQUE_MSAA 次之) 1=关 4=4x
     /* RenderTexture MSAA 全局开关（F4 / MAQUE_ENGINE_OPTIONS 的 rt_msaa）：只管**相机离屏目标**，
      * 不动主输出。0=跟随（上面的 MSAA / MAQUE_MSAA / 各 RT 字段 / 场景），1=全部强制关，
@@ -830,8 +858,15 @@ struct Engine {
     bool  opt_last_sun = false;
     float opt_last_near = 0.1F, opt_last_far = 100.0F;
     bool  opt_env_parsed = false;
-    void engine_options_parse_env();           // 启动初值 MAQUE_ENGINE_OPTIONS（只解析一次）
+    void engine_options_parse_env();           // 启动初值 MAQUE_ENGINE_OPTIONS + 持久化文件（只解析一次）
     void engine_options_panel(float show_w, float show_h);   // F4 面板内容（本帧 ImGui 已 begin）
+    void engine_options_save_file();           // 只持久化 render/imgui factor（Android 内部存储）
+    void engine_options_load_file();
+    void apply_render_factor();                // 只重建引擎自有 3D 离屏目标（帧首）
+    void invalidate_text_fonts();              // 场景切载/旧调用保留；RenderFactor 不再影响 UI 字体
+    void rebuild_imgui_for_scale();            // ImGuiFactor 改变后重建 ImGui 上下文/字体图集
+    void destroy_scene3d_target();             // 释放引擎自有 3D 离屏 target
+    int  ensure_scene3d_target(int w, int h);  // 创建/重配；返回纹理句柄，失败 -1
     void engine_options_fill_post(mq_renderer_post& out) const;  // opt_post_* → frame3d.post
     void engine_options_log_post();            // 变化时打印一行（CI 可断言）
 

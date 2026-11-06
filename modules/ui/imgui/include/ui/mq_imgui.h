@@ -86,6 +86,7 @@ int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_s
  *   （内边距/间距/标题栏高度/滚动条…）一并按它缩放 → 控件比例不变。
  * body_size<=0 → 取 title_size*0.78；title_size<=0 → 内置默认。 */
 int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_size, float pixel_scale);
+void mq_imgui_set_compact_glyphs(int compact);
 void mq_imgui_shutdown(void);
 int mq_imgui_ready(void);
 

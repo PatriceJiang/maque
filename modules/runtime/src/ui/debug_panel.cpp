@@ -3,6 +3,9 @@
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段 S5，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
 
+#include <cctype>
+#include <filesystem>
+
 namespace maque::rt {
 
 /* ---- ImGui 调试面板（docs/27 §ImGui）------------------------------------------------
@@ -68,10 +71,58 @@ void Engine::imgui_setup() {
      * ImGui 走 CPU 像素 → 2D 网格的既有回退链，随 render_frame3d 的 meshes 提交。 */
     if (pre_ren) mq_imgui_set_backend_mode(1);
     /* 像素倍率：官方后端工作在 drawable 像素；网格链还需乘主输出 render_scale。 */
-    const float ps = imgui_ui_scale * imgui_content_scale *
-                     (pre_ren ? 1.0F : std::max(render_scale_req, 0.25F));
+    const float base_ps = imgui_ui_scale * imgui_content_scale *
+                          (pre_ren ? 1.0F : std::max(render_scale_req, 0.25F));
+    /* 允许 25%：低到亚像素字号时 ImGui 的 WindowBorderHoverPadding 会变成 0
+     * 触发断言；在 imgui 初始化里把该样式值钳到 ≥1（不改变布局倍率）。 */
+    const float f = std::clamp(opt_imgui_factor, 1.0F, 5.0F);
+    imgui_effective_factor = f;
+    const float ps = base_ps * f;
     imgui_pixel_scale = ps > 0.0F ? ps : 1.0F;
-    if (mq_imgui_init_with_fonts(font_path.empty() ? nullptr : font_path.c_str(),
+    /* "(builtin 5x7)" 不是可读文件；传给 AddFontFromFileTTF 只会触发断言/错误日志。
+     * Android 上 text_setup 可能没有 FreeType（或项目 fonts/ 在 asset:// 里不可直接
+     * 用 std::filesystem 打开），所以这里再给 ImGui 一次独立查找系统字体的机会；
+     * 都找不到就退回内置 ASCII 字体，面板仍可打开（中文显示为 ?，但不崩溃）。 */
+    std::string imgui_font_path = font_path;
+    /* text_setup() 依赖 FreeType；某些移动端构建没编 FreeType（font_path=builtin），
+     * 但 ImGui 的 stb_truetype 可以直接吃项目 TTF。优先用 MAQUE_FONT 的 TTF。 */
+    if (const char* env_font = std::getenv("MAQUE_FONT"); env_font && *env_font) {
+        std::string p = env_font;
+        const size_t dot = p.find_last_of('.');
+        std::string ext = dot == std::string::npos ? std::string() : p.substr(dot);
+        for (char& c : ext) c = (char)std::tolower((unsigned char)c);
+        std::error_code ec;
+        if (ext == ".ttf" && std::filesystem::is_regular_file(p, ec)) imgui_font_path = p;
+    }
+    if (imgui_font_path.empty() || imgui_font_path == "(builtin 5x7)") {
+        static const char* kSystemFonts[] = {
+#if defined(__ANDROID__)
+            "/system/fonts/NotoSansCJK-Regular.ttc",
+            "/system/fonts/NotoSansSC-Regular.otf",
+            "/system/fonts/DroidSansFallback.ttf",
+            "/system/fonts/Roboto-Regular.ttf",
+#else
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+#endif
+        };
+        for (const char* c : kSystemFonts) {
+            std::error_code ec;
+            if (std::filesystem::is_regular_file(c, ec)) { imgui_font_path = c; break; }
+        }
+    }
+    /* stb_truetype 只吃 TrueType 轮廓；CFF/OTF 与 TTC 会在 InitFont 阶段直接断言。
+     * 桌面 Windows 的 msyh.ttc、Android 的 NotoSansCJK.ttc 都属于这种情况 → 交给内置字体。 */
+    auto lower_ext = [](const std::string& p) {
+        const size_t dot = p.find_last_of('.');
+        std::string e = dot == std::string::npos ? std::string() : p.substr(dot);
+        for (char& c : e) c = (char)std::tolower((unsigned char)c);
+        return e;
+    };
+    const std::string fext = lower_ext(imgui_font_path);
+    if (fext == ".ttc" || fext == ".otf") imgui_font_path.clear();
+    const char* imgui_font = imgui_font_path.empty() ? nullptr : imgui_font_path.c_str();
+    mq_imgui_set_compact_glyphs(opt_imgui_factor > 4.0F ? 1 : 0);
+    if (mq_imgui_init_with_fonts(imgui_font,
                                  imgui_title_size, imgui_body_size, imgui_pixel_scale) != 0) {
         std::print(stderr, "runtime: imgui init failed\n");
         imgui_on = false;
@@ -124,6 +175,8 @@ void Engine::imgui_enable(bool on, bool show_stats) {
             imgui_meshes.clear();
         }
         imgui_on = false;
+        imgui_ptr_down = false;
+        imgui_pending_up = false;
         std::print("runtime: imgui panel OFF\n");
         if (had_opts) std::print("runtime: engine options panel OFF\n");
         return;
@@ -146,6 +199,9 @@ void Engine::imgui_show_size(float* w, float* h) const {
         if (dw > 0 && dh > 0) { sw = (float)dw; sh = (float)dh; }
         else if (win_w > 0 && win_h > 0) { sw = (float)win_w; sh = (float)win_h; }
     }
+    /* ImGui 显示空间 = target（TW×TH）：输入映射与窗口位置都只用 target 坐标；
+     * ImGuiFactor 只改字体/面板像素倍率（面板变小），不再改 show/scale ——
+     * 否则缩放后面板位置与触控命中会错位。 */
     if (w) *w = sw;
     if (h) *h = sh;
 }
@@ -154,6 +210,16 @@ void Engine::imgui_show_size(float* w, float* h) const {
  * 无窗口（headless/截图）时指针本来就是目标像素 → 1。
  * ⚠️ 与 Canvas 的 scale/offset 无关：面板是屏幕空间覆盖层，不参与"设计坐标 → 目标"映射
  *    （旧实现按画布反算 → WGPU 直呈下点击/拖动整体偏移，见 docs/bugs/010）。 */
+float Engine::imgui_safe_top() const {
+#if defined(__ANDROID__)
+    /* 24dp × 实际像素倍率：避免 F2/F4 默认位置压住通知栏/刘海。
+     * 位置一旦被用户拖动，会写进 ImGui ini（MAQUE_IMGUI_INI）并在下次恢复。 */
+    return 24.0F * imgui_pixel_scale;
+#else
+    return 0.0F;
+#endif
+}
+
 float Engine::imgui_show_scale() const {
     if (!window || !platform) return 1.0F;
     int ww = 0, wh = 0;
@@ -165,23 +231,52 @@ float Engine::imgui_show_scale() const {
 }
 
 /* 把本帧设备事件转发给 ImGui（**窗口逻辑像素坐标**；调用点在转成世界坐标**之前**）。
- * ImGui 的显示空间 = 渲染目标像素（网格链）或绘制区设备像素（官方后端），两者与窗口逻辑
- * 像素只差一个等比倍率 → 用 `imgui_show_scale()` 换算。**不能**再按 Canvas 的 offset/scale
- * 反算：面板是屏幕空间覆盖层，不跟随游戏视图的 zoom/平移（docs/bugs/010）。 */
+ * ImGui 的显示空间 = 渲染目标像素（网格链）或绘制区设备像素（官方后端）。Android 的
+ * window 逻辑尺寸与真实 surface 可能**非等比**（889x722 → 2670x1200），因此 x/y 各用
+ * 自己的倍率。**不能**再按 Canvas 的 offset/scale 反算：面板是屏幕空间覆盖层，
+ * 不跟随游戏视图的 zoom/平移（docs/bugs/010）。 */
 void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np,
                               const mq_platform_key_event* keys, uint32_t nk) {
     if (!imgui_on || !imgui_inited) return;
-    float wheel = 0.0F;
+    /* Android 上窗口逻辑尺寸（实测 889x722）与真实 surface（2670x1200）**不是等比**：
+     * 只用一个 width 倍率会让 y 命中错位（面板点不中）。x/y 各用自己的倍率。 */
+    int ww = 0, wh = 0;
+    float sw = 0.0F, sh = 0.0F;
+    if (platform) mq_platform_window_size(platform, &ww, &wh);
+    imgui_show_size(&sw, &sh);
+    const float kx = (ww > 0 && sw > 0.0F) ? sw / (float)ww : 1.0F;
+    const float ky = (wh > 0 && sh > 0.0F) ? sh / (float)wh : 1.0F;
+    /* 触摸 down+up 可能落在同一游戏帧（Android 低帧率）：ImGui 的 NewFrame 只在
+     * 帧边界处理事件，同帧 down/up 最终状态是 up → 永远点不中控件。
+     * 做法：down 立即入队；若同帧也出现 up，把 up 延到下一帧，保证至少一帧 MouseDown。 */
+    bool saw_down = false, saw_up = false, saw_move = false;
+    float last_x = imgui_ptr_x, last_y = imgui_ptr_y;
     for (uint32_t i = 0; i < np; ++i) {
         const mq_platform_pointer_event& p = ptrs[i];
-        imgui_ptr_x = p.x;
-        imgui_ptr_y = p.y;
-        if (p.type == MQ_PLATFORM_POINTER_DOWN && p.button == 0) imgui_ptr_down = true;
-        else if (p.type == MQ_PLATFORM_POINTER_UP && p.button == 0) imgui_ptr_down = false;
-        else if (p.type == MQ_PLATFORM_POINTER_WHEEL) wheel += p.scroll_y != 0.0F ? p.scroll_y : p.dy;
+        imgui_ptr_x = last_x = p.x;
+        imgui_ptr_y = last_y = p.y;
+        if (p.type == MQ_PLATFORM_POINTER_DOWN && p.button == 0) { saw_down = true; imgui_ptr_down = true; }
+        else if (p.type == MQ_PLATFORM_POINTER_UP && p.button == 0) { saw_up = true; imgui_ptr_down = false; }
+        else if (p.type == MQ_PLATFORM_POINTER_MOVE) { saw_move = true; }
+        else if (p.type == MQ_PLATFORM_POINTER_WHEEL)
+            mq_imgui_input_pointer(p.x * kx, p.y * ky, imgui_ptr_down ? 1 : 0,
+                                   p.scroll_y != 0.0F ? p.scroll_y : p.dy);
     }
-    const float k = imgui_show_scale();
-    mq_imgui_input_pointer(imgui_ptr_x * k, imgui_ptr_y * k, imgui_ptr_down ? 1 : 0, wheel);
+    if (imgui_pending_up) {
+        mq_imgui_input_pointer(last_x * kx, last_y * ky, 0, 0.0F);
+        imgui_ptr_down = false;
+        imgui_pending_up = false;
+    }
+    if (saw_down) mq_imgui_input_pointer(last_x * kx, last_y * ky, 1, 0.0F);
+    if (saw_move) mq_imgui_input_pointer(last_x * kx, last_y * ky, imgui_ptr_down ? 1 : 0, 0.0F);
+    if (saw_up && saw_down) {
+        imgui_pending_up = true;                 // 同帧 down+up：下一帧再抬
+        imgui_ptr_down = true;
+    } else if (saw_up) {
+        mq_imgui_input_pointer(last_x * kx, last_y * ky, 0, 0.0F);
+    }
+    if (np == 0 && !imgui_pending_up)
+        mq_imgui_input_pointer(imgui_ptr_x * kx, imgui_ptr_y * ky, imgui_ptr_down ? 1 : 0, 0.0F);
     for (uint32_t i = 0; i < nk; ++i) {
         const mq_platform_key_event& k = keys[i];
         mq_imgui_input_key((int)k.key, k.down ? 1 : 0);
@@ -225,7 +320,25 @@ void Engine::imgui_fake_input(mq_platform_pointer_event* ptrs, uint32_t& count, 
     }
 }
 
+/* ImGuiFactor 改变：字体图集/面板尺寸都绑定 pixel_scale，必须重建上下文。
+ * 保留 stats/F4 面板开关；ini 里的窗口位置会随 shutdown/init 自动保存/恢复。 */
+void Engine::rebuild_imgui_for_scale() {
+    if (!imgui_inited || !imgui_on) { imgui_rescale_pending = false; return; }
+    const bool stats = imgui_stats;
+    const bool opts = opt_panel;
+    const bool opened = opt_opened_imgui;
+    imgui_enable(false, false);
+    imgui_stats = stats;
+    opt_panel = opts;
+    opt_opened_imgui = opened;
+    imgui_enable(true, stats);
+}
+
 void Engine::imgui_frame_begin(float dt) {
+    if (imgui_rescale_pending) {
+        imgui_rescale_pending = false;
+        if (imgui_inited) rebuild_imgui_for_scale();
+    }
     /* 首次调用时决定初始开关：**默认关**（ImGui 是开发工具，不默认覆盖游戏画面）。
      * 打开：启动期 `MAQUE_IMGUI=1`（含 headless/截图），或运行时 F2 / 脚本
      * `imgui_set_enabled(1)`；`MAQUE_IMGUI=0` 只是显式初值（F2 仍可再开）。 */
@@ -274,7 +387,8 @@ void Engine::imgui_frame_begin(float dt) {
      * 与窗口/目标大小无关。 */
     float show_w = 0.0F, show_h = 0.0F;
     imgui_show_size(&show_w, &show_h);
-    const float scale = 1.0F, off_x = 0.0F, off_y = 0.0F;
+    const float scale = 1.0F;
+    const float off_x = 0.0F, off_y = 0.0F;
     const float dpi = 1.0F;
     if (imgui_backend) mq_imgui_backend_new_frame();   // 官方后端的 NewFrame（须在 ImGui::NewFrame 之前）
     mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
@@ -294,7 +408,7 @@ void Engine::imgui_frame_begin(float dt) {
                 const float min_h = 60.0F * imgui_pixel_scale;
                 const float w = std::min(imgui_panel_w, show_w * 0.85F);
                 const float h = std::min(imgui_panel_h, show_h * 0.75F);
-                mq_imgui_set_pos(pad, pad);
+                mq_imgui_set_pos(pad, pad + imgui_safe_top());
                 mq_imgui_set_size(w > min_w ? w : min_w, h > min_h ? h : min_h);
                 stat_window_sized = true;
             }
@@ -331,6 +445,9 @@ void Engine::imgui_frame_begin(float dt) {
                 }
                 std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
                               (unsigned long long)frame, target_w, target_h);
+                mq_imgui_text(line);
+                std::snprintf(line, sizeof line, "3D %dx%d  low=%d",
+                              scene3d_w, scene3d_h, scene3d_low_active ? 1 : 0);
                 mq_imgui_text(line);
                 mq_imgui_pop_small_font();
             }

@@ -14,20 +14,22 @@ bool Engine::reload_script(std::string* err, const std::string* only) {
     for (size_t i = 0; i < script_paths.size(); ++i) {
         const std::string& sp = script_paths[i];
         if (only && !only->empty() && *only != sp) continue;      // 只重载改动的那个脚本
+        const char* lang = mq_script_lang_for_path(sp.c_str());
+        const bool is_native = std::strcmp(lang, "native") == 0;
+        const std::string vpath = "/" + sp;
         void* d = nullptr; size_t n = 0;
-        if (mq_vfs_read(vfs, ("/" + sp).c_str(), &d, &n) != MQ_VFS_OK) continue;
-        std::string src((char*)d, n);
-        mq_vfs_free(d);
-        const uint64_t h = mq_vfs_hash(src.data(), src.size());
-        if (i < script_hashes.size() && h == script_hashes[i]) continue;   // 内容未变 → 跳过
+        const bool read_ok = mq_vfs_read(vfs, vpath.c_str(), &d, &n) == MQ_VFS_OK;
+        if (!read_ok && !is_native) continue;
+        std::string src = read_ok ? std::string((char*)d, n) : std::string();
+        if (read_ok) mq_vfs_free(d);
+        const uint64_t h = src.empty() ? 0 : mq_vfs_hash(src.data(), src.size());
+        if (!is_native && i < script_hashes.size() && h == script_hashes[i]) continue;   // 内容未变 → 跳过
         /* 原子热重载：先建**全新 VM** 并 eval；成功才换入槽位（顺序不变，其它脚本状态保留）。
          * 失败则销毁新 VM、保留旧的 —— 写坏一个脚本不会让正在跑的游戏失去该逻辑。 */
-        const char* lang = mq_script_lang_for_path(sp.c_str());
-        mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+        mq_script_vm* fresh = make_script_vm(lang, vpath);
         if (!fresh) { if (err) *err = "backend unavailable"; return false; }
-        mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-        mq_bind_generated(fresh, this);
-        if (mq_script_eval(fresh, src.c_str(), sp.c_str()) != 0) {
+        const char* eval_name = is_native ? vpath.c_str() : sp.c_str();
+        if (mq_script_eval(fresh, src.c_str(), eval_name) != 0) {
             char ebuf[512] = { 0 };
             std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
             mq_script_vm_destroy(fresh);                       // 保留旧 VM：游戏继续用旧逻辑

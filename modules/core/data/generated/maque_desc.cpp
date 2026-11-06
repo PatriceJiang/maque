@@ -6172,6 +6172,7 @@ static const mq_enum_value mq_values_script_ScriptLanguage[] = {
     { "Lua", (int64_t)1 },
     { "Python", (int64_t)2 },
     { "V8", (int64_t)3 },
+    { "Native", (int64_t)4 },
 };
 
 static const mq_enum_value mq_values_ui_Align[] = {
@@ -9432,7 +9433,7 @@ extern const mq_type_desc mq_type_script_ScriptLanguage = {
     3u,
     0u,
     mq_values_script_ScriptLanguage,
-    4u,
+    5u,
     mq_defaults_script_ScriptLanguage,
 };
 

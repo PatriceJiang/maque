@@ -82,16 +82,20 @@ bool Engine::detect_package() {
             if (dom) {
                 const char* id = mq_json_str(mq_json_get(dom, "id"), "");
                 const char* ver = mq_json_str(mq_json_get(dom, "version"), "0");
-                bool js_backend = true;
+                /* backends 缺省 = 可尝试任意后端；声明后至少要有一个当前构建支持的语言
+                 *（js/lua/native）。旧逻辑只认 js，会让 native-only 包静默不激活。 */
+                bool has_backend = true;
                 const mq_json* backends = mq_json_get(dom, "backends");
                 if (backends && mq_json_len(backends) > 0) {
-                    js_backend = false;
+                    has_backend = false;
                     for (uint32_t i = 0; i < mq_json_len(backends); ++i) {
                         const char* b = mq_json_str(mq_json_at(backends, i), "");
-                        if (std::strcmp(b, "js") == 0) js_backend = true;
+                        if (std::strcmp(b, "js") == 0 || std::strcmp(b, "lua") == 0 ||
+                            std::strcmp(b, "native") == 0)
+                            has_backend = true;
                     }
                 }
-                if (id && *id && js_backend) {
+                if (id && *id && has_backend) {
                     next.active = true;
                     next.id = id;
                     next.version = ver;

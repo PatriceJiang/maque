@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **328** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
+统计：脚本 API **328** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -922,7 +922,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_spine_attachment_sequence_info` | int | inst: mq_spine_instance*, slot_index: int, out: mq_spine_sequence_info* |
 | `mq_spine_instance_set_sequence_index` | int | inst: mq_spine_instance*, slot_index: int, frame: int |
 
-### script — `maque.script` v3
+### script — `maque.script` v4
 
 头文件：`build/modules/core/data/generated/abi/script.h` · 宏：`MQ_SCRIPT_ABI_VERSION` / `_IFACE_NAME`
 
@@ -930,11 +930,13 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 
 - `mq_script_bytes_view`：data: const void*, size: size_t
 - `mq_script_bytes_result`：data: void*, size: size_t, release: void (*)(void* user, void* data), release_user: void*
+- `mq_script_vm_native_config`：struct_size: uint32_t, api: const struct mq_script_api_v1*, host_ctx: void*, resolver: int (*)(void* user, const char* source_path, char* out_spec, int cap), resolver_user: void*
 
 | 函数 | 返回 | 参数 |
 |------|------|------|
 | `mq_script_vm_create` | mq_script_vm* | — |
 | `mq_script_vm_create_lang` | mq_script_vm* | lang: const char* |
+| `mq_script_vm_configure_native` | int | vm: mq_script_vm*, cfg: const mq_script_vm_native_config* |
 | `mq_script_lang_for_path` | const char* | path: const char* |
 | `mq_script_backends` | int | out: char*, cap: int |
 | `mq_script_lang` | const char* | vm: mq_script_vm* |
@@ -985,6 +987,20 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_script_register_multi` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_fn, user: void* |
 | `mq_script_register_multi_ret_str` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_ret_str_fn, user: void* |
 | `mq_script_register_bytes` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_bytes_fn, user: void* |
+
+### script_guest — `maque.script.guest` v1
+
+头文件：`build/modules/core/data/generated/abi/script_guest.h` · 宏：`MQ_SCRIPT_GUEST_ABI_VERSION` / `_IFACE_NAME`
+
+结构体：
+
+- `mq_script_prop`：name: const char*, type: uint32_t, num: double[4], str: const char*
+- `mq_script_guest_mount`：struct_size: uint32_t, node: int32_t, scene: int32_t, module_key: const char*, params: const char*, props: const mq_script_prop*, prop_count: uint32_t
+- `mq_script_guest_vt`：header: mq_api_header, create: mq_script_guest* (*)(const mq_script_api_v1* api, void* host_ctx, char* err, int err_cap), destroy: void (*)(mq_script_guest* guest), instantiate: mq_script_guest_instance* (*)(mq_script_guest* guest, const mq_script_guest_mount* mount, char* err, int err_cap), instance_destroy: void (*)(mq_script_guest_instance* inst), instance_has: int (*)(mq_script_guest_instance* inst, const char* fn), instance_call: int (*)(mq_script_guest_instance* inst, const char* fn, int nnum, const double* nums, const char* text, double* ret, char* err, int err_cap)
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_script_guest_register_static` | int | key: const char*, vt: const mq_script_guest_vt* |
 
 ### asset — `maque.asset` v1
 

@@ -56,3 +56,6 @@ __pycache__/
 .kimi-tmp
 
 .tmp/
+
+# Android debug artifacts
+android/app-debug-*.apk

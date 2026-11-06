@@ -10,6 +10,7 @@
 
 #include "imgui.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cstdio>
 #include <cstring>
@@ -60,7 +61,23 @@ int mq_imgui_begin(const char *title) {
 int mq_imgui_begin_at(const char *title, float x, float y, float w, float h) {
     ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
-    return ImGui::Begin(title && *title ? title : "panel") ? 1 : 0;
+    const bool shown = ImGui::Begin(title && *title ? title : "panel");
+    if (shown) {
+        /* ImGuiFactor 放大后字体/面板度量变大，但 ini 里保存的是旧尺寸
+         *（FirstUseEver 不会覆盖），标题/选项会被裁掉。旧尺寸明显小于当前
+         * 期望尺寸时强制回到期望尺寸；用户正常拖动/缩放（>50%）不受影响。 */
+        const ImVec2 cur = ImGui::GetWindowSize();
+        if ((w > 0.0F && cur.x < w * 0.5F) || (h > 0.0F && cur.y < h * 0.5F))
+            ImGui::SetWindowSize(ImVec2(w > 0.0F ? w : cur.x, h > 0.0F ? h : cur.y));
+        /* 放大后旧 ini 位置可能把更大的面板推出屏幕；夹回显示区。 */
+        const ImVec2 ds = ImGui::GetIO().DisplaySize;
+        ImVec2 pos = ImGui::GetWindowPos();
+        const ImVec2 size = ImGui::GetWindowSize();
+        const float nx = std::clamp(pos.x, 0.0F, std::max(0.0F, ds.x - size.x));
+        const float ny = std::clamp(pos.y, 0.0F, std::max(0.0F, ds.y - size.y));
+        if (nx != pos.x || ny != pos.y) ImGui::SetWindowPos(ImVec2(nx, ny));
+    }
+    return shown ? 1 : 0;
 }
 
 void mq_imgui_end(void) { ImGui::End(); }
@@ -234,6 +251,10 @@ extern "C" ImFont *mq_imgui_small_font(void);   // 定义在 imgui.cpp
 
 int mq_imgui_push_small_font(void) {
     ImFont *f = mq_imgui_small_font();
+    /* 无第二档字体（TTF 加载失败/仅默认 ASCII）时仍 push 当前字体：
+     * Push/Pop 必须成对，否则调用方无条件 PopFont 会触发 "PopFont() too many times"
+     * 断言（Android 上 F2/F4 首开即崩的根因）。 */
+    if (!f) f = ImGui::GetFont();
     if (!f) return 0;
     ImGui::PushFont(f);              // 用该字体自带尺寸（传 0 会断言）
     return 1;

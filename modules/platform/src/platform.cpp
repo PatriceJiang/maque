@@ -47,6 +47,12 @@
 #  include <time.h>
 #endif
 
+#if defined(__ANDROID__)
+/* Android 触摸唯一入口：MaqueActivity 直接调 `mq_platform_android_touch`（归一化坐标），
+ * 绕开 SDL 在旋转/沉浸式/多窗口下的本地坐标偏移。单实例宿主（Android app）。 */
+static mq_platform* g_android_platform = nullptr;
+#endif
+
 namespace {
 
 uint32_t mods_from_sdl(SDL_Keymod m) {
@@ -462,6 +468,9 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
     auto* p = new mq_platform();
     p->w = w > 0 ? w : 320;
     p->h = h > 0 ? h : 240;
+#if defined(__ANDROID__)
+    g_android_platform = p;
+#endif
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == 0) {
         p->sdl = true;
         if (w > 0 && h > 0) {
@@ -507,6 +516,9 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
 }
 
 void mq_platform_destroy(mq_platform* p) {
+#if defined(__ANDROID__)
+    if (g_android_platform == p) g_android_platform = nullptr;
+#endif
     if (p && p->frame_tex) { SDL_DestroyTexture(p->frame_tex); p->frame_tex = nullptr; }
     if (p && p->ren) { SDL_DestroyRenderer(p->ren); p->ren = nullptr; }
     if (!p) return;
@@ -641,7 +653,19 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
 
 void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {
     int w = 0, h = 0;
-    if (p && p->win) SDL_GetWindowSizeInPixels(p->win, &w, &h);   /* 设备像素（HiDPI 下更大） */
+#if defined(__ANDROID__)
+    /* SDL 在 Android 上把 window size 报成逻辑/兼容尺寸（实测 889x722），而真正的
+     * render SurfaceView / ANativeWindow 是 2670x1200。用错会让 render target、
+     * ImGui 输入空间和交换链三者不一致（画面横向拉伸 + 面板点不中）。 */
+    if (p) {
+        if (ANativeWindow* aw = android_render_window(p)) {
+            w = ANativeWindow_getWidth(aw);
+            h = ANativeWindow_getHeight(aw);
+        }
+    }
+#endif
+    if ((w <= 0 || h <= 0) && p && p->win)
+        SDL_GetWindowSizeInPixels(p->win, &w, &h);   /* 设备像素（HiDPI 下更大） */
     if (out_w) *out_w = w;
     if (out_h) *out_h = h;
 }
@@ -889,6 +913,30 @@ void mq_platform_inject_pointer(mq_platform* p, const mq_platform_pointer_event*
     }
     queue_pointer(p, *ev);
 }
+
+#if defined(__ANDROID__)
+/* JNI 入口（MaqueActivity.nativeTouch）：id=Java pointerId，action=0 down/1 up/2 move/3 cancel，
+ * nx/ny ∈ [0,1]（相对 renderSurface）。坐标按窗口逻辑尺寸展开，和 SDL 路径同单位。 */
+extern "C" void mq_platform_android_touch(int id, int action, float nx, float ny) {
+    mq_platform* p = g_android_platform;
+    if (!p) return;
+    mq_platform_pointer_event ev{};
+    ev.pointer_id = (uint32_t)(id + 1);
+    ev.pointer_type = MQ_PLATFORM_POINTER_TOUCH;
+    switch (action) {
+    case 0: ev.type = MQ_PLATFORM_POINTER_DOWN; ev.pressure = 1.0F; break;
+    case 1: ev.type = MQ_PLATFORM_POINTER_UP; break;
+    case 2: ev.type = MQ_PLATFORM_POINTER_MOVE; break;
+    case 3: ev.type = MQ_PLATFORM_POINTER_CANCEL; break;
+    default: return;
+    }
+    const float w = (float)std::max(1, p->w);
+    const float h = (float)std::max(1, p->h);
+    ev.x = std::clamp(nx, 0.0F, 1.0F) * w;
+    ev.y = std::clamp(ny, 0.0F, 1.0F) * h;
+    queue_pointer(p, ev);
+}
+#endif
 
 void mq_platform_inject_key(mq_platform* p, const mq_platform_key_event* ev) {
     if (!p || !ev) return;

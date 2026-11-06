@@ -41,6 +41,15 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (scenes != null && !scenes.isEmpty() && intent.hasExtra(EXTRA_SCENE_INDEX)) {
+            select(intent.getIntExtra(EXTRA_SCENE_INDEX, selectedIndex));
+        }
+    }
+
     private View createContent() {
         int padding = dp(16);
         LinearLayout root = new LinearLayout(this);

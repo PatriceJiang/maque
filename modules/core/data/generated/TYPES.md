@@ -2224,6 +2224,7 @@ role: `transform2d`
 | `Lua` | 1 |
 | `Python` | 2 |
 | `V8` | 3 |
+| `Native` | 4 |
 
 ## ui（61） · `ui/ui.yaml`
 

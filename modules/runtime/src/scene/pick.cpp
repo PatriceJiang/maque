@@ -158,8 +158,9 @@ Engine::PickHit Engine::pick_screen(float x, float y) {
     }
     if (!pick_cam_valid || !scene || !has_3d)
         return miss;
-    /* 相机缓存 = 最近一次成帧的 view/proj；渲染目标变化（resize）后等下一帧再拾取。 */
-    if (pick_tw != TW || pick_th != TH || pick_tw <= 0 || pick_th <= 0)
+    /* 相机缓存 = 最近一次 3D pass 的 view/proj；RenderFactor 会让 3D target 小于主
+     * target，不能再用 pick_tw == TW 判定失效 —— 直接用 pick_tw/pick_th 做像素换算。 */
+    if (pick_tw <= 0 || pick_th <= 0)
         return miss;
     if (!(canvas.window_w > 0.0F) || !(canvas.window_h > 0.0F) ||
         !(canvas.scale_x > 0.0F) || !(canvas.scale_y > 0.0F))

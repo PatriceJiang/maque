@@ -5,6 +5,25 @@
 
 namespace maque::rt {
 
+/* 目标 → surface 的**等比**目标矩形。Android/兼容窗口尺寸不一致时，直接按全屏
+ * 拉伸会把画面横向拉长；这里统一 ShowAll + 居中（与 Canvas 的 fit 语义一致）。 */
+static void fit_present_rect(int tw, int th, int sw, int sh,
+                             int& x, int& y, int& w, int& h) {
+    x = 0; y = 0; w = sw; h = sh;
+    if (tw <= 0 || th <= 0 || sw <= 0 || sh <= 0) return;
+    const double target_aspect = (double)tw / (double)th;
+    const double surface_aspect = (double)sw / (double)sh;
+    if (target_aspect > surface_aspect) {
+        w = sw;
+        h = (int)std::llround((double)sw / target_aspect);
+        y = (sh - h) / 2;
+    } else {
+        h = sh;
+        w = (int)std::llround((double)sh * target_aspect);
+        x = (sw - w) / 2;
+    }
+}
+
 /* ---- Engine ---- */
 
 /* 单帧推进：① 采样 ② 输入帧 ③ 脚本 update+GC ④ 校验和/快照 ⑤ 渲染。
@@ -48,11 +67,147 @@ static void sim_pointer_at(mq_platform_pointer_event* ptrs, uint32_t& count, uin
     }
 }
 
+void Engine::orbit_pan_by(float dx, float dy) {
+    orbit_enabled = true;
+    const float sy = std::sin(orbit_yaw), cy = std::cos(orbit_yaw);
+    const float sp = std::sin(orbit_pitch), cp = std::cos(orbit_pitch);
+    /* 相机右轴 / 上轴（与 extract3d 的 orbit 基一致；世界 y 向上） */
+    const float rx = cy, ry = 0.0F, rz = -sy;
+    const float ux = -sy * sp, uy = cp, uz = -cy * sp;
+    /* 指针坐标已转成设计/世界坐标；按屏幕高度把"拖 1 单位"换算成世界位移。 */
+    const float h = (H > 0 ? (float)H : 720.0F);
+    const float fov = (orbit_fov_y > 1.0F ? orbit_fov_y : 45.0F) * 3.14159265F / 180.0F;
+    const float k = 2.0F * orbit_dist * std::tan(fov * 0.5F) / h;
+    orbit_target[0] -= rx * dx * k + ux * dy * k;
+    orbit_target[1] -= ry * dx * k + uy * dy * k;
+    orbit_target[2] -= rz * dx * k + uz * dy * k;
+}
+
+void Engine::orbit_zoom_by(float factor) {
+    if (!(factor > 0.0F)) return;
+    orbit_enabled = true;
+    orbit_dist *= factor;
+    if (orbit_dist < 0.05F) orbit_dist = 0.05F;
+    if (orbit_dist > 500.0F) orbit_dist = 500.0F;
+}
+
+/* 触摸手势（Android/iOS）：
+ *   单指拖动   = 环绕（yaw/pitch）
+ *   双指拖动   = 沿相机右/上轴平移
+ *   双指捏合   = 推拉（dist）
+ * 触摸点只在 pointer_type=TOUCH 的事件里维护；脚本仍会收到同一批 pointer 事件。
+ * 坐标已由 device_event_to_world 转成设计坐标（与鼠标一致）。 */
+void Engine::orbit_touch_event(const mq_platform_pointer_event& pe) {
+    auto* slot = [&]() -> OrbitTouch* {
+        for (auto& t : orbit_touches) if (t.active && t.id == pe.pointer_id) return &t;
+        return nullptr;
+    }();
+    const bool down = pe.type == MQ_PLATFORM_POINTER_DOWN;
+    const bool up = pe.type == MQ_PLATFORM_POINTER_UP || pe.type == MQ_PLATFORM_POINTER_CANCEL;
+
+    if (down && !slot) {
+        for (auto& t : orbit_touches) {
+            if (!t.active) { t = { pe.pointer_id, pe.x, pe.y, true }; slot = &t; break; }
+        }
+    } else if (slot) {
+        if (pe.type == MQ_PLATFORM_POINTER_MOVE || down) { slot->x = pe.x; slot->y = pe.y; }
+        if (up) slot->active = false;
+    }
+
+    /* 重新统计活动触摸点（最多取前两个做双指手势）。 */
+    OrbitTouch* a = nullptr;
+    OrbitTouch* b = nullptr;
+    int n = 0;
+    for (auto& t : orbit_touches) {
+        if (!t.active) continue;
+        ++n;
+        if (!a) a = &t;
+        else if (!b) b = &t;
+    }
+    orbit_touch_count = n;
+    if (n == 1 && a) {
+        if (pe.type == MQ_PLATFORM_POINTER_MOVE) {
+            orbit_enabled = true;
+            orbit_yaw -= (a->x - orbit_last_x) * 0.005F;
+            orbit_pitch += (a->y - orbit_last_y) * 0.005F;
+            if (orbit_pitch > 1.45F) orbit_pitch = 1.45F;
+            if (orbit_pitch < -1.45F) orbit_pitch = -1.45F;
+        }
+        orbit_last_x = a->x;
+        orbit_last_y = a->y;
+        orbit_touch_dist = 0.0F;
+        return;
+    }
+    if (n >= 2 && a && b) {
+        const float dx = b->x - a->x;
+        const float dy = b->y - a->y;
+        const float dist = std::sqrt(dx * dx + dy * dy);
+        const float mid_x = (a->x + b->x) * 0.5F;
+        const float mid_y = (a->y + b->y) * 0.5F;
+        if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_touch_dist > 1.0F &&
+            dist > 1.0F) {
+            orbit_zoom_by(orbit_touch_dist / dist);
+            orbit_pan_by(mid_x - orbit_touch_mid_x, mid_y - orbit_touch_mid_y);
+        }
+        orbit_touch_dist = dist;
+        orbit_touch_mid_x = mid_x;
+        orbit_touch_mid_y = mid_y;
+        if (std::getenv("MAQUE_TRACE_ORBIT"))
+            std::print("runtime: orbit touch count={} yaw={:.3f} pitch={:.3f} dist={:.3f}\n",
+                       orbit_touch_count, orbit_yaw, orbit_pitch, orbit_dist);
+        return;
+    }
+    orbit_touch_dist = 0.0F;
+    if (std::getenv("MAQUE_TRACE_ORBIT"))
+        std::print("runtime: orbit touch count={} yaw={:.3f} pitch={:.3f} dist={:.3f}\n",
+                   orbit_touch_count, orbit_yaw, orbit_pitch, orbit_dist);
+}
+
+/* 测试钩子：`MAQUE_SIM_TOUCH_AT="frame:down|move|up:id:x:y[;...]"`。
+ * 触摸事件与真实 SDL_FINGER 同一条指针流（pointer_type=TOUCH），用于 headless 验证
+ * 单指环绕/双指平移/捏合缩放；坐标是窗口像素。 */
+static void sim_touch_at(mq_platform_pointer_event* ptrs, uint32_t& count, uint32_t cap,
+                         uint64_t frame) {
+    const char* spec = std::getenv("MAQUE_SIM_TOUCH_AT");
+    if (!spec || !*spec) return;
+    const std::string s(spec);
+    size_t i = 0;
+    while (i <= s.size()) {
+        const size_t semi = s.find(';', i);
+        const std::string item = s.substr(i, semi == std::string::npos ? std::string::npos : semi - i);
+        i = (semi == std::string::npos) ? s.size() + 1 : semi + 1;
+        if (item.empty()) continue;
+        unsigned long long f = 0;
+        char kind[16] = {};
+        int id = 0;
+        float x = 0, y = 0;
+        if (std::sscanf(item.c_str(), "%llu:%15[^:]:%d:%f:%f", &f, kind, &id, &x, &y) < 5)
+            continue;
+        if (f != frame) continue;
+        if (count >= cap) break;
+        int type = -1;
+        const std::string k(kind);
+        if (k == "down") type = MQ_PLATFORM_POINTER_DOWN;
+        else if (k == "up") type = MQ_PLATFORM_POINTER_UP;
+        else if (k == "move") type = MQ_PLATFORM_POINTER_MOVE;
+        else if (k == "cancel") type = MQ_PLATFORM_POINTER_CANCEL;
+        if (type < 0 || id <= 0) continue;
+        mq_platform_pointer_event& e = ptrs[count++];
+        e = mq_platform_pointer_event{};
+        e.pointer_type = MQ_PLATFORM_POINTER_TOUCH;
+        e.pointer_id = (uint32_t)id;
+        e.type = (uint32_t)type;
+        e.x = x; e.y = y;
+        e.pressure = type == MQ_PLATFORM_POINTER_DOWN ? 1.0F : 0.0F;
+    }
+}
+
 void Engine::step_frame(bool render_frame) {
     MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
     tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
     profile_tick();                                  // perf：MAQUE_PROFILE 启动/到帧自动停（docs/35；未启用时零开销）
     engine_options_parse_env();                      // F4 引擎选项的启动初值（MAQUE_ENGINE_OPTIONS；只解析一次）
+    if (render_factor_apply_pending) apply_render_factor();   // F4 RenderFactor（帧首重建 target）
     /* 输入帧缓冲：**必须预分配**（平台按 pointer_cap/key_cap 写入；容量 0 = 静默丢弃全部设备事件）。
      * 这是"真实鼠标/键盘事件永远到不了脚本"的根因（docs/19 §3：宿主预分配语义）。 */
     static constexpr uint32_t kMaxPointers = 16, kMaxKeys = 32;
@@ -91,6 +246,7 @@ void Engine::step_frame(bool render_frame) {
         /* 测试注入：MAQUE_IMGUI_POINTER（合成指针 → 本帧设备队列，与真实鼠标同路径） */
         imgui_fake_input(iframe.pointers, iframe.pointer_count, iframe.pointer_cap);
         sim_pointer_at(iframe.pointers, iframe.pointer_count, iframe.pointer_cap, frame);
+        sim_touch_at(iframe.pointers, iframe.pointer_count, iframe.pointer_cap, frame);
         /* ImGui 先吃**窗口像素**事件（它工作在窗口空间）；之后才把同一批转成世界坐标。
          * 顺序不能反：转成世界坐标后就没有原始窗口坐标了。 */
         imgui_input_feed(iframe.pointers, iframe.pointer_count, iframe.keys, iframe.key_count);
@@ -102,57 +258,6 @@ void Engine::step_frame(bool render_frame) {
                        iframe.pointer_count, iframe.key_count, frame);
     }
     // ① 帧首：控制端点轮询（inspector/MCP；非阻塞、单线程、帧边界一次 → 不改确定性）
-    /* OrbitControls（3D 场景；与 ImGui 同帧时也生效，便于调试）：
-     *   右键拖拽 = 环绕（platform 按钮编码：0=左 / 1=右 / 2=中）
-     *   中键拖拽 = 平移（沿相机右/上轴移动 orbit_target，模型跟随鼠标）
-     *   滚轮     = 推拉 */
-    if (has_3d) {
-        for (uint32_t i = 0; i < iframe.pointer_count; ++i) {
-            const mq_platform_pointer_event& pe = iframe.pointers[i];
-            if (pe.pointer_type != MQ_PLATFORM_POINTER_MOUSE) continue;
-            if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 1) {
-                orbit_dragging = true;
-                orbit_panning = false;
-                orbit_last_x = pe.x; orbit_last_y = pe.y;
-            } else if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 2) {
-                orbit_panning = true;
-                orbit_dragging = false;
-                orbit_pan_last_x = pe.x; orbit_pan_last_y = pe.y;
-            } else if (pe.type == MQ_PLATFORM_POINTER_UP || pe.type == MQ_PLATFORM_POINTER_CANCEL) {
-                orbit_dragging = false;
-                orbit_panning = false;
-            } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_dragging) {
-                orbit_enabled = true;
-                orbit_yaw -= (pe.x - orbit_last_x) * 0.01F;
-                orbit_pitch += (pe.y - orbit_last_y) * 0.01F;
-                if (orbit_pitch > 1.45F) orbit_pitch = 1.45F;
-                if (orbit_pitch < -1.45F) orbit_pitch = -1.45F;
-                orbit_last_x = pe.x; orbit_last_y = pe.y;
-            } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_panning) {
-                orbit_enabled = true;
-                const float dx = pe.x - orbit_pan_last_x;
-                const float dy = pe.y - orbit_pan_last_y;
-                const float sy = std::sin(orbit_yaw), cy = std::cos(orbit_yaw);
-                const float sp = std::sin(orbit_pitch), cp = std::cos(orbit_pitch);
-                /* 相机右轴 / 上轴（与 extract3d 的 orbit 基一致；世界 y 向上） */
-                const float rx = cy, ry = 0.0F, rz = -sy;
-                const float ux = -sy * sp, uy = cp, uz = -cy * sp;
-                /* 指针坐标已转成设计/世界坐标；按屏幕高度把"拖 1 单位"换算成世界位移。 */
-                const float h = (H > 0 ? (float)H : 720.0F);
-                const float fov = (orbit_fov_y > 1.0F ? orbit_fov_y : 45.0F) * 3.14159265F / 180.0F;
-                const float k = 2.0F * orbit_dist * std::tan(fov * 0.5F) / h;
-                orbit_target[0] -= rx * dx * k + ux * dy * k;
-                orbit_target[1] -= ry * dx * k + uy * dy * k;
-                orbit_target[2] -= rz * dx * k + uz * dy * k;
-                orbit_pan_last_x = pe.x; orbit_pan_last_y = pe.y;
-            } else if (pe.type == MQ_PLATFORM_POINTER_WHEEL) {
-                orbit_enabled = true;
-                orbit_dist *= std::exp(-pe.scroll_y * 0.12F);
-                if (orbit_dist < 0.05F) orbit_dist = 0.05F;
-                if (orbit_dist > 500.0F) orbit_dist = 500.0F;
-            }
-        }
-    }
     if (ctl_server) mq_control_server_poll(ctl_server);
     // ① 帧首：释放上一帧退役的字形图集纹理（此时已无图元引用旧 id）
     if (!retired_textures.empty()) {
@@ -304,14 +409,52 @@ void Engine::step_frame(bool render_frame) {
         iframe.key_count = out;
     }
     /* ImGui：开始一帧（**必须在脚本 update 之前** —— 脚本里要调 imgui_begin/控件/imgui_end）。
-     * 内部还会按需初始化、上传字体图集纹理，并在 ImGui 要吃输入时清空本帧设备事件（不点穿）。 */
+     * 指针已在上面逐事件喂给 ImGui；这里 NewFrame 后得到本帧 WantCaptureMouse。 */
     imgui_frame_begin(1.0F / 60.0F);
-    /* ③ 不点穿：ImGui 要吃鼠标/键盘 → 清空本帧设备事件，世界输入即被阻断。
-     * 判据来自 ImGui 本帧 NewFrame（上一帧的面板状态），这是 ImGui 的标准用法。
+    /* ③ 不点穿：只清空**被面板命中**的指针；面板外空白仍给场景/UI。
      * 注：sim 注入走 input 模块内部路径，不受这里影响（CI 仍能驱动玩法）。 */
-    if (imgui_on && imgui_inited) {
-        if (mq_imgui_want_mouse()) iframe.pointer_count = 0;
-        if (mq_imgui_want_keyboard()) iframe.key_count = 0;
+    /* 指针只让 ImGui **真正命中窗口**的区域被捕获：面板外的空白区域仍交给场景/UI。
+     * 判断用本帧 NewFrame 的 WantCaptureMouse（pointer 已在上面逐事件喂给 ImGui）。 */
+    const bool imgui_pointer_capture = imgui_on && imgui_inited && mq_imgui_want_mouse();
+    if (imgui_pointer_capture) iframe.pointer_count = 0;
+    if (imgui_on && imgui_inited && mq_imgui_want_keyboard()) iframe.key_count = 0;
+    /* OrbitControls：与 ImGui 同帧时，只有**没被面板命中**的指针才驱动相机。
+     *   右键拖拽 = 环绕（platform 按钮编码：0=左 / 1=右 / 2=中）
+     *   中键拖拽 = 平移（沿相机右/上轴移动 orbit_target，模型跟随鼠标）
+     *   滚轮     = 推拉 */
+    if (has_3d && !imgui_pointer_capture) {
+        for (uint32_t i = 0; i < iframe.pointer_count; ++i) {
+            const mq_platform_pointer_event& pe = iframe.pointers[i];
+            if (pe.pointer_type == MQ_PLATFORM_POINTER_TOUCH) {
+                orbit_touch_event(pe);
+                continue;
+            }
+            if (pe.pointer_type != MQ_PLATFORM_POINTER_MOUSE) continue;
+            if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 1) {
+                orbit_dragging = true;
+                orbit_panning = false;
+                orbit_last_x = pe.x; orbit_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 2) {
+                orbit_panning = true;
+                orbit_dragging = false;
+                orbit_pan_last_x = pe.x; orbit_pan_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_UP || pe.type == MQ_PLATFORM_POINTER_CANCEL) {
+                orbit_dragging = false;
+                orbit_panning = false;
+            } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_dragging) {
+                orbit_enabled = true;
+                orbit_yaw -= (pe.x - orbit_last_x) * 0.01F;
+                orbit_pitch += (pe.y - orbit_last_y) * 0.01F;
+                if (orbit_pitch > 1.45F) orbit_pitch = 1.45F;
+                if (orbit_pitch < -1.45F) orbit_pitch = -1.45F;
+                orbit_last_x = pe.x; orbit_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_panning) {
+                orbit_pan_by(pe.x - orbit_pan_last_x, pe.y - orbit_pan_last_y);
+                orbit_pan_last_x = pe.x; orbit_pan_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_WHEEL) {
+                orbit_zoom_by(std::exp(-pe.scroll_y * 0.12F));
+            }
+        }
     }
     // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
     if (input) {
@@ -492,7 +635,28 @@ void Engine::step_frame(bool render_frame) {
         std::vector<mq_renderer_pbr_material> mats3d;
         std::vector<mq_renderer_draw3d> draws3d;
         std::vector<mq_renderer_skin> skins3d;
-        extract_3d(TW, SHpx, views3d, lights3d, mats3d, draws3d, skins3d);
+        scene3d_low_active = false;
+        /* RenderFactor 只压 3D PBR：主 target/UI/ImGui 仍全分辨率。低分辨率 3D 先画到
+         * 引擎自有 RenderTexture，再作为一层全屏纹理合成到主 target（见下方）。 */
+        const float rf = std::clamp(opt_render_factor, 0.25F, 1.0F);
+        const bool low3d = rf < 0.999F && opt_3d_enabled &&
+                           !(opt_post_enabled && opt_post_include_2d);
+        const int low_w = low3d ? std::max(1, (int)std::lround((double)TW * rf)) : TW;
+        const int low_h = low3d ? std::max(1, (int)std::lround((double)SHpx * rf)) : SHpx;
+        /* extract_3d 用 canvas.window/offset/viewport 计算 3D viewport。低 3D target
+         * 只是主 target 的等比缩小；必须把 canvas 指标同步乘低分辨率倍率，否则
+         * canvas 留边会被按原始窗口/目标错配 → 3D 画面缩放/长宽比变化。
+         * 只在提取期间临时缩放，主 2D/UI/拾取仍用原始 metrics。 */
+        const mq_canvas_metrics saved_canvas = canvas;
+        if (low3d) {
+            const float fx = (float)low_w / (float)std::max(1, TW);
+            const float fy = (float)low_h / (float)std::max(1, SHpx);
+            canvas.window_w *= fx; canvas.window_h *= fy;
+            canvas.offset_x *= fx; canvas.offset_y *= fy;
+            canvas.viewport_w *= fx; canvas.viewport_h *= fy;
+        }
+        extract_3d(low_w, low_h, views3d, lights3d, mats3d, draws3d, skins3d);
+        if (low3d) canvas = saved_canvas;
         if (opt_3d_enabled) {
             stat_3d_calls = (int)draws3d.size();
             for (const auto& dr : draws3d) {
@@ -529,10 +693,14 @@ void Engine::step_frame(bool render_frame) {
         fr.graph_passes = graphs3d.data(); fr.graph_pass_count = (uint32_t)graphs3d.size();
         fr.graph_sprites = graph_sprites3d.data(); fr.graph_sprite_count = (uint32_t)graph_sprites3d.size();
         fr.shader_sprites = sprites3d.data(); fr.shader_sprite_count = (uint32_t)sprites3d.size();
-        fr.present_x = 0;
-        fr.present_y = 0;
-        fr.present_w = 0;                         /* 0 = 整个 surface；目标等于屏幕时可直接渲染 */
-        fr.present_h = 0;
+        {
+            int sw = 0, sh = 0;
+            if (platform) mq_platform_drawable_size(platform, &sw, &sh);
+            fit_present_rect(TW, SHpx, sw, sh, fr.present_x, fr.present_y, fr.present_w, fr.present_h);
+            if (fr.present_x == 0 && fr.present_y == 0 && fr.present_w == sw && fr.present_h == sh) {
+                fr.present_w = 0; fr.present_h = 0;   /* 满屏：走 gfx 的快路径 */
+            }
+        }
         fr.render_mode = opt_render_mode;
         /* 后处理 PostEffect：纯视图层（F4 / MAQUE_ENGINE_OPTIONS）。enabled=0 → gfx 不建中间
          * 目标、不跑 pass（旧画面逐字节不变）；参数只在开启时被读取。 */
@@ -620,6 +788,85 @@ void Engine::step_frame(bool render_frame) {
         fr.env.sky_mode = scene->desc.env_background ? 2 : 1;
     else
         fr.env.sky_mode = (env_tex_id >= 0 && scene->desc.env_background) ? 3 : 1;
+        /* 低分辨率 3D 离屏 pass（RenderFactor<100%）。主 target 仍 TW×SHpx：
+         *   ① 3D PBR/天空/3D shader 画进 scene3d_tex（low_w×low_h）
+         *   ② 主 frame 去掉 3D，只保留全分辨率 2D/UI/ImGui，并把 scene3d_tex 作为
+         *      layer0、极小 z 的全屏图元先合成 → UI/字体/触控坐标完全不受 factor 影响。 */
+        std::vector<mq_renderer_item> composite_items;
+        bool low3d_done = false;
+        if (low3d && !draws3d.empty()) {
+            const int tex = ensure_scene3d_target(low_w, low_h);
+            if (tex >= 0) {
+                mq_renderer_frame3d lf = fr;
+                lf.width = low_w; lf.height = low_h;
+                lf.views = views3d.data(); lf.view_count = (uint32_t)views3d.size();
+                lf.lights = lights3d.data(); lf.light_count = (uint32_t)lights3d.size();
+                lf.materials = mats3d.data(); lf.material_count = (uint32_t)mats3d.size();
+                lf.draws = draws3d.data(); lf.draw_count = (uint32_t)draws3d.size();
+                lf.skins = skins3d.data(); lf.skin_count = (uint32_t)skins3d.size();
+                lf.views2d = nullptr; lf.view2d_count = 0;
+                lf.items = nullptr; lf.item_count = 0;
+                lf.meshes = nullptr; lf.mesh_count = 0;
+                lf.graph_sprites = nullptr; lf.graph_sprite_count = 0;
+                lf.shader_sprites = nullptr; lf.shader_sprite_count = 0;
+                lf.masks = nullptr; lf.mask_count = 0;
+                lf.out = nullptr; lf.out_size = 0;
+                lf.present_x = lf.present_y = lf.present_w = lf.present_h = 0;
+                lf.present_after_readback = 0;
+                if (rapi->render_to_texture && rapi->render_to_texture(rself, tex, &lf) == 0) {
+                    low3d_done = true;
+                    scene3d_low_active = true;
+                    fr.views = nullptr; fr.view_count = 0;
+                    fr.lights = nullptr; fr.light_count = 0;
+                    fr.materials = nullptr; fr.material_count = 0;
+                    fr.draws = nullptr; fr.draw_count = 0;
+                    fr.skins = nullptr; fr.skin_count = 0;
+                    fr.passes = nullptr; fr.pass_count = 0;
+                    fr.graph_passes = nullptr; fr.graph_pass_count = 0;
+                    fr.post = mq_renderer_post{};
+                    fr.msaa_samples = 1;
+                    mq_renderer_item ci{};
+                    ci.x = W * 0.5F; ci.y = H * 0.5F;
+                    ci.half_w = W * 0.5F; ci.half_h = H * 0.5F;
+                    ci.size = std::max(ci.half_w, ci.half_h);
+                    ci.r = ci.g = ci.b = ci.a = 1.0F;
+                    ci.texture = tex;
+                    ci.filter = 0;                     /* linear upsample */
+                    /* 低 3D target 里包含 canvas 的留边；合成图元本身覆盖设计画布，
+                     * 必须只采样 canvas viewport 的 UV 子矩形，否则会把整张低 target
+                     * 再塞进画布 viewport，导致 3D/画布横向比例变化。 */
+                    if (canvas.window_w > 0.0F && canvas.viewport_w > 0.0F) {
+                        ci.uv0 = std::clamp(canvas.offset_x / canvas.window_w, 0.0F, 1.0F);
+                        ci.uv2 = std::clamp((canvas.offset_x + canvas.viewport_w) / canvas.window_w, 0.0F, 1.0F);
+                    } else {
+                        ci.uv0 = 0.0F; ci.uv2 = 1.0F;
+                    }
+                    if (canvas.window_h > 0.0F && canvas.viewport_h > 0.0F) {
+                        ci.uv1 = std::clamp(canvas.offset_y / canvas.window_h, 0.0F, 1.0F);
+                        ci.uv3 = std::clamp((canvas.offset_y + canvas.viewport_h) / canvas.window_h, 0.0F, 1.0F);
+                    } else {
+                        ci.uv1 = 0.0F; ci.uv3 = 1.0F;
+                    }
+                    ci.layer = 0;
+                    ci.z = -2147483646;
+                    ci.clip_x = 0; ci.clip_y = 0;
+                    ci.clip_w = W; ci.clip_h = H;
+                    ci.mask = -1;
+                    composite_items.reserve(draws.size() + 1);
+                    composite_items.push_back(ci);
+                    composite_items.insert(composite_items.end(), draws.begin(), draws.end());
+                    fr.items = composite_items.data();
+                    fr.item_count = (uint32_t)composite_items.size();
+                }
+            }
+            if (!low3d_done) {
+                static bool warned = false;
+                if (!warned) {
+                    warned = true;
+                    std::print(stderr, "runtime: 3D RenderFactor 离屏合成失败，回退全分辨率 3D\n");
+                }
+            }
+        }
         /* 静态帧跳过（docs/29 / docs/bugs/009）：画面输入完全不变时不再提交 GPU。
          * 只对"没有逐帧动画/外部像素消费者/覆盖层"的 3D 直呈帧启用；脚本/物理仍每帧推进。
          * 每 60 帧强制重画一次，兜住窗口 expose/驱动 surface 变化。 */
@@ -699,10 +946,14 @@ void Engine::step_frame(bool render_frame) {
         f.item_count = (uint32_t)draws.size();
         f.meshes = spine_meshes.data();
         f.mesh_count = (uint32_t)spine_meshes.size();
-        f.present_x = 0;
-        f.present_y = 0;
-        f.present_w = 0;
-        f.present_h = 0;
+        {
+            int sw = 0, sh = 0;
+            if (platform) mq_platform_drawable_size(platform, &sw, &sh);
+            fit_present_rect(TW, SHpx, sw, sh, f.present_x, f.present_y, f.present_w, f.present_h);
+            if (f.present_x == 0 && f.present_y == 0 && f.present_w == sw && f.present_h == sh) {
+                f.present_w = 0; f.present_h = 0;
+            }
+        }
         f.out = need_pixels ? pixels.data() : nullptr;
         f.out_size = (uint32_t)pixels.size();
         f.masks = ui_masks.data();
@@ -804,8 +1055,9 @@ void Engine::step_frame(bool render_frame) {
     if (!direct_present && platform && window && rapi && rself) {
         MQ_TRACY_ZONE_N(platform, "present");   // Tracy：上传纹理 + ImGui pass + 单次 present
         /* 渲染目标已经包含 Canvas viewport/留边；这里只做目标到 drawable 的最终输出缩放。 */
-        const int dx = 0, dy = 0;
-        const int dw = (int)(canvas.window_w + 0.5F), dh = (int)(canvas.window_h + 0.5F);
+        int dx = 0, dy = 0;
+        int dw = (int)(canvas.window_w + 0.5F), dh = (int)(canvas.window_h + 0.5F);
+        fit_present_rect(TW, SHpx, dw, dh, dx, dy, dw, dh);
         mq_platform_draw_rect(platform, pixels.data(), TW, SHpx, dx, dy, dw, dh, -1);
         if (imgui_on && imgui_backend) mq_imgui_backend_render();   // ② ImGui 独立 pass（叠在游戏帧上）
         mq_platform_present_ui(platform);                            // ③ 单次 present（含抓帧）

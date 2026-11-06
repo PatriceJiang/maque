@@ -99,6 +99,7 @@
 | 19 | three.js 材质迁移（多着色模型） | ✅ | ✅ M1 | 🟡 | 🟡 | M1 schema/ABI/管线/10 个 fragment entry；M2/M3 场景+Physical 扩展+importer 扩展；Points/Line/Sprite 未做 |
 | 23 | 运行时 glTF/GLB 直读（C++，[plans/23](23-runtime-gltf-loading.md)） | ✅ | — | ✅ | ✅ | `render.MeshRenderer.mesh_path` 直接吃 `.gltf`/`.glb`（外部 bin/data URI/GLB BIN）；静态网格 + 核心 PBR；蒙皮/动画/压缩扩展未做 |
 | 24 | 运行时 glTF 蒙皮/动画/morph+材质+灯光（[plans/24](24-runtime-gltf-capabilities.md)） | ✅ | — | ✅ | 🟡 | P1–P5 已落地；P6 instancing/sparse/node_visibility/materials_variants 已做，animation_pointer 材质数值子集；KTX2/BasisU 已接入；贴图/节点 pointer、块格式 KTX2 与压缩未做 |
+| 26 | C/C++ 脚本（native guest，[plans/26](26-cpp-scripts.md)） | ✅ | ✅ P0 | ✅ | 🟡 | 桌面 native 动态 guest P0（API 表/SDK/后端/manifest/e2e）；桌面 static E2E 已落地；Android/iOS/WASM 平台集成与 wasm guest 待做 |
 
 **声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、
@@ -113,9 +114,10 @@
 
 **e2e 回归**（`samples/player`）：`player_run`、`determinism`、`control_plane`、`ui_e2e`、
 `hot_reload_e2e`、`anim_e2e`、`editor_e2e`、`prefab_e2e`、`crash_context_e2e`、`nav_e2e`、
-`host_tick`、`host_multi_instance`。
+`host_tick`、`host_multi_instance`、`native_script_e2e`、`touch_orbit_e2e`、`tank_native_smoke/title/e2e_smoke/input/play/rules、tank_native_static(_smoke)`。
 **附加计划**：[17](17-inspector.md) 游戏检查器（ImGui + TCP 控制面，独立进程）；
 [18](18-pbr-3d.md) PBR 材质系统与 3D 渲染（直接呈现；M0 接口冻结已完成）；
 [19](19-threejs-materials.md) three.js 材质迁移（多着色模型：Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow）；
 [20](20-pbr-audit.md) PBR 审计修复；[21](21-gltf-animation-and-compression.md) glTF 动画/蒙皮/morph 与压缩扩展评估；
-[22](22-gltf-animation-implementation.md) glTF 动画/蒙皮/morph 落地实现（S1+S2+S3，已落地）。
+[22](22-gltf-animation-implementation.md) glTF 动画/蒙皮/morph 落地实现（S1+S2+S3，已落地）；
+[26](26-cpp-scripts.md) C/C++ 脚本（native guest：桌面 dynamic + static E2E 已落地；平台 static/wasm P1/P2）。

@@ -1,0 +1,10 @@
+{
+  "name": "tank_native_input",
+  "space": "window",
+  "events": [
+    { "frame": 120, "type": "key_down", "key": 87 },
+    { "frame": 150, "type": "key_up", "key": 87 },
+    { "frame": 180, "type": "key_down", "key": 32 },
+    { "frame": 184, "type": "key_up", "key": 32 }
+  ]
+}
