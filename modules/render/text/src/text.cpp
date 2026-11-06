@@ -15,6 +15,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 #include <print>
 #include <string>
 #include <utility>
@@ -24,6 +26,12 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
+#else
+/* Android/NDK 没有系统 FreeType（也不 vendored）：用 ImGui 已带的 stb_truetype
+ * 作为备用栅格器，否则 Label/Scene 字体全部退回 5x7，中文标签直接丢失。 */
+#define STBTT_STATIC
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../../../../third_party/imgui/imstb_truetype.h"
 #endif
 #if defined(MAQUE_HAVE_HARFBUZZ)
 #include <harfbuzz/hb.h>
@@ -110,6 +118,10 @@ struct mq_font {
     std::vector<Atlas> atlases;
 #if defined(MAQUE_HAVE_FREETYPE)
     FT_Face face = nullptr;
+#else
+    std::vector<uint8_t> stb_data;
+    stbtt_fontinfo stb{};
+    bool stb_ready = false;
 #endif
 #if defined(MAQUE_HAVE_HARFBUZZ)
     /* 按设计 ppem 缓存 hb-ft font（创建时必须 face 尺寸已就绪，否则 scale=0）。 */
@@ -190,8 +202,21 @@ extern "C" mq_font* mq_font_load_file(const char* path) {
     face->generic.data = lib;
     return f;
 #else
-    (void)path;
-    return nullptr;
+    if (!path || !*path) return nullptr;
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return nullptr;
+    std::vector<uint8_t> data((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    if (data.empty()) return nullptr;
+    auto* f = new (std::nothrow) mq_font();
+    if (!f) return nullptr;
+    f->path = path;
+    f->stb_data = std::move(data);
+    if (!stbtt_InitFont(&f->stb, f->stb_data.data(), stbtt_GetFontOffsetForIndex(f->stb_data.data(), 0))) {
+        delete f;
+        return nullptr;
+    }
+    f->stb_ready = true;
+    return f;
 #endif
 }
 
@@ -221,6 +246,9 @@ const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bo
 #if defined(MAQUE_HAVE_FREETYPE)
     if (f && f->face && !f->builtin)
         return ensure_glyph_gid(f, a, FT_Get_Char_Index(f->face, cp), cp, size, bold, italic);
+#else
+    if (f && f->stb_ready && !f->builtin)
+        return ensure_glyph_gid(f, a, (uint32_t)stbtt_FindGlyphIndex(&f->stb, (int)cp), cp, size, bold, italic);
 #endif
     return ensure_glyph_gid(f, a, cp, cp, size, bold, italic);   /* 内置位图字体：gid = cp */
 }
@@ -339,6 +367,29 @@ const Glyph* ensure_glyph_gid(mq_font* f, Atlas& a, uint32_t gid, uint32_t cp, f
                  * 把“贴近基线”的字形统一吸附到 baseline-1；标点/重音（rel 远小于 -2）和
                  * 降部/下划线（rel > 0）保持不动。 */
                 if (rel >= -2 && rel <= 0) g.bearing_y += rel + 1;
+            }
+        }
+    }
+#else
+    else if (f->stb_ready) {
+        const float scale = stbtt_ScaleForPixelHeight(&f->stb, size);
+        int adv = 0, lsb = 0;
+        stbtt_GetGlyphHMetrics(&f->stb, (int)gid, &adv, &lsb);
+        int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+        stbtt_GetGlyphBitmapBoxSubpixel(&f->stb, (int)gid, scale, scale, 0.0F, 0.0F, &x0, &y0, &x1, &y1);
+        bw = x1 - x0;
+        bh = y1 - y0;
+        g.bearing_x = x0;
+        g.bearing_y = -y0;
+        g.advance = (float)adv * scale;
+        if (bold) g.advance += (float)bold_strength_of(size);
+        if (bw > 0 && bh > 0) {
+            std::vector<uint8_t> alpha((size_t)bw * bh, 0);
+            stbtt_MakeGlyphBitmapSubpixel(&f->stb, alpha.data(), bw, bh, bw, scale, scale, 0.0F, 0.0F, (int)gid);
+            bmp.assign((size_t)bw * bh * 4, 0);
+            for (size_t i = 0; i < alpha.size(); ++i) {
+                bmp[i * 4 + 0] = bmp[i * 4 + 1] = bmp[i * 4 + 2] = 255;
+                bmp[i * 4 + 3] = alpha[i];
             }
         }
     }
@@ -508,6 +559,12 @@ void font_extents(mq_font* f, float design_size, float* ascent) {
         if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(design_size + 0.5F)) == 0)
             *ascent = (float)(f->face->size->metrics.ascender >> 6);
     }
+#else
+    if (f && !f->builtin && f->stb_ready) {
+        int asc = 0, desc = 0, gap = 0;
+        stbtt_GetFontVMetrics(&f->stb, &asc, &desc, &gap);
+        *ascent = (float)asc * stbtt_ScaleForPixelHeight(&f->stb, design_size);
+    }
 #endif
 }
 
@@ -583,6 +640,9 @@ extern "C" uint64_t mq_font_memory_bytes(const mq_font* font) {
 #if defined(MAQUE_HAVE_HARFBUZZ)
     n += (uint64_t)f->hb_fonts.capacity() * sizeof(std::pair<float, hb_font_t*>);
 #endif
+#if !defined(MAQUE_HAVE_FREETYPE)
+    n += (uint64_t)f->stb_data.capacity();
+#endif
     return n;
 }
 
@@ -596,6 +656,12 @@ extern "C" float mq_font_height(mq_font* font, float size) {
     if (font->face) {
         if (FT_Set_Pixel_Sizes(font->face, 0, (FT_UInt)((size > 0 ? size : 16.0F) + 0.5F)) == 0)
             return (float)(font->face->size->metrics.height >> 6);
+    }
+#else
+    if (font->stb_ready) {
+        int asc = 0, desc = 0, gap = 0;
+        stbtt_GetFontVMetrics(&font->stb, &asc, &desc, &gap);
+        return (float)(asc - desc + gap) * stbtt_ScaleForPixelHeight(&font->stb, size > 0 ? size : 16.0F);
     }
 #endif
     return size > 0.0F ? size * 1.25F : 20.0F;
@@ -612,6 +678,12 @@ extern "C" float mq_font_advance(mq_font* font, uint32_t codepoint, float size) 
         if (FT_Set_Pixel_Sizes(font->face, 0, (FT_UInt)((size > 0 ? size : 16.0F) + 0.5F)) == 0 &&
             FT_Load_Char(font->face, codepoint, FT_LOAD_DEFAULT) == 0)
             return (float)(font->face->glyph->advance.x >> 6);
+    }
+#else
+    if (font->stb_ready) {
+        int adv = 0, lsb = 0;
+        stbtt_GetGlyphHMetrics(&font->stb, stbtt_FindGlyphIndex(&font->stb, (int)codepoint), &adv, &lsb);
+        return (float)adv * stbtt_ScaleForPixelHeight(&font->stb, size > 0 ? size : 16.0F);
     }
 #endif
     return (size > 0 ? size : 16.0F) * 0.6F;
