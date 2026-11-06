@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.854,
-  "preview_mean_lum": 0.8636,
-  "mean_lum_delta": 0.0096,
-  "hist_similarity": 0.091,
-  "rgb_delta": 0.0092,
+  "preview_mean_lum": 0.864,
+  "mean_lum_delta": 0.0099,
+  "hist_similarity": 0.2319,
+  "rgb_delta": 0.0111,
   "ref_coverage": 0.1121,
-  "preview_coverage": 0.2076,
-  "coverage_ratio": 1.852,
+  "preview_coverage": 0.041,
+  "coverage_ratio": 0.366,
   "ref_bbox": [
     25,
     13,
@@ -26,10 +26,10 @@
     117
   ],
   "preview_bbox": [
-    376,
-    56,
-    836,
-    621
+    428,
+    46,
+    806,
+    668
   ],
   "ref_mean_rgb": [
     217.8,
@@ -37,10 +37,12 @@
     217.8
   ],
   "preview_mean_rgb": [
-    219.8,
-    219.7,
-    220.8
+    220.3,
+    220.3,
+    221.2
   ],
-  "framing_notes": [],
-  "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+  "framing_notes": [
+    "预览主体占比过小（<5%）→ 机位过远？"
+  ],
+  "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）；预览主体占比过小（<5%）→ 机位过远？"
 }

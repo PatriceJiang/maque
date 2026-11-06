@@ -154,7 +154,10 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     this->frames_dir = frames_dir;
     this->name = name;
     if (!frames_dir.empty()) std::filesystem::create_directories(frames_dir);
-    uint64_t cap = 60 * 60;
+    /* 默认**不限制帧数**：窗口关闭/脚本 quit/信号才退出。只有测试/回归显式给
+     * `--frames`/`MAQUE_MAX_FRAMES` 或 `MAQUE_STOP_FRAME` 才设上限。
+     * （旧实现 cap=3600 = 60s，普通运行会被莫名截断，已移除。） */
+    uint64_t cap = 0;   // 0 = 无上限
     if (const char* mf = std::getenv("MAQUE_MAX_FRAMES")) { long v = std::strtol(mf, nullptr, 10); if (v > 0) cap = (uint64_t)v; }
     if (const char* sf = std::getenv("MAQUE_STOP_FRAME")) { long v = std::strtol(sf, nullptr, 10); if (v > 0) { cap = (uint64_t)v + 1; stop_frame = (uint64_t)v; } }
 
@@ -205,7 +208,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     const bool per_frame_output = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty() ||
                                   std::getenv("MAQUE_CAPTURE") != nullptr;
 
-    for (; frame < cap && !quit; ) {
+    for (; (cap == 0 || frame < cap) && !quit; ) {
         MQ_TRACY_ZONE_N(runtime, "loop");   // Tracy：一轮主循环（含可能的多步补偿 + 墙钟 sleep）
         if (stop_frame && frame > stop_frame) break;
         if (g_quit_requested) {                          // SIGTERM/SIGINT → 优雅退出（正常收尾 + 清理端点）
@@ -250,7 +253,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
         }
         const auto pace_work0 = std::chrono::steady_clock::now();
         int pace_ran = 0;
-        for (int s = 0; s < steps_this_frame && frame < cap && !quit; ++s) {
+        for (int s = 0; s < steps_this_frame && (cap == 0 || frame < cap) && !quit; ++s) {
             if (stop_frame && frame > stop_frame) break;
             /* 补步：只有**最后一步**成帧（渲染 + present + Tracy FrameMark），中间步只推进模拟。
              * 旧实现每步都完整 render+present → 补 2 步 = 渲染两帧，越补越慢；
@@ -281,7 +284,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     }
 
     /* 循环是因为"到帧数上限"退出的 → 记下来（退出码按成功算，见 frames_capped 注释）。 */
-    if (!quit && (frame >= cap || (stop_frame && frame > stop_frame))) frames_capped = true;
+    if (!quit && ((cap > 0 && frame >= cap) || (stop_frame && frame > stop_frame))) frames_capped = true;
 
     finalize_run();
 

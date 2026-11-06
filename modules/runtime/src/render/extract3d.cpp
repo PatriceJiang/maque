@@ -35,6 +35,13 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     bool has_cam = false;
     bool gltf_lights_added = false;
     bool gltf_light_logged = false;
+    /* 场景里已有 render.Light 时，runtime glTF 模型自带的 KHR_lights_punctual 不再追加：
+     * 场景灯光是显式覆盖（迁移后的 .scn 已把手调强度/相机/环境固化；否则 bin 场景会
+     * 「场景灯 + 模型灯」叠加，PlaysetLightTest 这类物理强度模型直接过曝）。 */
+    bool scene_has_lights = false;
+    for (int idx : ids) {
+        if (comp_by_name(*this, idx, "render.Light", nullptr)) { scene_has_lights = true; break; }
+    }
     float cam_priority = -1.0e9F;
     float fov_y = 60.0F, ortho_height = 2.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
     int32_t projection = 0;
@@ -116,8 +123,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             if (gm->variants[vi] == *vn) { selected_variant = (int)vi; break; }
                     }
                 }
-                /* plans/24 P5：KHR_lights_punctual → frame3d 灯光（按模型尺度归一化）。 */
+                /* plans/24 P5：KHR_lights_punctual → frame3d 灯光（按模型尺度归一化）。
+                 * 场景已有 Light 组件时跳过（场景覆盖模型灯光，避免叠加过曝）。 */
                 for (const GltfGpuModel::Light& gl : gm->lights) {
+                    if (scene_has_lights) break;
                     if (gl.node < 0) continue;
                     const size_t nw = (size_t)gl.node * 16u;
                     if (nw + 16u > gst.node_world.size()) continue;
@@ -608,10 +617,12 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     }
 
     /* OrbitControls：仅主相机绕世界原点环绕；RenderTexture 相机保持节点自身变换。 */
+    if (allow_orbit) orbit_fov_y = fov_y;
     if (allow_orbit) if (const char* oo = std::getenv("MAQUE_ORBIT")) {
         float oy = 0.0F, op = 0.3F, od = 1.0F;
         if (std::sscanf(oo, "%f,%f,%f", &oy, &op, &od) >= 1) {
             orbit_yaw = oy; orbit_pitch = op; orbit_dist = od > 0.0F ? od : 1.0F;
+            orbit_target[0] = orbit_target[1] = orbit_target[2] = 0.0F;
             orbit_enabled = true; orbit_inited = true;
         }
     }
@@ -627,16 +638,20 @@ void Engine::extract_3d(int32_t tw, int32_t th,
         }
         const float cp = std::cos(orbit_pitch), sp = std::sin(orbit_pitch);
         const float sy = std::sin(orbit_yaw), cy = std::cos(orbit_yaw);
-        const float px = sy * cp * orbit_dist, py = sp * orbit_dist, pz = cy * cp * orbit_dist;
+        const float tx = orbit_target[0], ty = orbit_target[1], tz = orbit_target[2];
+        const float px = tx + sy * cp * orbit_dist;
+        const float py = ty + sp * orbit_dist;
+        const float pz = tz + cy * cp * orbit_dist;
         cam_trs.position = math::Vec3{ px, py, pz };
         cam_trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
-        const float fl = std::sqrt(px * px + py * py + pz * pz);
+        const float dx = tx - px, dy = ty - py, dz = tz - pz;
+        const float fl = std::sqrt(dx * dx + dy * dy + dz * dz);
         if (fl > 1e-6F) {
-            const float fx = -px / fl, fy = -py / fl, fz = -pz / fl;
+            const float fx = dx / fl, fy = dy / fl, fz = dz / fl;
             cam_trs.rotation = math::Vec3{ std::asin(std::max(-1.0F, std::min(1.0F, fy))),
                                            std::atan2(-fx, -fz), 0.0F };
         }
-        m4_from_trs(cam_trs, cam_wm);        /* Orbit 覆盖相机：世界矩阵 = 绕世界原点环绕 */
+        m4_from_trs(cam_trs, cam_wm);        /* Orbit 覆盖相机：绕 orbit_target 环绕/平移 */
         has_cam_wm = true;
         (void)has_cam;
     }

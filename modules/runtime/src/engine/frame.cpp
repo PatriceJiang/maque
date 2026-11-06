@@ -10,6 +10,44 @@ namespace maque::rt {
 /* 单帧推进：① 采样 ② 输入帧 ③ 脚本 update+GC ④ 校验和/快照 ⑤ 渲染。
  * 主循环与控制面 Runtime.step 走**同一条帧序** → 行为一致（docs/10 D1、docs/11）。 */
 
+/* 测试钩子：`MAQUE_SIM_POINTER_AT="frame:down|move|up|wheel:x:y[:button][;...]"`。
+ * 把合成指针压进**本帧设备队列**（与真实 SDL 鼠标同一条 imgui→世界坐标→OrbitControls 路径），
+ * 用于 headless/CI 验证中键平移/右键环绕。坐标是窗口像素；button 0=左/1=右/2=中。 */
+static void sim_pointer_at(mq_platform_pointer_event* ptrs, uint32_t& count, uint32_t cap,
+                           uint64_t frame) {
+    const char* spec = std::getenv("MAQUE_SIM_POINTER_AT");
+    if (!spec || !*spec) return;
+    const std::string s(spec);
+    size_t i = 0;
+    while (i <= s.size()) {
+        const size_t semi = s.find(';', i);
+        const std::string item = s.substr(i, semi == std::string::npos ? std::string::npos : semi - i);
+        i = (semi == std::string::npos) ? s.size() + 1 : semi + 1;
+        if (item.empty()) continue;
+        unsigned long long f = 0;
+        char kind[16] = {};
+        float x = 0, y = 0;
+        int button = 0;
+        if (std::sscanf(item.c_str(), "%llu:%15[^:]:%f:%f:%d", &f, kind, &x, &y, &button) < 4)
+            continue;
+        if (f != frame) continue;
+        if (count >= cap) break;
+        int type = -1;
+        const std::string k(kind);
+        if (k == "down") type = MQ_PLATFORM_POINTER_DOWN;
+        else if (k == "up") type = MQ_PLATFORM_POINTER_UP;
+        else if (k == "move") type = MQ_PLATFORM_POINTER_MOVE;
+        else if (k == "wheel") type = MQ_PLATFORM_POINTER_WHEEL;
+        if (type < 0) continue;
+        mq_platform_pointer_event& e = ptrs[count++];
+        e = mq_platform_pointer_event{};
+        e.pointer_type = MQ_PLATFORM_POINTER_MOUSE;
+        e.type = (uint32_t)type;
+        e.button = (uint32_t)button;
+        e.x = x; e.y = y;
+    }
+}
+
 void Engine::step_frame(bool render_frame) {
     MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
     tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
@@ -52,6 +90,7 @@ void Engine::step_frame(bool render_frame) {
         if (window) sync_window_size(iframe.width, iframe.height);
         /* 测试注入：MAQUE_IMGUI_POINTER（合成指针 → 本帧设备队列，与真实鼠标同路径） */
         imgui_fake_input(iframe.pointers, iframe.pointer_count, iframe.pointer_cap);
+        sim_pointer_at(iframe.pointers, iframe.pointer_count, iframe.pointer_cap, frame);
         /* ImGui 先吃**窗口像素**事件（它工作在窗口空间）；之后才把同一批转成世界坐标。
          * 顺序不能反：转成世界坐标后就没有原始窗口坐标了。 */
         imgui_input_feed(iframe.pointers, iframe.pointer_count, iframe.keys, iframe.key_count);
@@ -63,16 +102,25 @@ void Engine::step_frame(bool render_frame) {
                        iframe.pointer_count, iframe.key_count, frame);
     }
     // ① 帧首：控制端点轮询（inspector/MCP；非阻塞、单线程、帧边界一次 → 不改确定性）
-    /* OrbitControls：鼠标左键拖拽环绕、滚轮缩放（3D 场景；与 ImGui 同帧时也生效，便于调试） */
+    /* OrbitControls（3D 场景；与 ImGui 同帧时也生效，便于调试）：
+     *   右键拖拽 = 环绕（platform 按钮编码：0=左 / 1=右 / 2=中）
+     *   中键拖拽 = 平移（沿相机右/上轴移动 orbit_target，模型跟随鼠标）
+     *   滚轮     = 推拉 */
     if (has_3d) {
         for (uint32_t i = 0; i < iframe.pointer_count; ++i) {
             const mq_platform_pointer_event& pe = iframe.pointers[i];
             if (pe.pointer_type != MQ_PLATFORM_POINTER_MOUSE) continue;
             if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 1) {
                 orbit_dragging = true;
+                orbit_panning = false;
                 orbit_last_x = pe.x; orbit_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 2) {
+                orbit_panning = true;
+                orbit_dragging = false;
+                orbit_pan_last_x = pe.x; orbit_pan_last_y = pe.y;
             } else if (pe.type == MQ_PLATFORM_POINTER_UP || pe.type == MQ_PLATFORM_POINTER_CANCEL) {
                 orbit_dragging = false;
+                orbit_panning = false;
             } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_dragging) {
                 orbit_enabled = true;
                 orbit_yaw -= (pe.x - orbit_last_x) * 0.01F;
@@ -80,6 +128,23 @@ void Engine::step_frame(bool render_frame) {
                 if (orbit_pitch > 1.45F) orbit_pitch = 1.45F;
                 if (orbit_pitch < -1.45F) orbit_pitch = -1.45F;
                 orbit_last_x = pe.x; orbit_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_panning) {
+                orbit_enabled = true;
+                const float dx = pe.x - orbit_pan_last_x;
+                const float dy = pe.y - orbit_pan_last_y;
+                const float sy = std::sin(orbit_yaw), cy = std::cos(orbit_yaw);
+                const float sp = std::sin(orbit_pitch), cp = std::cos(orbit_pitch);
+                /* 相机右轴 / 上轴（与 extract3d 的 orbit 基一致；世界 y 向上） */
+                const float rx = cy, ry = 0.0F, rz = -sy;
+                const float ux = -sy * sp, uy = cp, uz = -cy * sp;
+                /* 指针坐标已转成设计/世界坐标；按屏幕高度把"拖 1 单位"换算成世界位移。 */
+                const float h = (H > 0 ? (float)H : 720.0F);
+                const float fov = (orbit_fov_y > 1.0F ? orbit_fov_y : 45.0F) * 3.14159265F / 180.0F;
+                const float k = 2.0F * orbit_dist * std::tan(fov * 0.5F) / h;
+                orbit_target[0] -= rx * dx * k + ux * dy * k;
+                orbit_target[1] -= ry * dx * k + uy * dy * k;
+                orbit_target[2] -= rz * dx * k + uz * dy * k;
+                orbit_pan_last_x = pe.x; orbit_pan_last_y = pe.y;
             } else if (pe.type == MQ_PLATFORM_POINTER_WHEEL) {
                 orbit_enabled = true;
                 orbit_dist *= std::exp(-pe.scroll_y * 0.12F);

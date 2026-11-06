@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_materials_pbrSpecularGlossiness` |
 | alpha 模式分布 | OPAQUE×4 |
 
-**导入产物**：`assets/` 4 个 `.mesh.json`（合计 575.2 KB），`textures/` 6 张；场景 `SpecGlossVsMetalRough.scn`。
+**导入产物**：`assets/` 4 个 `.mesh.json`（合计 575.4 KB），`textures/` 8 张；场景 `SpecGlossVsMetalRough.scn`。
 
 ## 生成 / 运行
 
@@ -42,25 +42,25 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Spe
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.303 | 0.616 | 差 +0.313 |
-| 前景平均 RGB | [85.9, 76.7, 57.4] | [160.9, 157.8, 140.3] | RGB 距离 0.312 |
-| 亮度直方图相似度 | — | — | 0.15（16 桶交集，1=完全一致） |
-| 前景占比 | 48.0% | 12.6% | 覆盖率比 0.263 |
+| 前景平均亮度 | 0.303 | 0.350 | 差 +0.047 |
+| 前景平均 RGB | [85.9, 76.7, 57.4] | [94.2, 90.3, 64.4] | RGB 距离 0.038 |
+| 亮度直方图相似度 | — | — | 0.49（16 桶交集，1=完全一致） |
+| 前景占比 | 48.0% | 9.7% | 覆盖率比 0.201 |
 
-自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
+自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_pbrSpecularGlossiness（旧扩展）未实现
+- KHR_materials_pbrSpecularGlossiness：转换为 metallic-roughness（diffuse/spec-gloss 逐像素合成 baseColor + MR 贴图）
 - 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_pbrSpecularGlossiness（旧扩展）未实现
+- KHR_materials_pbrSpecularGlossiness：转换为 metallic-roughness（diffuse/spec-gloss 逐像素合成 baseColor + MR 贴图）
 
 ## 踩过的坑 / 注意
 
-- 本模型导入/渲染无告警。
+- 手动机位：近景正对两只瓶、蓝灰背景（对齐官方构图）
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 

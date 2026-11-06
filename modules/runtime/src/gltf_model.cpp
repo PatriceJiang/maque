@@ -744,6 +744,43 @@ bool Parser::parse_materials()
         const mq_json* exts = jget(jm, "extensions");
         if (exts)
         {
+            /* KHR_materials_pbrSpecularGlossiness（已废弃但 Khronos 样例仍用）→ metallic-roughness 近似。
+             * 引擎贴图槽没有通道重映射，因此按“材质是否像金属”二选一：
+             *   · 有 specularGlossinessTexture 且 specularFactor 非黑 → 视为金属：
+             *     baseColor = specularGlossinessTexture.RGB（金属反射色），metallic=1，
+             *     roughness = 1 - glossinessFactor（贴图 A 忽略；用 0.5 折中避免全镜面）；
+             *   · 否则按电介质：baseColor = diffuseFactor/diffuseTexture，metallic=0，
+             *     roughness = 1 - glossinessFactor。
+             * 该扩展只用于 Khronos SpecGlossVsMetalRough（本仓库唯一用例），近似目标是
+             * “两只瓶子观感一致”，非逐像素 SG 求解。 */
+            if (const mq_json* sg = jget(exts, "KHR_materials_pbrSpecularGlossiness"))
+            {
+                float spec_max = 1.0F;
+                if (const mq_json* sf = jget(sg, "specularFactor"))
+                {
+                    spec_max = 0.0F;
+                    for (int k = 0; k < 3; ++k)
+                        spec_max = std::max(spec_max, (float)mq_json_num(jitem(sf, (uint32_t)k), 0.0));
+                }
+                const float gloss = std::clamp((float)jnum(sg, "glossinessFactor", 1.0), 0.0F, 1.0F);
+                if (jget(sg, "specularGlossinessTexture") && spec_max > 0.01F)
+                {
+                    make_texture_ref(jget(sg, "specularGlossinessTexture"), true, m.base_color_tex);
+                    m.metallic = 1.0F;
+                    m.roughness = std::clamp(1.0F - 0.5F * gloss, 0.04F, 1.0F);
+                }
+                else
+                {
+                    if (const mq_json* df = jget(sg, "diffuseFactor"))
+                    {
+                        for (int k = 0; k < 4; ++k)
+                            m.base_color[k] = (float)mq_json_num(jitem(df, (uint32_t)k), m.base_color[k]);
+                    }
+                    make_texture_ref(jget(sg, "diffuseTexture"), true, m.base_color_tex);
+                    m.metallic = 0.0F;
+                    m.roughness = std::clamp(1.0F - gloss, 0.04F, 1.0F);
+                }
+            }
             m.unlit = jget(exts, "KHR_materials_unlit") != nullptr;
             m.physical = jget(exts, "KHR_materials_clearcoat") || jget(exts, "KHR_materials_sheen") ||
                          jget(exts, "KHR_materials_iridescence") ||

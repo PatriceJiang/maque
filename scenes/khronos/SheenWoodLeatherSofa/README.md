@@ -44,9 +44,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
 | 前景平均亮度 | 0.286 | 0.269 | 差 -0.017 |
-| 前景平均 RGB | [93.2, 69.4, 50.5] | [94.0, 63.7, 42.1] | RGB 距离 0.019 |
+| 前景平均 RGB | [93.2, 69.4, 50.5] | [94.1, 63.8, 42.1] | RGB 距离 0.019 |
 | 亮度直方图相似度 | — | — | 0.67（16 桶交集，1=完全一致） |
-| 前景占比 | 64.1% | 25.3% | 覆盖率比 0.396 |
+| 前景占比 | 64.1% | 25.4% | 覆盖率比 0.396 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
@@ -55,7 +55,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 - KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
-- WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）
+- WebP 贴图：离线导入用 PIL 转 PNG/JPEG（需 Pillow）；运行时直读 GLB 仍不支持 WebP
 - 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
@@ -63,7 +63,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 - KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
-- WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）
+- WebP 贴图：离线导入用 PIL 转 PNG/JPEG（需 Pillow）；运行时直读 GLB 仍不支持 WebP
 
 ## 踩过的坑 / 注意
 
@@ -71,6 +71,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 
-## 人工视觉复核（自动迁移初版）
-- 结论：沙发几何完整（软垫/靠背/木框形状正确），但所有部件呈纯白无贴图，官方为深色木质+金棕色织物。README 已记录“WebP 贴图无解码器”，本模型是 148 个里唯一使用 EXT_texture_webp 的模型，属明确可定位的贴图缺失问题（补 WebP 解码即可恢复）。
-- 差异主因：导入问题：EXT_texture_webp 贴图无解码器 → 全部贴图缺失（白模）
+## 人工视觉复核（2026-11 修正后）
+- 结论：离线导入用 Pillow 把 13 张 WebP 转成 PNG/JPEG 后，深色木框与金棕色织物贴图完整，与官方参考的主体亮度/色调接近（hist≈0.67）。
+- 已知边界：`scenes/khronos-bin` 的运行时 GLB 直读路径**不支持 EXT_texture_webp**（引擎无 WebP 解码依赖）→ 该路径仍会白模；这是运行时能力限制，不是离线迁移缺失。

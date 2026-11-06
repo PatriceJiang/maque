@@ -11,12 +11,12 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": -3.4540888867497976,
-              "y": -2.33441704565267,
-              "z": 2.5454050821661407
+              "x": -5.676915945052268,
+              "y": 2.6287474202681507,
+              "z": 9.95200186306494
             },
             "rotation": {
-              "x": -0.22326312094374035,
+              "x": -0.22326312094374032,
               "y": -0.519019258989053,
               "z": 0.0
             }
@@ -25,8 +25,8 @@
         {
           "type": "render.Camera3D",
           "fov_y": 45.0,
-          "near": 0.05996242831957929,
-          "far": 34.567843510279204,
+          "near": 0.2344405621452283,
+          "far": 133.43000970720666,
           "clear_color": {
             "r": 0.13,
             "g": 0.13,
@@ -62,6 +62,122 @@
       ]
     },
     {
+      "name": "node0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 3.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MeshPrimitiveModes_0_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MeshPrimitiveModes_1_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MeshPrimitiveModes_2_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node3_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MeshPrimitiveModes_3_0.mesh.json"
+        }
+      ]
+    },
+    {
       "name": "node4_0",
       "components": [
         {
@@ -87,6 +203,64 @@
         {
           "type": "render.MeshRenderer",
           "mesh_path": "assets/MeshPrimitiveModes_4_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node5_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -3.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MeshPrimitiveModes_5_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node6_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0,
+              "y": -3.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MeshPrimitiveModes_6_0.mesh.json"
         }
       ]
     }

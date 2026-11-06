@@ -11,26 +11,26 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": -0.27424370538340254,
-              "y": 0.15524267209700376,
-              "z": 0.48006793845218404
+              "x": 0.0,
+              "y": 0.06,
+              "z": 0.78
             },
             "rotation": {
-              "x": -0.2232631209437403,
-              "y": -0.5190192589890529,
+              "x": -0.07677189126977803,
+              "y": -0.0,
               "z": 0.0
             }
           }
         },
         {
           "type": "render.Camera3D",
-          "fov_y": 45.0,
-          "near": 0.011309020929380072,
-          "far": 6.357832043374439,
+          "fov_y": 40.0,
+          "near": 0.01,
+          "far": 10.0,
           "clear_color": {
-            "r": 0.13,
-            "g": 0.13,
-            "b": 0.14,
+            "r": 0.28,
+            "g": 0.3,
+            "b": 0.42,
             "a": 1.0
           }
         }
@@ -108,6 +108,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/BottleMat_SpecGloss_sg_base.png",
+          "metallic_roughness_texture": "textures/BottleMat_SpecGloss_sg_mr.png",
           "normal_texture": "textures/image2.png",
           "occlusion_texture": "textures/image4.png",
           "emissive_texture": "textures/image3.png"
@@ -256,7 +258,7 @@
             "b": 1.0,
             "a": 1.0
           },
-          "metallic": 1.0,
+          "metallic": 0.0,
           "roughness": 1.0,
           "emissive": {
             "x": 0.0,
@@ -266,7 +268,8 @@
           "double_sided": false,
           "side": 0,
           "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image7.png"
         }
       ]
     }

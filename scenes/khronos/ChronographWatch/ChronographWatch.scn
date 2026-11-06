@@ -1441,7 +1441,7 @@
     }
   ],
   "env_texture": "/khronos_env/Cannon_Exterior.hdr",
-  "env_background": false,
+  "env_background": true,
   "env_intensity": 1.0,
   "env_rotation": 0.0
 }

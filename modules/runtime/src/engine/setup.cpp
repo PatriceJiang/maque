@@ -51,6 +51,43 @@ bool mount_scene_source(mq_vfs* vfs, const std::string& scn_path, std::string& v
     return true;
 }
 
+/* Khronos 画廊的 HDRI 在仓库 .deps/khronos-env（gitignored，体积/许可原因不入库）。
+ * 场景里写的是 /khronos_env/<file>；用户直接跑 maque_player 时通常不会记得设 MAQUE_MOUNT，
+ * 于是 env_texture 静默回退 analytic（Glass/金属反射明显变差）。这里按场景目录自动探测：
+ *   scenes/khronos/<Model>/  -> ../../../.deps/khronos-env
+ *   scenes/khronos/          -> ../../.deps/khronos-env
+ *   CWD/.deps/khronos-env
+ * 显式 MAQUE_MOUNT 里已有 /khronos_env= 时尊重用户设置（不覆盖）。 */
+void apply_khronos_env_mount(mq_vfs* vfs, const std::string& scn_dir, const std::string& scene_text) {
+    if (!vfs || scn_dir.empty()) return;
+    if (scene_text.find("/khronos_env") == std::string::npos) return;   // 只有用到 HDRI 的场景才挂
+    if (scn_dir.rfind("http://", 0) == 0 || scn_dir.rfind("https://", 0) == 0 ||
+        scn_dir.rfind("asset://", 0) == 0)
+        return;
+    if (const char* spec = std::getenv("MAQUE_MOUNT");
+        spec && std::string(spec).find("/khronos_env=") != std::string::npos)
+        return;
+    const std::filesystem::path base(scn_dir);
+    const std::filesystem::path cwd = std::filesystem::current_path();
+    const std::filesystem::path candidates[] = {
+        base / "../../../.deps/khronos-env",
+        base / "../../.deps/khronos-env",
+        cwd / ".deps/khronos-env",
+    };
+    for (const auto& cand : candidates) {
+        std::error_code ec;
+        const std::filesystem::path abs = std::filesystem::weakly_canonical(cand, ec);
+        if (ec || !std::filesystem::is_directory(abs, ec)) continue;
+        if (mq_vfs_mount(vfs, "/khronos_env", abs.string().c_str()) == MQ_VFS_OK)
+            std::print("runtime: auto-mount '/khronos_env' <- {}（Khronos HDRI；MAQUE_MOUNT 可覆盖）\n",
+                       abs.string());
+        return;
+    }
+    std::print(stderr,
+               "runtime: 场景引用 '/khronos_env'，但未找到 .deps/khronos-env（可用 "
+               "MAQUE_MOUNT='/khronos_env=<目录>' 指定；缺失时回退 analytic IBL）\n");
+}
+
 /* MAQUE_MOUNT="/cdn=https://host/assets/,/extra=../shared"：额外挂载（后挂载优先，docs/04 §5）。
  * 场景目录挂载之后应用：本地开发时把资源指向 CDN，或从 URL 场景挂本地补丁目录。 */
 void apply_env_mounts(mq_vfs* vfs) {
@@ -160,6 +197,33 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     if (const char* ts = std::getenv("MAQUE_TITLE"); ts && *ts) win_title = ts;
     platform = mq_platform_create(win_title.c_str(), win_w, win_h);
     window = mq_platform_has_window(platform) != 0;
+    /* 默认 800x650 是按 1080p/96dpi 参考屏定的：4K 屏（或 X11 下没有 OS 缩放的 4K）上只占
+     * 屏幕 ~20%，看起来"窗口特别小"。首次建窗后（无 MAQUE_WINDOW / 非最大化）按**逻辑屏幕**
+     * 尺寸缩放默认值，并用 content_scale 抵消 OS DPI 缩放（Windows 200% 时屏幕逻辑尺寸已是
+     * 1920x1200，content_scale=2 → 仍旧 800x650 逻辑 = 1600x1300 物理，观感一致）。
+     * 例：3840x2400 @1x → 1600x1300；1920x1080 @1x → 800x650（保持原默认）。 */
+    if (window && !std::getenv("MAQUE_WINDOW") &&
+        !(std::getenv("MAQUE_WINDOW_MAXIMIZED") && *std::getenv("MAQUE_WINDOW_MAXIMIZED") != '0')) {
+        int32_t sw = 0, sh = 0, cw = 0, ch = 0;
+        mq_platform_screen_size(platform, &sw, &sh);
+        mq_platform_window_size(platform, &cw, &ch);
+        const float cs = std::max(1.0F, mq_platform_content_scale(platform));
+        if (sw > 0 && sh > 0 && cw > 0 && ch > 0) {
+            const float ref = std::min((float)sw / 1920.0F, (float)sh / 1080.0F);
+            const float scale = std::max(1.0F, ref / cs);
+            int nw = (int)(800.0F * scale + 0.5F);
+            int nh = (int)(650.0F * scale + 0.5F);
+            nw = std::min(nw, (int)((float)sw * 0.92F));
+            nh = std::min(nh, (int)((float)sh * 0.92F));
+            if (nw != cw || nh != ch) {
+                mq_platform_set_window_size(platform, nw, nh);
+                win_w = nw; win_h = nh;
+                win_last_w = nw; win_last_h = nh;   // 避免首个 poll 把自动缩放当成用户 resize
+                std::print("runtime: window {}x{} (auto from screen {}x{} @{:.2f}x; "
+                           "MAQUE_WINDOW=WxH 可覆盖)\n", nw, nh, sw, sh, (double)cs);
+            }
+        }
+    }
     /* load_scene_into 发生在建窗前，只能用逻辑尺寸预估；现在用真实 drawable 校正 TW/TH。 */
     if (window) {
         mq_platform_drawable_size(platform, &drawable_last_w, &drawable_last_h);
@@ -252,6 +316,14 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
  * → 脚本 VM/绑定 → 监视 → 资源预解析 → 物理组件建体。切场景同样走此处（docs/12/20）。 */
 bool Engine::load_scene_into(const std::string& scn_path) {
     MQ_TRACY_ZONE_N(runtime, "scene.load");   // Tracy：场景加载（资源/实体/脚本装配）
+    /* 切到不同场景时复位轨道相机（同路径 reload 保留用户当前视角/平移）。 */
+    if (scn_path != scn_full_path) {
+        orbit_enabled = false;
+        orbit_dragging = false;
+        orbit_panning = false;
+        orbit_inited = false;
+        orbit_target[0] = orbit_target[1] = orbit_target[2] = 0.0F;
+    }
     /* 场景来源挂载（本地目录 / http(s) URL 目录）——后挂载者优先 → 新场景来源生效 */
     std::string scn_vfs;
     if (!mount_scene_source(vfs, scn_path, scn_vfs, scn_dir)) return false;
@@ -261,6 +333,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     { void* d = nullptr; size_t n = 0;
       if (mq_vfs_read(vfs, scn_vfs.c_str(), &d, &n) == MQ_VFS_OK) {
           text.assign((char*)d, n); mq_vfs_free(d); } }
+    apply_khronos_env_mount(vfs, scn_dir, text);   // 场景引用 /khronos_env 时才自动挂载
     if (text.empty()) return false;
 
     /* docs/34 P0：包清单决定是否走"每语言一个 VM + 模块/实例"路径（在旧实例销毁前判定）。 */
@@ -324,7 +397,8 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     /* 启动期覆盖（宿主/CI 用；docs/05、docs/22）：
      *   MAQUE_WINDOW=WxH  窗口尺寸（世界坐标不变，仅改可视区）
      *   MAQUE_VIEWS=n     视图数（1 = 单视图；>1 = 并排多视图/立体） */
-    /* **默认窗口 800x650**（用户要求）：世界/渲染目标仍是场景尺寸（W×H），
+    /* **默认窗口 800x650**（1080p 参考值；建窗后按逻辑屏幕尺寸自动放大，见 setup 尾部）：
+     * 世界/渲染目标仍是场景尺寸（W×H），
      * 窗口内等比缩放 + 居中留边显示 —— 场景比窗口大就缩小，小就放大，都不裁剪。
      * 之前的默认是"窗口 = 场景尺寸"，大场景（如 spine 的 all.scn 1600x1300）
      * 在 1080p 屏上会超出显示器，必须改成固定小窗口。

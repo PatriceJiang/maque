@@ -751,12 +751,17 @@ struct Engine {
     void extract_shader_graphs(std::vector<mq_renderer_shader_graph_pass>& out);
     void extract_shader_graph_sprites(std::vector<mq_renderer_shader_graph_sprite>& out);
     void shader_graph_swap_targets();
-    /* 3D OrbitControls（鼠标拖拽环绕 + 滚轮缩放；在场景相机之上覆盖；MAQUE_ORBIT=yaw,pitch,dist 供 CI） */
+    /* 3D OrbitControls（右键拖拽环绕、中键拖拽平移、滚轮缩放；在场景相机之上覆盖；
+     * MAQUE_ORBIT=yaw,pitch,dist 供 CI）。orbit_target 是环绕/平移的目标点（默认世界原点）。 */
     bool  orbit_enabled = false;
-    bool  orbit_dragging = false;
+    bool  orbit_dragging = false;      // 右键环绕
+    bool  orbit_panning = false;       // 中键平移
     bool  orbit_inited = false;
     float orbit_yaw = 0.0F, orbit_pitch = 0.3F, orbit_dist = 1.0F;
+    float orbit_target[3] = { 0.0F, 0.0F, 0.0F };
+    float orbit_fov_y = 45.0F;         // 最近一次 3D 提取的主相机 fov（平移速度按屏幕高度换算）
     float orbit_last_x = 0.0F, orbit_last_y = 0.0F;
+    float orbit_pan_last_x = 0.0F, orbit_pan_last_y = 0.0F;
 
     /* ---- 引擎选项（F4 ImGui 面板；docs/28）----
      * 运行期可热调的纯视图选项：

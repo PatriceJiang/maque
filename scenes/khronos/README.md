@@ -19,7 +19,7 @@
 | 失败/异常 | 1 |
 | 派生资产总大小（本地，不入库） | 1017.7 MB |
 
-> ⚠️ 与官方 `screenshot/` 对比**不是像素级 pass/fail**：官方图多为离线渲染（常带 HDRI studio、软阴影、不同机位/背景），maque 对 README 声明环境的模型已注入官方 HDRI（仅 IBL、不开背景，见 `tools/khronos_env.json`），其余用解析 studio IBL；无面光/软阴影/动画骨骼；每个模型的 README 给出定量指标与差异归因。
+> ⚠️ 与官方 `screenshot/` 对比**不是像素级 pass/fail**：官方图多为离线渲染（常带 HDRI studio、软阴影、不同机位/背景），maque 对 README 声明环境的模型已注入官方 HDRI（默认显示天空盒背景，见 `tools/khronos_env.json`；`env_background=false` 可退回仅 IBL；runtime 会按场景目录自动挂载 `<repo>/.deps/khronos-env`，也可用 `MAQUE_MOUNT` 覆盖），其余用解析 studio IBL；无面光/软阴影/动画骨骼；每个模型的 README 给出定量指标与差异归因。
 
 ## 模型列表
 

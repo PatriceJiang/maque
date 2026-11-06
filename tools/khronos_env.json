@@ -1,5 +1,5 @@
 {
-  "note": "官方 Khronos glTF Sample 截图使用的 HDRI 环境（README 明确写出的 23 个模型）。HDRI 文件**不入库**（许可混杂：CC0/CC-BY/CC-BY-NC-SA/无 license；且 1024x512 RGBE 共 16MB），放在 .deps/khronos-env/（gitignored，下载脚本见 maque-test-tmp/hdri_lab/fetch_hdri.ps1）。迁移工具按本表给 .scn 注入 env_texture=/khronos_env/<file>，渲染时用 MAQUE_MOUNT=/khronos_env=<repo>/.deps/khronos-env 挂载；未挂载时 runtime 回退 analytic IBL。",
+  "note": "官方 Khronos glTF Sample 截图使用的 HDRI 环境（README 明确写出的 23 个模型）。HDRI 文件**不入库**（许可混杂：CC0/CC-BY/CC-BY-NC-SA/无 license；且 1024x512 RGBE 共 16MB），放在 .deps/khronos-env/（gitignored，下载脚本见 maque-test-tmp/hdri_lab/fetch_hdri.ps1）。迁移工具按本表给 .scn 注入 env_texture=/khronos_env/<file>，runtime 会按场景目录自动挂载 <repo>/.deps/khronos-env（也可用 MAQUE_MOUNT=/khronos_env=<dir> 覆盖）；缺失时回退 analytic IBL。",
   "mount_name": "/khronos_env",
   "env_dir": ".deps/khronos-env",
   "rotation_labels": {

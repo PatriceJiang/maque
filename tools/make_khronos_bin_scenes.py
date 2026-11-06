@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 import shutil
+import struct
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -147,13 +148,91 @@ def ensure_glb(models_root, model, dst):
     return "convert"
 
 
+WEBP_CONVERTER = os.path.join(REPO, "tools", "gltf_webp_to_png.py")
+SG_CONVERTER = os.path.join(REPO, "tools", "gltf_specgloss_to_mr.py")
+TRI_CONVERTER = os.path.join(REPO, "tools", "gltf_expand_primitives.py")
+
+
+def glb_json(path):
+    """只读 GLB 头部 + JSON chunk（不加载 BIN）；失败返回 None。"""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(20)
+            if len(head) < 20 or head[:4] != b"glTF":
+                return None
+            clen, ctype = struct.unpack_from("<II", head, 12)
+            if ctype != 0x4E4F534A:
+                return None
+            raw = f.read(clen)
+        return json.loads(raw.decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def glb_has_extension(path, ext):
+    """GLB 的 JSON 是否声明某个扩展。"""
+    js = glb_json(path)
+    for key in ("extensionsUsed", "extensionsRequired"):
+        if js and ext in (js.get(key) or []):
+            return True
+    return False
+
+
+def glb_has_non_triangle(path):
+    js = glb_json(path)
+    if not js:
+        return False
+    for mesh in js.get("meshes") or []:
+        for prim in (mesh or {}).get("primitives") or []:
+            if int((prim or {}).get("mode", 4)) != 4:
+                return True
+    return False
+
+
+def transcode_webp(path):
+    """EXT_texture_webp → JPEG/PNG（运行时无 WebP 解码器；与离线 importer 同口径）。"""
+    if not glb_has_extension(path, "EXT_texture_webp"):
+        return False
+    proc = subprocess.run([sys.executable, WEBP_CONVERTER, path, "--in-place"],
+                          cwd=REPO, capture_output=True, text=True, encoding="utf-8",
+                          errors="replace")
+    if proc.returncode != 0:
+        raise RuntimeError("WebP 转码失败 %s\n%s\n%s" % (path, proc.stdout[-1000:], proc.stderr[-1000:]))
+    return True
+
+
 def process_model(src_root, out_root, models_root, model):
     out_dir = os.path.join(out_root, model)
     os.makedirs(os.path.join(out_dir, "assets"), exist_ok=True)
     src_scn = os.path.join(src_root, model, model + ".scn")
     if not os.path.isfile(src_scn):
         raise RuntimeError("缺少场景: " + src_scn)
-    mode = ensure_glb(models_root, model, os.path.join(out_dir, "assets", model + ".glb"))
+    dst_glb = os.path.join(out_dir, "assets", model + ".glb")
+    try:
+        mode = ensure_glb(models_root, model, dst_glb)
+    except RuntimeError:
+        if not os.path.isfile(dst_glb):
+            raise
+        # 源仓库只有 .gltf 且 npx 不可用（离线/沙箱）→ 复用已有 GLB，只重建场景/转码。
+        mode = "reuse"
+    if transcode_webp(dst_glb):
+        mode += "+webp→png"
+    if glb_has_extension(dst_glb, "KHR_materials_pbrSpecularGlossiness"):
+        proc = subprocess.run([sys.executable, SG_CONVERTER, dst_glb, "--in-place"],
+                              cwd=REPO, capture_output=True, text=True, encoding="utf-8",
+                              errors="replace")
+        if proc.returncode != 0:
+            raise RuntimeError("spec-gloss 转 MR 失败 %s\n%s\n%s"
+                               % (dst_glb, proc.stdout[-1000:], proc.stderr[-1000:]))
+        mode += "+sg→mr"
+    if glb_has_non_triangle(dst_glb):
+        proc = subprocess.run([sys.executable, TRI_CONVERTER, dst_glb, "--in-place"],
+                              cwd=REPO, capture_output=True, text=True, encoding="utf-8",
+                              errors="replace")
+        if proc.returncode != 0:
+            raise RuntimeError("非三角 primitive 展开失败 %s\n%s\n%s"
+                               % (dst_glb, proc.stdout[-1000:], proc.stderr[-1000:]))
+        mode += "+非三角→三角"
     with open(os.path.join(out_dir, model + ".scn"), "w", encoding="utf-8", newline="\n") as f:
         f.write(build_scene(src_scn, model))
     return mode
@@ -202,7 +281,7 @@ def main():
 用途：对比两种加载路径的速度（`tools/bench_khronos_load.py`）。
 
 生成：`python tools/make_khronos_bin_scenes.py`（缺失 GLB 时会调用 `npx @gltf-transform/cli copy`）。
-本目录的 `assets/*.glb` 是派生资产，体积大，不提交（见 `.gitignore`）。
+本目录的 `assets/*.glb` 是派生资产（Git LFS 管理）；`EXT_texture_webp` 模型在生成时\n用 Pillow 转成 JPEG/PNG 并重写 GLB（运行时直读无 WebP 解码器）；\n`KHR_materials_pbrSpecularGlossiness` 模型逐像素转换成 baseColor + metallicRoughness；\n非三角 primitive（点/线/strip/fan）展开成三角形（同离线 importer 近似）。
 """
     with open(os.path.join(out_root, "README.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write(readme)

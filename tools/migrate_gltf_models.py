@@ -97,6 +97,18 @@ MANUAL_CAMERA = {
         "fov": 42.0, "near": 0.01, "far": 100.0,
         "clear_color": (0.92, 0.92, 0.92),
         "note": "手动机位：官方 3/4 前视特写（方位 45°/仰角 8°、距离系数 0.95、浅灰底）"},
+    # AnisotropyRotationTest：官方参考是暗色影棚（背景近黑）+ Studio Neutral IBL；
+    # 自动机位可用，只把背景压暗，避免 analytic 亮灰背景显得发白。
+    "AnisotropyRotationTest": {"clear_color": (0.13, 0.13, 0.14),
+                                "note": "暗灰影棚背景（0.13），对齐官方深色底"},
+    # PlaysetLightTest：官方用 glTF 自带相机 + 物理灯光强度（exposure 缩放）；自动机位太远。
+    "PlaysetLightTest": {"exposure": 0.12,
+                         "note": "glTF 自带相机 + exposure 0.12（物理灯光强度 512/1500 的缩放）"},
+    # SpecGlossVsMetalRough：官方是 532×532 近景（两只瓶占满画面、蓝灰背景）；自动 3/4 机位太远。
+    "SpecGlossVsMetalRough": {"position": (0.0, 0.06, 0.78), "target": (0.0, 0.0, 0.0),
+                              "fov": 40.0, "near": 0.01, "far": 10.0,
+                              "clear_color": (0.28, 0.30, 0.42),
+                              "note": "近景正对两只瓶、蓝灰背景（对齐官方构图）"},
 }
 
 # 手调场景环境：模型 → `.scn` 顶层 `env_*`（scn.Scene）。用于官方参考图是"暗色影棚+面光"的
@@ -134,6 +146,22 @@ MANUAL_ENV = {
         "env_intensity": 0.8,
         "note": "手调环境：analytic 亮度 1.6→0.8（金属高光不过曝，对齐官方亮度/直方图）",
     },
+    # AnisotropyRotationTest 官方是深色影棚 + 面光：analytic 暗色环境 + 软光箱高光，
+    # 才能出官方那种「深色金属带 + 水平拉伸高光」；亮 HDRI 会把金属带打成一整片白。
+    "AnisotropyRotationTest": {"env_color": (0.02, 0.022, 0.028, 1.0),
+                                "env_sky_color": (0.04, 0.045, 0.055, 1.0),
+                                "env_ground_color": (0.02, 0.02, 0.024, 1.0),
+                                "env_highlight": 0.4, "env_intensity": 1.0,
+                                "note": "暗色影棚 analytic 环境（深底金属带 + 水平各向异性高光）"},
+    # PlaysetLightTest README 明确要求「不要添加 environment map / IBL」：关闭解析环境，只保留
+    # 导入的 KHR_lights_punctual（方向 512 lux + 点光 1500 cd → 观感归一化 5/20）。
+    "PlaysetLightTest": {"env_intensity": 0.0, "env_background": False,
+                         "note": "关闭 IBL（官方 README 要求 as-is 灯光）"},
+    # GlassHurricaneCandleHolder 官方用 Artist Workshop HDRI；本地无该文件，用 Colorful Studio
+    # 做近似：室内亮背景让蓝色玻璃透射/金属底座反射可见（ennis 太暗玻璃发黑，Wide Street 是户外）。
+    "GlassHurricaneCandleHolder": {"env_texture": "/khronos_env/Colorful_Studio.hdr",
+                                   "env_background": True, "env_intensity": 1.0,
+                                   "note": "Colorful Studio 室内背景（近似 Artist Workshop；蓝色玻璃透射 + 铬底座）"},
 }
 
 # 参考图说明（写进 README「踩过的坑」/报告）：官方截图不是单视图渲染（两联图/多机位）时提示读者，
@@ -151,11 +179,17 @@ MANUAL_REFERENCE = {
 MANUAL_LIGHT = {
     "DirectionalLight": {"intensity_abs": 1.0,
                          "note": "光强按 glTF 原值（1.0；README 的能量测试语义，importer 观感归一化 ×2.6 不适用）"},
+    # PlaysetLightTest：方向光 512 lux / 点光 1500 cd。importer 的观感归一化会夹到 20/2000，
+    # 这里按曝光 0.12 手调到 5/20，保留「点光近处亮、方向光铺底」的相对关系。
+    "PlaysetLightTest": {"intensity_by_type": {0: 5.0, 1: 20.0},
+                         "note": "方向 5.0 / 点光 20.0（配合 exposure 0.12）"},
+    "AnisotropyRotationTest": {"intensity_abs": 1.0,
+                               "note": "默认太阳 1.0（配合暗色影棚环境，避免金属带过曝）"},
 }
 
 # glTF 自带相机（--use-gltf-camera）实测优于自动机位的模型（2026-10，指标 hist/rgb 均改善）。
 # 排除：DiffuseTransmissionPlant（hist 0.846→0.384，官方机位与 glTF 相机不同）、MultiUVTest /
-# NodePerformanceTest（变差）、DirectionalLight / PlaysetLightTest（持平）；多相机模型
+# NodePerformanceTest（变差）、DirectionalLight；多相机模型
 # （Cameras/AnimationPointerUVs/ToyCar/VirtualCity）官方参考多为多视图拼接，不用单相机。
 GLTF_CAMERA_MODELS = {
     "Duck",
@@ -164,6 +198,7 @@ GLTF_CAMERA_MODELS = {
     "TrafficCone",
     "TransmissionTest",
     "DirectionalLight",
+    "PlaysetLightTest",
 }
 
 
@@ -277,9 +312,9 @@ def apply_hdri_env(scene_path, spec, intensity=1.0, env_background=None):
     except (OSError, ValueError):
         return False
     jset(scn, "env_texture", KH_ENV_MOUNT_NAME + "/" + spec["env_file"])
-    # 默认仅 IBL（不画 HDRI 背景）；个别模型（官方参考就是 HDRI 亮背景，如 USDShaderBallForGltf）
-    # 在 khronos_env.json 里写 "env_background": true 才画背景。
-    bg = bool(spec.get("env_background", False)) if env_background is None else bool(env_background)
+    # 默认画 HDRI 天空盒（模型查看/交互需要；官方参考图对比可在 MANUAL_ENV 里关掉个别模型）。
+    # khronos_env.json 的 "env_background" 或 MANUAL_ENV 仍可显式覆盖。
+    bg = bool(spec.get("env_background", True)) if env_background is None else bool(env_background)
     jset(scn, "env_background", bg)
     jset(scn, "env_intensity", round(float(intensity), 4))
     jset(scn, "env_rotation", float(spec.get("env_rotation_deg") or 0.0))
@@ -343,12 +378,22 @@ def apply_camera_override(scene_path, spec):
                     jset(c, "far", float(spec["far"]))
                 if "clear_color" in spec:
                     jset_color(c, "clear_color", spec["clear_color"])
+                if "exposure" in spec:
+                    jset(c, "exposure", float(spec["exposure"]))
                 changed = True
     return save_scene_pairs(scene_path, scn, orig) if changed else False
 
 
+def _light_type_code(comp):
+    """render.Light 组件用重复 "type" 键：第一个是字符串组件类型，数值键才是 LightType。"""
+    for k, v in comp:
+        if k == "type" and isinstance(v, (int, float)):
+            return int(v)
+    return 0
+
+
 def apply_light_override(scene_path, spec):
-    """按 MANUAL_LIGHT 调整场景里 render.Light.intensity（绝对值或倍率）。"""
+    """按 MANUAL_LIGHT 调整场景里 render.Light.intensity（绝对值/倍率/按灯型）。"""
     if not os.path.isfile(scene_path):
         return False
     try:
@@ -361,7 +406,12 @@ def apply_light_override(scene_path, spec):
         for c in jget(ent, "components") or []:
             if jget(c, "type") != "render.Light":
                 continue
-            if "intensity_abs" in spec:
+            by_type = spec.get("intensity_by_type") or {}
+            lt = _light_type_code(c)
+            if lt in by_type:
+                jset(c, "intensity", float(by_type[lt]))
+                changed = True
+            elif "intensity_abs" in spec:
                 jset(c, "intensity", float(spec["intensity_abs"]))
                 changed = True
             elif "intensity_scale" in spec:
@@ -602,7 +652,7 @@ def known_gaps(stats):
     if stats.get("has_khr_lights"):
         gaps.append("KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）")
     if stats.get("non_tri_prims"):
-        gaps.append("非三角形 primitive 被跳过（线/点）")
+        gaps.append("非三角 primitive：导入期展开（strip/fan→三角索引，点/线→细四边面）")
     if stats.get("color0_prims"):
         if stats.get("texcoord_sets", {}).get("textureInfo>=2"):
             gaps.append("部分贴图使用 TEXCOORD_2+（引擎支持 TEXCOORD_0/1；更高 UV 集会退回 uv0）")
@@ -627,16 +677,16 @@ def known_gaps(stats):
     if "KHR_materials_specular" in used:
         gaps.append("KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）")
     if "KHR_materials_anisotropy" in used:
-        gaps.append("KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ "
+        gaps.append("KHR_materials_anisotropy：各向异性 GGX（strength/旋转/贴图方向；无 TANGENT 时按 glTF 规范用默认切线 +X）+ "
                     "环境反射 bent-normal 近似；非真实多次反射")
     if "KHR_materials_variants" in used:
         gaps.append("KHR_materials_variants：只使用默认材质（不做变体切换）")
     if "KHR_materials_pbrSpecularGlossiness" in used:
-        gaps.append("KHR_materials_pbrSpecularGlossiness（旧扩展）未实现")
+        gaps.append("KHR_materials_pbrSpecularGlossiness：转换为 metallic-roughness（diffuse/spec-gloss 逐像素合成 baseColor + MR 贴图）")
     if "KHR_texture_basisu" in used or stats.get("image_kinds", {}).get("ktx2"):
         gaps.append("KTX2/BasisU 贴图无解码器（相关贴图会缺失）")
     if "EXT_texture_webp" in used or stats.get("image_kinds", {}).get("webp"):
-        gaps.append("WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）")
+        gaps.append("WebP 贴图：离线导入用 PIL 转 PNG/JPEG（需 Pillow）；运行时直读 GLB 仍不支持 WebP")
     if "KHR_node_visibility" in used:
         gaps.append("KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入")
     if "EXT_mesh_gpu_instancing" in used:
@@ -1059,7 +1109,7 @@ def migrate_one(model, args, models_root, out_root, manifest):
     if stats.get("no_normal_prims"):
         rec["issues"].append("%d 个 primitive 无 NORMAL（导入器按索引重建法线）" % stats["no_normal_prims"])
     if stats.get("non_tri_prims"):
-        rec["issues"].append("%d 个非三角 primitive 被跳过" % stats["non_tri_prims"])
+        rec["issues"].append("%d 个非三角 primitive 已展开为三角形/细四边面" % stats["non_tri_prims"])
     if stats.get("vertices", 0) > 500000:
         rec["issues"].append("大模型：%s 顶点（加载/渲染较慢）" % f"{stats['vertices']:,}")
 
@@ -1077,15 +1127,17 @@ def migrate_one(model, args, models_root, out_root, manifest):
             rec["render_seconds"] = 0.0
         else:
             env = dict(os.environ)
-            env.update({"MAQUE_PRESENT": "off", "MAQUE_WINDOW": "0x0"})
+            env.update({"MAQUE_PRESENT": "off", "MAQUE_WINDOW": "0x0", "MAQUE_HEADLESS": "1"})
             kh_env = (KNOWN_KH_ENV.get(model)
                       if (KNOWN_KH_ENV and not args.no_hdri_env and os.path.isdir(KH_ENV_DIR)) else None)
             env_snapshot = None
             hdri_calib_png = os.path.join(out_dir, "preview_calib.png")
+            manual_env_tex = (MANUAL_ENV.get(model, {}).get("env_texture") or "")
             if kh_env:
                 env_snapshot = _scene_env_snapshot(scene)
                 apply_hdri_env(scene, kh_env, 1.0,
                                MANUAL_ENV.get(model, {}).get("env_background"))
+            if kh_env or manual_env_tex.startswith(KH_ENV_MOUNT_NAME + "/"):
                 env["MAQUE_MOUNT"] = KH_ENV_MOUNT_NAME + "=" + KH_ENV_DIR
             t0 = time.time()
             p = subprocess.run([PLAYER, "--shot", full_png, "--shot-frame", "1", scene],
@@ -1380,6 +1432,7 @@ def run_auto_framing(args, manifest, models_root, out_root):
 
 
 def main():
+    global PLAYER
     ap = argparse.ArgumentParser(description="批量迁移 Khronos glTF-Sample-Assets Models → maque scenes")
     ap.add_argument("--models-root", default=DEFAULT_MODELS_ROOT)
     ap.add_argument("--out-root", default=DEFAULT_OUT_ROOT)
@@ -1399,8 +1452,11 @@ def main():
     ap.add_argument("--auto-framing", action="store_true",
                     help="按参考图前景覆盖率自动调相机距离（需已有 manifest/compare；逐模型重导+渲染）")
     ap.add_argument("--dry-run", action="store_true", help="只打印 auto-framing 计划，不执行")
+    ap.add_argument("--player", default=PLAYER,
+                    help="maque_player 可执行文件（默认 build-win/...；Linux 传 ./build/samples/player/maque_player）")
     args = ap.parse_args()
     args.camera_scale = None
+    PLAYER = args.player
 
     if not os.path.isdir(args.models_root):
         sys.exit("migrate: 找不到 models 目录：%s\n（先运行 node .deps/download-gltf-assets.js 并解包到 .deps/gltf-assets）"

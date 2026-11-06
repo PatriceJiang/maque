@@ -7,6 +7,8 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME player_run
         COMMAND maque_player "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
                              "${CMAKE_CURRENT_BINARY_DIR}/frames")
+    # 默认不限制帧数 → 测试必须显式给上限（否则 CTest 会一直跑）
+    set_tests_properties(player_run PROPERTIES ENVIRONMENT "MAQUE_MAX_FRAMES=120")
 endif()
 
 # 声明式脚本绑定面：schema 中每个 api 在 JS/Lua 都必须可调用。
@@ -39,8 +41,8 @@ endif()
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME determinism COMMAND "${MAQUE_BASH}" -c
       "P=$<TARGET_FILE:maque_player>; S=${CMAKE_SOURCE_DIR}/scenes/ball.scn; \
-       A=$($<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
-       B=$($<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
+       A=$(MAQUE_MAX_FRAMES=120 $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
+       B=$(MAQUE_MAX_FRAMES=120 $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
        test -n \"$A\" && test \"$A\" = \"$B\"")
     # 逐帧 checksum 默认关闭，MAQUE_CHECKSUM=1 才打开（docs/10 §5）
     add_test(NAME checksum_mode_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/checksum_mode_e2e.sh"
@@ -52,7 +54,7 @@ endif()
 # 控制平面（headless 驱动）：AI 可查询指标/场景/校验和
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME control_plane COMMAND "${MAQUE_BASH}" -c
-      "MAQUE_CONTROL='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"Perf.get\"}' $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -q '\"metrics\"'")
+      "MAQUE_MAX_FRAMES=30 MAQUE_CONTROL='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"Perf.get\"}' $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -q '\"metrics\"'")
 endif()
 
 # 截图端到端：单张 PNG/PPM + 确定性 + **批量截图**（--shot-seq / --shot-frames /

@@ -514,7 +514,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
 | 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ✅ **第 29 轮已支持**（`plans/22`）：importer 输出层级场景 + 派生 `assets/skin/*.skel.json` + `assets/anim/*.clip.json`；runtime 按 `scn.AnimationPlayer.clips` 自动播放首个片段（STEP/LINEAR、quat slerp），关节调色板 = 关节世界矩阵 × inverse_bind（gfx 顶点布局 2/3 + storage palette + 阴影同绑）；morph 走 CPU 顶点更新（默认权重 + weights 动画）。`KHR_animation_pointer`（5）仍不导入 | 角色摆姿势/形变正确；预览=第 1 帧姿态（与参考图的其它动画帧姿势不同属正常） | CUBICSPLINE 按 LINEAR 近似、无状态机/混合；pointer 为 P3（§11） |
-| 场景根 `env_*` / `env_texture` / `env_background` | ✅ **官方 HDRI IBL**（第 25 轮起用于迁移）：`env_texture` 写 **Radiance `.hdr`（RGBE）**、**OpenEXR scanline**（NONE/RLE/ZIP/ZIPS）、PNG/JPEG 时启用；装配期 CPU 预计算 **GGX importance-sample 粗糙度 mip 链** + **余弦卷积漫反射 irradiance** + **天空背景全屏 pass**；`env_background=false` → HDRI 只做 IBL，背景保留相机 `clear_color`。迁移按 `tools/khronos_env.json`（README 明确声明环境的 23 个模型）注入官方 HDRI：**env_intensity 自动标定**（按参考图前景亮度，1~2 轮）+ **指标回退**（hist 比 analytic 差 >0.02 则撤销，最终 17/23 保留）。HDRI 文件不入库（许可混杂 + 体积）→ `.deps/khronos-env/`，渲染时 `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`，未挂载自动回退 analytic | 反射/环境光接近官方 HDRI studio（AnisotropyDiscTest/IridescenceLamp/CarConcept 等 hist +0.2~0.4）；cubemap（第 26 轮：`scn.Scene.env_cubemap` 6 面 → GGX cube + irradiance cube，按方向采样）与 equirect 任选；无面光软阴影 | §11：更多模型缺官方环境信息（126 个 README 未声明） |
+| 场景根 `env_*` / `env_texture` / `env_background` | ✅ **官方 HDRI IBL**（第 25 轮起用于迁移）：`env_texture` 写 **Radiance `.hdr`（RGBE）**、**OpenEXR scanline**（NONE/RLE/ZIP/ZIPS）、PNG/JPEG 时启用；装配期 CPU 预计算 **GGX importance-sample 粗糙度 mip 链** + **余弦卷积漫反射 irradiance** + **天空背景全屏 pass**；`env_background` 默认 true（显示 HDRI 天空盒）；设为 false → 只做 IBL，背景保留相机 `clear_color`。迁移按 `tools/khronos_env.json`（README 明确声明环境的 23 个模型）注入官方 HDRI：**env_intensity 自动标定**（按参考图前景亮度，1~2 轮）+ **指标回退**（hist 比 analytic 差 >0.02 则撤销，最终 17/23 保留）。HDRI 文件不入库（许可混杂 + 体积）→ `.deps/khronos-env/`，runtime 按场景目录自动挂载 `<repo>/.deps/khronos-env`（也可用 `MAQUE_MOUNT` 覆盖），缺失时回退 analytic | 反射/环境光接近官方 HDRI studio（AnisotropyDiscTest/IridescenceLamp/CarConcept 等 hist +0.2~0.4）；cubemap（第 26 轮：`scn.Scene.env_cubemap` 6 面 → GGX cube + irradiance cube，按方向采样）与 equirect 任选；无面光软阴影 | §11：更多模型缺官方环境信息（126 个 README 未声明） |
 | MSAA | ✅ **opt-in 4x**：`scn.Scene.msaa_samples=4` 或 `MAQUE_MSAA=4` → 4x 颜色/深度附件 + pass 结束 resolve；默认 0/1 = 关（旧场景逐像素不变）；`gfx caps.max_samples` 探测设备能力，创建失败自动回退 1x | 边缘锯齿明显改善（ToyCar/金属轮廓）；4x 显存/带宽约 4 倍，迁移批量预览默认仍关 | 参考图多为离线抗锯齿渲染，批量预览可后续按需开；MSAA 不解决纹理/高光走样 |
 | 地面/背景板/阴影接收体 | ❌ 自动场景无 | "模型飘在空中"，接触阴影缺失 | 需要时手加地面 + `material_shadow.scn` 范式（§6.4 ⑤） |
 
@@ -598,11 +598,11 @@ far  = max(dist * 10, (dist + radius) * 8)
 > → **HDRI 一律不入库**，只放 `.deps/khronos-env/`（gitignored，下载脚本
 > `maque-test-tmp/hdri_lab/fetch_hdri.ps1`）；`.scn` 里写挂载路径，未挂载自动回退 analytic。
 > 复现官方对比预览：`python tools/migrate_gltf_models.py --only <Model>`（工具自动
-> `MAQUE_MOUNT=/khronos_env=<repo>/.deps/khronos-env` 并做 env_intensity 标定；`--no-hdri-env` 关闭）。
+> runtime 自动挂载 `<repo>/.deps/khronos-env`（也可用 `MAQUE_MOUNT` 覆盖），并做 env_intensity 标定；`--no-hdri-env` 关闭）。
 > `USDShaderBallForGltf` 官方参考是 HDRI 亮背景 → `khronos_env.json` 里 `env_background: true`，
 > 其余模型保持暗色背景只取 IBL 光照。
 
-| IBL | **官方 HDRI PMREM IBL（第 25 轮）**：`.hdr`（RGBE）/EXR/PNG/JPEG/builtin studio；装配期 **GGX 粗糙度 mip 预过滤 + 漫反射 irradiance 卷积** + Karis env BRDF；`env_background=false` → 仅 IBL 不画天空。23 个 README 声明环境的模型按 `tools/khronos_env.json` 注入官方 HDRI（env_intensity 自动标定 + 指标回退，17 个保留）；其余 126 个用 analytic studio IBL（150 迁移基线默认不变） | 有 HDR 高光/环境反射；接近官方 HDRI studio；cubemap 与 equirect 均支持（第 26 轮 `env_cubemap` 6 面资产）；无面光软阴影 |
+| IBL | **官方 HDRI PMREM IBL（第 25 轮）**：`.hdr`（RGBE）/EXR/PNG/JPEG/builtin studio；装配期 **GGX 粗糙度 mip 预过滤 + 漫反射 irradiance 卷积** + Karis env BRDF；`env_background` 默认 true（天空盒）、false → 仅 IBL。23 个 README 声明环境的模型按 `tools/khronos_env.json` 注入官方 HDRI（env_intensity 自动标定 + 指标回退，17 个保留）；其余 126 个用 analytic studio IBL（150 迁移基线默认不变） | 有 HDR 高光/环境反射；接近官方 HDRI studio；cubemap 与 equirect 均支持（第 26 轮 `env_cubemap` 6 面资产）；无面光软阴影 |
 
 ### 6.4 手调教程（preview 不理想时）
 
@@ -1112,7 +1112,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > 0.44→0.57 等）。
 > **第 25 轮（官方 HDRI 环境接入）** 迁移工具新增 `tools/khronos_env.json`（README 明确声明环境的 23 个模型
 > → 官方 Khronos glTF-Sample-Environments HDRI）+ `--no-hdri-env` 开关；引擎 `scn.Scene` 新增
-> `env_background`（HDRI 只做 IBL、不画天空），渲染时用 `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`
+> `env_background`（默认 true 显示天空盒；false = 仅 IBL），runtime 按场景目录自动挂载 `<repo>/.deps/khronos-env`（也可用 `MAQUE_MOUNT` 覆盖）
 > 挂载（HDRI 不入库：许可混杂 + 16MB）。每个模型自动 **env_intensity 标定**（按参考图前景亮度 1–2 轮）
 > 并做**指标回退**（hist 比 analytic 差 >0.02 撤销）。最终 17/23 保留 HDRI：AnisotropyDiscTest
 > 0.255→0.648、IridescenceLamp 0.320→0.642、CarConcept 0.310→0.567、TransmissionRoughnessTest

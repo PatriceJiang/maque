@@ -139,7 +139,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   clang++ -fsanitize=address t.cpp -o t && ./t                    # Linux
   ```
 
-- **窗口（宿主启动期覆盖）**：**默认窗口 800x650**（场景 `width/height` 是设计分辨率/世界尺寸；
+- **窗口（宿主启动期覆盖）**：**默认窗口 800x650（1080p 参考值；首次建窗时按逻辑屏幕尺寸自动放大，4K@1x → 1600x1300；`MAQUE_WINDOW` 覆盖）**（场景 `width/height` 是设计分辨率/世界尺寸；
   窗口内**等比缩放 + 居中留边**显示 —— 场景比窗口大就缩小、小就放大，都不裁剪；输入坐标自动映射回
   世界坐标）。`MAQUE_WINDOW=WxH` 覆盖尺寸，**`0x0` = 不建窗口**（CI/无显示环境）。
   渲染倍率：`scn.Scene.render_scale` / `MAQUE_RENDER_SCALE=N` 相对窗口 drawable 的设备像素，`1` =
@@ -214,6 +214,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   `runtime: gltf material[...]` 诊断日志（shading/factors/tex 槽）。
   **灯光/相机（P5）已支持**：`KHR_lights_punctual` → frame3d 灯光（方向/点/聚光，观感归一化、方向光优先、≤8）；
   场景无 `render.Camera3D` 时用模型首个 perspective 相机（ortho 回退自动机位）。
+  **场景已有 `render.Light` 时不再追加模型自带 KHR 灯光**（场景显式覆盖；否则 bin 场景的
+  「迁移灯光 + 模型灯光」会叠加过曝，PlaysetLightTest 是典型）。
   **EXT_mesh_gpu_instancing（P6 部分）**：实例 accessor 展开为合成子节点 + N 份 primitive。
   **sparse accessor（P6 部分）**：indices/values 覆盖 base（含无 bufferView 的零基数据）。
   **KHR_node_visibility（P6 部分）**：静态 `visible=false` 隐藏整棵子树（mesh/灯/相机）；动画可见性未做。
@@ -223,7 +225,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   **KTX2 / Basis Universal 贴图**：image 模块接入 `third_party/basisu`，支持 ETC1S、UASTC(+Zstd)、
   未压缩 RGBA/RGB/BGRA（统一转 RGBA8）；glTF `KHR_texture_basisu.source` 已解析。
   **剩余能力见 [plans/24](plans/24-runtime-gltf-capabilities.md) 能力矩阵**：贴图/节点 pointer、动画可见性，
-  KTX2 块格式/cubemap 未做；Draco/meshopt/WebP/AVIF 无解码依赖（明确不支持）。
+  KTX2 块格式/cubemap 未做；Draco/meshopt/WebP/AVIF 无解码依赖（运行时直读不支持；
+  离线 importer 用 PIL 把 WebP 转 PNG/JPEG）。
   诊断开关：`MAQUE_ANIM=0`（不采样动画）、`MAQUE_SKIN=0`（identity palette）、`MAQUE_MORPH=0`（基础网格）、
   `MAQUE_RENDER3D_INFO=1`（模型/skin/clip/morph/材质扩展/灯光相机/首帧动画状态日志）。解析/解码/上传全部在装配期
   （`setup_gltf_assets`），模拟帧内只读 `gltf_models`/`gltf_states` 缓存；切场景统一销毁。外部 URI 按
@@ -246,7 +249,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   gfx 按 `(shading_model, blend, side)` 懒建管线（`side` → cullMode，缺省 Double 兼容旧 cull=None）。
   追加字段：`opacity`/`side`/`flat_shading`/`emissive_intensity`/`env_intensity`/`normal_scale_y`/`specular`/
   `shininess`/`specular_intensity`/`ior`/`sheen`(+color/roughness)/`iridescence`(+ior/thickness)/
-  `anisotropy`(+rotation)/`clearcoat_normal_scale`/`toon_steps`/`depth_packing` + 3 个贴图路径
+  `anisotropy`(+rotation；无 TANGENT 时按 glTF 规范用默认切线 +X)/`clearcoat_normal_scale`/`toon_steps`/`depth_packing` + 3 个贴图路径
   （`matcap_texture`/`gradient_texture`/`clearcoat_normal_texture`）+ KHR_texture_transform
   （`uv_scale`/`uv_offset`、`normal_uv_scale`/`normal_uv_offset`）。材质 uniform **336B（84 floats）**，
   camera uniform **912B（+view 矩阵 + analytic studio IBL 参数 + env4 cubemap 标志）**；贴图槽 8 张（+KHR 扩展槽 12 张）。
@@ -258,9 +261,12 @@ tools\win\build.cmd -Sanitize address -RunTests
   `scn.Scene.env_sky_color/env_ground_color/env_highlight/env_rotation`（0 色 = 由 env_color 派生）调控；
   输出用精确 sRGB OETF；PBR 贴图运行时生成 CPU mip 链（抗闪/摩尔纹）。
   内置程序化纹理 `builtin:/textures/toon_ramp`、`builtin:/textures/matcap_studio`。
+  主相机交互（仅主 Camera3D）：**右键拖拽环绕、中键拖拽平移、滚轮推拉**（`MAQUE_ORBIT=yaw,pitch,dist` 供 CI）。
   样例 `scenes/pbr/material_models.scn`（9 个网格模型）、`material_shadow.scn`（shadow catcher）、
   `material_physical.scn`；测试 `ctest -R 'material_.*_e2e'`。glTF importer 支持
   KHR_materials_unlit/clearcoat/sheen/iridescence/specular/ior/anisotropy/emissive_strength
+  + **KHR_materials_pbrSpecularGlossiness（旧扩展）→ MR 近似**（diffuse/spec-gloss 逐像素合成
+  baseColor + metallicRoughness；运行时就地转换、离线 importer 同口径）
   以及 **transmission/volume/diffuse_transmission/dispersion 近似**：gfx 把 3D 拆成 opaque→copy scene
   color→blend 两 pass；shader 逐像素折射（thicknessFactor/thicknessTexture.G）+ transmissionTexture 掩码
   + dispersion RGB 偏移（第 20 轮）；`KHR_materials_volume` 的 attenuationColor/Distance 走 Beer-Lambert
@@ -271,7 +277,9 @@ tools\win\build.cmd -Sanitize address -RunTests
   （`scenes/pbr/volume_scale.scn` 两个同材质 cube，scale 1.0 vs 0.1 → 亮度必须差 >0.10）；
   `KHR_materials_diffuse_transmission` 为不透明材质 + 背光 wrap/环境透射 + 透射率(A)/透射色(RGB) 贴图
   （第 22–23 轮）；仅单视图离屏目标，直呈 surface 回退 alpha 近似；无多次折射/相位函数。
-  Points/Line/Sprite 未做（见 plans/19 §1）。
+  Points/Line/Sprite：离线 importer 把 strip/fan 展开为三角形、点/线展开为细四边面
+  （`MeshPrimitiveModes` / `PrimitiveModeNormalsTest`）；运行时 GLB 直读仍跳过非三角 primitive
+  （不新增点/线图元拓扑，见 plans/19 §1）。
   **网格朝向修复**：导入期对「闭合且法线/绕序整体朝内」的实体网格做保守翻正（法线取反 + 绕序反转；
   见 docs/31 §4.3）；`.scn` 灯光组件用**重复 `"type"` 键**（字符串组件类型 + 数值 LightType）——
   任何 Python 脚本改 `.scn` 必须保留重复键（migrate 用 `_JsonPairs` 读写并在丢灯时回滚），
@@ -287,7 +295,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   （动画骨骼 morph 已由 plans/22 支持，见上；KHR 扩展贴图槽、transmission/volume/diffuse_transmission、KTX2 已接入，见上）。
   迁移侧（`docs/31`）：官方 HDRI 环境映射在 `tools/khronos_env.json`，手调表（`MANUAL_CAMERA` /
   `MANUAL_ENV` / `MANUAL_LIGHT` / `MANUAL_REFERENCE`）也在 `tools/migrate_gltf_models.py`；渲染时
-  `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`（HDRI 不入库，缺失自动回退 analytic IBL）。
+  runtime 按场景目录自动探测 `<repo>/.deps/khronos-env` 挂到 `/khronos_env`（也可用 `MAQUE_MOUNT` 覆盖；HDRI 不入库，缺失回退 analytic IBL）。
   **纹理装配并行（docs/bugs/015）**：PBR 文件贴图在 setup 期按 `(ref,srgb)` 去重后并行
   decode+mip（`MAQUE_TEX_THREADS` 默认 `min(8,hw)`；1=串行，`MAQUE_TEX_PRELOAD=0` 关闭，
   `MAQUE_TEX_INFO=1` 打印统计）；`.mesh.json` 也由 `preload_mesh_refs()` 并行 parse
@@ -342,7 +350,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   - `--shot-seq <tmpl> --shot-frames 1,30,60`：tmpl 里 `{}` → 帧号（无 `{}` 则插到扩展名前）；
     拍完最大帧即退出。等价环境变量 `MAQUE_SHOT_SEQ` / `MAQUE_SHOT_FRAMES`。
   - `--shot-every 20 --shot-count 4`：每 20 帧一张、共 4 张后退出（`MAQUE_SHOT_EVERY`/`MAQUE_SHOT_COUNT`）。
-  - `--frames N`：最多跑 N 帧（`MAQUE_MAX_FRAMES`）。**到上限属于正常结束（退出码 0）**，
+  - `--frames N`：最多跑 N 帧（`MAQUE_MAX_FRAMES`；**默认不限制**，普通运行直到窗口关闭/脚本 quit/信号；只有测试/回归显式给上限）。**到上限属于正常结束（退出码 0）**，
     不是失败 —— 之前返回 1，在脚本里看起来像出错。
   PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；无窗口截图尺寸 = 虚拟屏幕
   （设计分辨率 × 视图数）× `render_scale`，默认 1；有窗口的普通渲染目标 = drawable × `render_scale`。

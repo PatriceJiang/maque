@@ -15,8 +15,17 @@ fn light_standard(s: Surface, f0: vec3f, n_cc: vec3f, cc_factor: f32, cc_roughne
   var aniso_t = vec3f(1.0, 0.0, 0.0);
   var aniso_b = vec3f(0.0, 1.0, 0.0);
   if (aniso_on) {
-    let cf = cotangent_frame(s.n, s.w, s.uv);
-    aniso_t = normalize(cf * vec3f(s.aniso_dir, 0.0));
+    /* KHR_materials_anisotropy 的切线空间方向：本引擎不导入 TANGENT 属性，按 glTF 规范
+     * 使用默认切线（局部 +X 投影到切平面），而不是从 UV 导数推 cotangent frame ——
+     * 后者会让同一材质在不同 UV 布局/圆柱展开上出现方向漂移（AnisotropyRotationTest 的带子
+     * 就是典型：UV 切线与网格切线不一致，旋转后的高光方向对不上官方截图）。 */
+    var t = vec3f(1.0, 0.0, 0.0) - s.n * s.n.x;
+    if (dot(t, t) < 1e-8) {
+      t = vec3f(0.0, 0.0, 1.0) - s.n * s.n.z;
+    }
+    let T = normalize(t);
+    let B = normalize(cross(s.n, T));
+    aniso_t = normalize(T * s.aniso_dir.x + B * s.aniso_dir.y);
     aniso_b = normalize(cross(s.n, aniso_t));
   }
   var color = vec3f(0.0);

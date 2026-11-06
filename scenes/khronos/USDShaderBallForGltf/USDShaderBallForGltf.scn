@@ -279,7 +279,7 @@
       ]
     }
   ],
-  "env_background": false,
+  "env_background": true,
   "env_texture": "/khronos_env/neutral.hdr",
   "env_intensity": 0.8429,
   "env_rotation": 0.0

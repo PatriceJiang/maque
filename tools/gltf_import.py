@@ -12,7 +12,7 @@
       layout 1（新）：pos3|normal3|color4|uv0_2|uv1_2              = 14 float / 56B
     仅当 primitive 有 COLOR_0 或其材质任一贴图 texCoord>0 时用 layout 1；
     否则 layout 0 输出与迁移前逐字节一致（旧资产零漂移）。
-  · 只接受三角网格（mode=4/缺省）；其它 mode 跳过并告警（确定性：按 primitive 顺序）
+  · 三角网格（mode=4/缺省）原样；strip/fan 索引展开；点/线展开为细四边面（离线近似）
   · 输出 JSON 排序键 + 固定缩进 → 同一 glTF 导入结果逐字节一致
   · 不做图像编解码：PNG/JPEG 原样搬运（运行时 image 模块按 magic 解码）；
     其它编码（KTX2/BasisU/WebP）跳过并告警
@@ -189,6 +189,92 @@ def compute_normals(positions, indices):
     return [normalize(v) for v in nrm]
 
 
+def expand_primitive_mode(positions, uvs, colors, uvs1, indices, mode):
+    """非三角形 primitive → 三角形列表（离线导入近似；引擎只画三角形）。
+
+    glTF 允许 mode 0..6；本仓库渲染器只有三角光栅，因此：
+      · 5/6（TRIANGLE_STRIP/FAN）→ 索引展开为 triangle list（顶点不变）；
+      · 0/1/2/3（POINTS/LINES/LINE_STRIP/LINE_LOOP）→ 细四边面：
+        点 = 小方块（边长 ~4% 包围盒对角线）、线 = 逐段细长四边形（宽 ~2.5%）。
+    这是**离线导入**的观感近似（MeshPrimitiveModes 这类测试图元），几何语义（线宽/点径）
+    不进入运行时渲染路径。返回 (positions, uvs, colors, uvs1, indices)。
+    """
+    n = len(positions)
+    if mode in (5, 6):  # strip / fan（按原始 indices 顺序展开；strip 偶数三角形翻转绕序）
+        seq = indices if indices else list(range(n))
+        out = []
+        if mode == 5:
+            for t in range(0, max(0, len(seq) - 2)):
+                a, b, c = seq[t], seq[t + 1], seq[t + 2]
+                out += [a, b, c] if t % 2 == 0 else [b, a, c]
+        else:
+            for t in range(1, max(1, len(seq) - 1)):
+                out += [seq[0], seq[t], seq[t + 1]]
+        return positions, uvs, colors, uvs1, out
+
+    # 线/点：按 XY 平面展开（这些测试图元都在 z=0 附近；3D 线也能出可见四边面）
+    xs = [p[0] for p in positions] or [0.0, 1.0]
+    ys = [p[1] for p in positions] or [0.0, 1.0]
+    zs = [p[2] for p in positions] or [0.0, 1.0]
+    diag = math.sqrt((max(xs) - min(xs)) ** 2 + (max(ys) - min(ys)) ** 2 +
+                     (max(zs) - min(zs)) ** 2)
+    width = max(1e-4, diag * (0.04 if mode == 0 else 0.025))
+    half = width * 0.5
+
+    new_pos, new_uv, new_col, new_uv1, out = [], [], [], [], []
+
+    def emit(quad, quad_uv, quad_col, quad_uv1, tris):
+        base = len(new_pos)
+        new_pos.extend(quad)
+        new_uv.extend(quad_uv)
+        if colors is not None:
+            new_col.extend(quad_col)
+        if uvs1 is not None:
+            new_uv1.extend(quad_uv1)
+        for t in tris:
+            out.append(base + t)
+
+    if mode == 0:  # POINTS → 小方块
+        for i in range(n):
+            p = positions[i]
+            uv = uvs[i]
+            quad = [[p[0] - half, p[1] - half, p[2]], [p[0] + half, p[1] - half, p[2]],
+                    [p[0] + half, p[1] + half, p[2]], [p[0] - half, p[1] + half, p[2]]]
+            c = [colors[i]] * 4 if colors is not None else []
+            u1 = [uvs1[i]] * 4 if uvs1 is not None else []
+            emit(quad, [uv] * 4, c, u1, [0, 1, 2, 0, 2, 3])
+        return (new_pos, new_uv,
+                new_col if colors is not None else None,
+                new_uv1 if uvs1 is not None else None, out)
+
+    # 线段表
+    segs = []
+    if mode == 1:    # LINES
+        segs = [(indices[i], indices[i + 1]) for i in range(0, len(indices) - 1, 2)]
+    elif mode == 2:  # LINE_LOOP
+        segs = [(indices[i], indices[(i + 1) % len(indices)]) for i in range(len(indices))]
+    else:            # LINE_STRIP
+        segs = [(indices[i], indices[i + 1]) for i in range(len(indices) - 1)]
+    for a, b in segs:
+        pa, pb = positions[a], positions[b]
+        dx, dy = pb[0] - pa[0], pb[1] - pa[1]
+        ln = math.hypot(dx, dy)
+        if ln > 1e-8:
+            px, py = -dy / ln * half, dx / ln * half
+        else:
+            px, py = half, 0.0
+        quad = [[pa[0] + px, pa[1] + py, pa[2]], [pa[0] - px, pa[1] - py, pa[2]],
+                [pb[0] + px, pb[1] + py, pb[2]], [pb[0] - px, pb[1] - py, pb[2]]]
+        uv = [uvs[a], uvs[a], uvs[b], uvs[b]]
+        c = [colors[a], colors[a], colors[b], colors[b]] if colors is not None else []
+        u1 = [uvs1[a], uvs1[a], uvs1[b], uvs1[b]] if uvs1 is not None else []
+        # 两个三角形：(a+,a-,b-)、(a+,b-,b+)
+        emit(quad, uv, c, u1, [0, 1, 3, 0, 3, 2])
+    return (new_pos, new_uv,
+            new_col if colors is not None else None,
+            new_uv1 if uvs1 is not None else None, out)
+
+
 def sniff_image(data):
     """按 magic 判断贴图编码（不信任扩展名/mimeType）。返回 'png'/'jpeg'/'gif'/'webp'/'ktx2'/None。"""
     if len(data) >= 8 and data[:8] == b"\x89PNG\r\n\x1a\n":
@@ -249,6 +335,25 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
     # 扩展字段只写"非默认"值（无扩展材质不因扩展逻辑产生漂移）。例外：side/double_sided 对
     # **每个**材质都写 —— 修 M1（运行时剔除只认 side，不看 double_sided）→ 已入库资产一次性重生成。
     exts = mat.get("extensions") or {}
+
+    # KHR_materials_pbrSpecularGlossiness（旧扩展；Khronos 样例仍用）→ MR 近似（与 runtime 同口径）：
+    #   · 有 specularGlossinessTexture 且 specularFactor 非黑 → 金属：baseColor=SG 贴图 RGB、
+    #     metallic=1、roughness=1-0.5*gloss（贴图 A 的 glossiness 无通道重映射，用因子折中）；
+    #   · 否则电介质：baseColor=diffuse、metallic=0、roughness=1-gloss。
+    sg = exts.get("KHR_materials_pbrSpecularGlossiness") or {}
+    sg_metallic = False
+    if sg:
+        spec = [float(x) for x in sg.get("specularFactor", [1.0, 1.0, 1.0])]
+        gloss = max(0.0, min(1.0, float(sg.get("glossinessFactor", 1.0))))
+        sg_metallic = ("specularGlossinessTexture" in sg) and max(spec) > 0.01
+        if sg_metallic:
+            m["metallic"] = 1.0
+            m["roughness"] = max(0.04, min(1.0, 1.0 - 0.5 * gloss))
+        else:
+            c = [float(x) for x in sg.get("diffuseFactor", [1.0, 1.0, 1.0, 1.0])]
+            m["base_color"] = {"r": c[0], "g": c[1], "b": c[2], "a": c[3]}
+            m["metallic"] = 0.0
+            m["roughness"] = max(0.04, min(1.0, 1.0 - gloss))
 
     def put_num(field, value, default):
         if float(value) != float(default):
@@ -453,6 +558,68 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
               file=sys.stderr)
         return ""
 
+    # spec-gloss → MR：把 diffuse（底色）与 specularGlossiness（RGB=镜面色、A=glossiness）
+    # 逐像素合成为 baseColor + metallicRoughness 两张贴图（PIL 可选依赖；无 PIL 时退回单贴图近似）。
+    sg_merged = False
+    if sg_metallic:
+        def _sg_image_bytes(tinfo):
+            if not tinfo:
+                return None
+            tex = js["textures"][tinfo["index"]]
+            src = tex.get("source")
+            if src is None:
+                for key in ("EXT_texture_webp", "KHR_texture_basisu", "EXT_texture_avif"):
+                    ext = (tex.get("extensions") or {}).get(key) or {}
+                    if "source" in ext:
+                        src = ext["source"]
+                        break
+            if src is None:
+                return None
+            img = js["images"][src]
+            if img.get("uri") and not img["uri"].startswith("data:"):
+                with open(os.path.join(base_dir, urllib.parse.unquote(img["uri"])), "rb") as f:
+                    return f.read()
+            if img.get("uri"):
+                return base64.b64decode(img["uri"].split(",", 1)[1])
+            view = js["bufferViews"][img["bufferView"]]
+            buf = buffers[view["buffer"]]
+            off = view.get("byteOffset", 0)
+            return buf[off:off + view["byteLength"]]
+
+        try:
+            from PIL import Image
+            import io as _io
+            db = _sg_image_bytes(sg.get("diffuseTexture"))
+            sb = _sg_image_bytes(sg.get("specularGlossinessTexture"))
+            if db and sb:
+                diff = Image.open(_io.BytesIO(db)).convert("RGB")
+                spec = Image.open(_io.BytesIO(sb)).convert("RGBA")
+                if spec.size != diff.size:
+                    spec = spec.resize(diff.size)
+                metal = spec.convert("L")                 # specular 亮度 = metallic 掩码
+                base = Image.composite(spec.convert("RGB"), diff, metal)
+                rough = spec.getchannel("A").point(lambda a: 255 - a)   # glossiness → roughness
+                white = Image.new("L", diff.size, 255)
+                mr = Image.merge("RGB", (white, rough, metal))
+                os.makedirs(tex_dir, exist_ok=True)
+                mat_base = _sanitize_file_base(str(m.get("name") or "material"))
+                base_name = mat_base + "_sg_base.png"
+                mr_name = mat_base + "_sg_mr.png"
+                base.save(os.path.join(tex_dir, base_name))
+                mr.save(os.path.join(tex_dir, mr_name))
+                images_out.add(base_name)
+                images_out.add(mr_name)
+                m["base_color_texture"] = "textures/" + base_name
+                m["metallic_roughness_texture"] = "textures/" + mr_name
+                m["metallic"] = 1.0
+                m["roughness"] = 1.0
+                sg_merged = True
+                print(f"gltf_import: spec-gloss → MR 逐像素合成（{base_name} / {mr_name}）",
+                      file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001 —— PIL 缺失/解码失败都退回单贴图近似
+            print(f"gltf_import: spec-gloss 逐像素转换失败（{exc}），退回单贴图近似",
+                  file=sys.stderr)
+
     # uv1_mask：bit0..7 = base/mr/ao/normal/emissive/matcap/gradient/clearcoat_normal
     # 使用 TEXCOORD_1（仅非 0 时写；对应网格必须 vertex_layout=1，uv1 数据在顶点末尾）。
     UV1_BIT = {"base": 1 << 0, "mr": 1 << 1, "ao": 1 << 2, "normal": 1 << 3,
@@ -464,15 +631,20 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         if effective_texcoord(tinfo) > 0:
             uv1_mask |= UV1_BIT[bit]
 
-    pbr_tex = pbr.get("baseColorTexture")
-    slot = tex_slot(pbr_tex)
-    if slot:
-        m["base_color_texture"] = slot
+    if sg_metallic:
+        pbr_tex = sg.get("specularGlossinessTexture")
+    else:
+        pbr_tex = sg.get("diffuseTexture") if sg else pbr.get("baseColorTexture")
+    if not sg_merged:
+        slot = tex_slot(pbr_tex)
+        if slot:
+            m["base_color_texture"] = slot
     mark_uv1("base", pbr_tex)
     mr_tex = pbr.get("metallicRoughnessTexture")
-    slot = tex_slot(mr_tex)
-    if slot:
-        m["metallic_roughness_texture"] = slot
+    if not sg_merged:
+        slot = tex_slot(mr_tex)
+        if slot:
+            m["metallic_roughness_texture"] = slot
     mark_uv1("mr", mr_tex)
     normal_tex = mat.get("normalTexture")
     slot = tex_slot(normal_tex)
@@ -1432,9 +1604,6 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
         mesh_weights = (mesh or {}).get("weights")
         for pi, prim in enumerate(mesh.get("primitives", [])):
             mode = prim.get("mode", MODE_TRIANGLES)
-            if mode != MODE_TRIANGLES:
-                print(f"gltf_import: 跳过非三角 primitive mesh={mi} prim={pi} mode={mode}", file=sys.stderr)
-                continue
             attrs = prim.get("attributes", {})
             if "POSITION" not in attrs:
                 continue
@@ -1463,11 +1632,19 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
             indices = (accessor_values(js, buffers, prim["indices"])
                        if "indices" in prim else [[i] for i in range(n)])
             indices = [int(r[0]) for r in indices]
+            if mode != MODE_TRIANGLES:
+                positions, uvs, colors, uvs1, indices = expand_primitive_mode(
+                    positions, uvs, colors, uvs1, indices, mode)
+                n = len(positions)
+                print(f"gltf_import: mode={mode} primitive mesh={mi} prim={pi} → "
+                      f"三角形展开（顶点 {n}）", file=sys.stderr)
             # 缺 NORMAL：glTF 规范允许。**有索引时必须按真实 indices** 累积（旧实现传 range(n)
             # 把顶点序号当三角形汤 → 法线随机错）；无索引时 range(n) 才等价于索引序列。
+            # 非三角 primitive 在上一步已展开成三角索引；这里始终用最终 indices 重算法线
+            # （旧写法在「无 indices 的线/点 primitive」上会退回 range(n)，法线随机错）。
             normals = (accessor_values(js, buffers, attrs["NORMAL"])
                        if "NORMAL" in attrs
-                       else compute_normals(positions, indices if "indices" in prim else list(range(n))))
+                       else compute_normals(positions, indices))
             mat_idx = prim.get("material", -1)
             mats = []
             if mat_idx >= 0:
