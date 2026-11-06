@@ -112,12 +112,18 @@ extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
     if (!out || out_size < (size_t)e.TW * (size_t)SHpx * 4) return 2;
     MQ_TRACY_ZONE_N(render, "frame");   // Tracy：宿主侧补渲染（mq_host_tick 的额外一次成帧）
     float bg[4] = { e.bg[0], e.bg[1], e.bg[2], e.bg[3] };
-    const int rc = (!meshes.empty() && e.rapi->render_mesh_views)
-        ? e.rapi->render_mesh_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
-                                    draws.data(), (uint32_t)draws.size(),
-                                    meshes.data(), (uint32_t)meshes.size(), bg, out, (uint32_t)out_size)
-        : e.rapi->render_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
-                               draws.data(), (uint32_t)draws.size(), bg, out, (uint32_t)out_size);
+    const int rc = e.rapi->render_ui_views
+        ? e.rapi->render_ui_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
+                                  draws.data(), (uint32_t)draws.size(),
+                                  meshes.data(), (uint32_t)meshes.size(),
+                                  e.ui_masks.data(), (uint32_t)e.ui_masks.size(),
+                                  bg, out, (uint32_t)out_size)
+        : ((!meshes.empty() && e.rapi->render_mesh_views)
+            ? e.rapi->render_mesh_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
+                                        draws.data(), (uint32_t)draws.size(),
+                                        meshes.data(), (uint32_t)meshes.size(), bg, out, (uint32_t)out_size)
+            : e.rapi->render_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
+                                   draws.data(), (uint32_t)draws.size(), bg, out, (uint32_t)out_size));
     return rc == 0 ? 0 : 3;
 }
 

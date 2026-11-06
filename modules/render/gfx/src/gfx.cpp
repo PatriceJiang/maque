@@ -1,4 +1,4 @@
-/* WebGPU 渲染后端：作为插件 .so 实现 DSL 生成的 mq_renderer_v3（maque_ifaces.h）。
+/* WebGPU 渲染后端：作为插件 .so 实现 DSL 生成的 mq_renderer_v4（maque_ifaces.h）。
  * 仅导出 mq_module_query；运行时经 maque::module(dlopen) 加载。 */
 #include "maque_ifaces.h"
 #include "core/module/mq_module.h"
@@ -1210,10 +1210,11 @@ static Device* create_device(std::string* out_backend) {
 
     if (solid_wgsl) dv->solidShader = make_shader(dv->device, solid_wgsl);
     if (dv->solidShader) {
-        WGPUBindGroupLayoutEntry e[2] = {};
+        WGPUBindGroupLayoutEntry e[3] = {};
         e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
         e[1].binding = 1; e[1].visibility = WGPUShaderStage_Vertex; e[1].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
-        WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 2; bd.entries = e;
+        e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment; e[2].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
+        WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 3; bd.entries = e;
         dv->solidBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->solidBgl;
         dv->solidPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
@@ -1239,12 +1240,13 @@ static Device* create_device(std::string* out_backend) {
         dv->blitSampler = wgpuDeviceCreateSampler(dv->device, &sd);
     }
     if (dv->texShader) {
-        WGPUBindGroupLayoutEntry e[4] = {};
+        WGPUBindGroupLayoutEntry e[5] = {};
         e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
         e[1].binding = 1; e[1].visibility = WGPUShaderStage_Vertex; e[1].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
         e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment; e[2].texture.sampleType = WGPUTextureSampleType_Float; e[2].texture.viewDimension = WGPUTextureViewDimension_2D;
         e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment; e[3].sampler.type = WGPUSamplerBindingType_Filtering;
-        WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 4; bd.entries = e;
+        e[4].binding = 4; e[4].visibility = WGPUShaderStage_Fragment; e[4].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
+        WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 5; bd.entries = e;
         dv->texBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->texBgl;
         dv->texPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
@@ -1404,9 +1406,9 @@ static void destroy_device(Device* dv) {
     delete dv;
 }
 
-/* 实例数据（64B）：与 WGSL `struct Inst` 严格对齐 —— 定义在 ui_batch.h（合批器同用一份）。 */
+/* 实例数据（80B）：与 WGSL `struct Inst` 严格对齐 —— 定义在 ui_batch.h（合批器同用一份）。 */
 using GpuInst = BatchInstance;
-static_assert(sizeof(GpuInst) == 64, "GpuInst 必须与 WGSL Inst 布局一致（stride 64）");
+static_assert(sizeof(GpuInst) == 80, "GpuInst 必须与 WGSL Inst 布局一致（stride 80）");
 
 static WGPUBuffer make_ibuf(Device* dv, const std::vector<GpuInst>& v) {
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
@@ -2653,6 +2655,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_view* views, uint32_t nviews,
                            const mq_renderer_item* items, uint32_t count,
                            const mq_renderer_mesh* meshes, uint32_t mesh_count,
+                           const mq_renderer_mask* masks, uint32_t mask_count,
                            const float* bg, uint8_t* out, uint32_t out_size,
                            WGPUTexture target = nullptr,
                            WGPUTextureFormat target_format = WGPUTextureFormat_RGBA8Unorm,
@@ -3149,11 +3152,11 @@ static int32_t render_2d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat
         append_shader_graph_sprite_items(dv, f, items);
         return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                            items.data(), (uint32_t)items.size(), f->meshes, f->mesh_count,
-                           bg, nullptr, 0, target, format, clear_first);
+                           nullptr, 0, bg, nullptr, 0, target, format, clear_first);
     }
     return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                        f->items, f->item_count, f->meshes, f->mesh_count,
-                       bg, nullptr, 0, target, format, clear_first);
+                       nullptr, 0, bg, nullptr, 0, target, format, clear_first);
 }
 
 /* 场景本体（shader pass → 3D → 2D 覆盖层）画进给定目标；不含后处理。 */
@@ -4465,6 +4468,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_view* views, uint32_t nviews,
                            const mq_renderer_item* items, uint32_t count,
                            const mq_renderer_mesh* meshes, uint32_t mesh_count,
+                           const mq_renderer_mask* masks, uint32_t mask_count,
                            const float* bg, uint8_t* out, uint32_t out_size,
                            WGPUTexture target,
                            WGPUTextureFormat target_format,
@@ -4479,6 +4483,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
     ensure_2d_pipelines(dv, target ? target_format : WGPUTextureFormat_RGBA8Unorm);
     if (count && !items) return 1;
     if (mesh_count && !meshes) return 1;
+    if (mask_count && !masks) return 1;
     if (nviews == 0 || !views) {
         static mq_renderer_view def{ 0, 0, 0, 0, 0, 0 };
         def.vw = (float)TW; def.vh = (float)TH;
@@ -4536,7 +4541,8 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         item_insts[i] = GpuInst{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
                                  { s.uv0, s.uv1, s.uv2, s.uv3 },
                                  { rect ? s.half_w : 0.0F, rect ? s.half_h : 0.0F },
-                                 rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F };
+                                 rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F,
+                                 s.mask, { 0, 0, 0 } };
         /* 字形/像素画：1 纹素 = 1 像素（nearest）；其余 linear。裁剪矩形是状态键的一部分
          * （不同 scissor 不能共享一次 drawcall）；w/h<=0 表示不裁剪。 */
         BatchKey key{ has_tex ? s.texture : -1, s.filter == 1 };
@@ -4674,6 +4680,23 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
     ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     ubd.size = 48;
     WGPUBuffer ibuf = insts.empty() ? nullptr : make_ibuf(dv, insts);
+    /* mask 数组：0 号恒为 identity（item.mask=0 表示无 mask）；无 mask 时也绑 1 条 dummy。 */
+    const uint32_t mask_n = mask_count ? mask_count : 1;
+    WGPUBuffer maskbuf = nullptr;
+    {
+        WGPUBufferDescriptor mbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        mbd.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst;
+        mbd.size = (uint64_t)mask_n * sizeof(mq_renderer_mask);
+        maskbuf = wgpuDeviceCreateBuffer(dv->device, &mbd);
+        if (mask_count) {
+            wgpuQueueWriteBuffer(dv->queue, maskbuf, 0, masks, (uint64_t)mask_count * sizeof(mq_renderer_mask));
+        } else {
+            mq_renderer_mask dummy{};
+            dummy.x0 = 0; dummy.y0 = 0; dummy.x1 = (float)TW; dummy.y1 = (float)TH;
+            dummy.opacity = 1.0F; dummy.curve = 1; dummy.next = -1;
+            wgpuQueueWriteBuffer(dv->queue, maskbuf, 0, &dummy, sizeof dummy);
+        }
+    }
 
     WGPUBuffer mvbuf = nullptr, mibuf = nullptr;
     if (!mverts.empty() && !midx.empty()) {
@@ -4864,18 +4887,22 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 : 0ull;
             WGPUBindGroup bgroup = find_bg(bkey);
             if (!bgroup) {
-                WGPUBindGroupEntry be[4] = {};
+                WGPUBindGroupEntry be[5] = {};
                 be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
                 be[1].binding = 1; be[1].buffer = ibuf;
                 be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
+                be[4].binding = 4; be[4].buffer = maskbuf;
+                be[4].size = (uint64_t)mask_n * sizeof(mq_renderer_mask);
                 WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
                 if (textured) {
                     be[2].binding = 2; be[2].textureView = dv->textures[c.key.texture]->view;
                     be[3].binding = 3;
                     be[3].sampler = c.key.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
-                    bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
+                    bgd.layout = dv->texBgl; bgd.entryCount = 5; bgd.entries = be;
                 } else {
-                    bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
+                    be[2].binding = 2; be[2].buffer = maskbuf;
+                    be[2].size = (uint64_t)mask_n * sizeof(mq_renderer_mask);
+                    bgd.layout = dv->solidBgl; bgd.entryCount = 3; bgd.entries = be;
                 }
                 bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
                 bg_cache.push_back({ bkey, bgroup });
@@ -4933,6 +4960,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
     }
     if (mibuf) wgpuBufferRelease(mibuf);
     if (mvbuf) wgpuBufferRelease(mvbuf);
+    if (maskbuf) wgpuBufferRelease(maskbuf);
     if (ibuf) wgpuBufferRelease(ibuf);
     wgpuTextureViewRelease(view);
     if (!target) wgpuTextureRelease(tex);   /* 外部 target（swapchain 纹理）归调用方所有 */
@@ -4944,7 +4972,7 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
                               const mq_renderer_view* views, uint32_t nviews,
                               const mq_renderer_item* items, uint32_t count,
                               const float* bg, uint8_t* out, uint32_t out_size) {
-    return render_impl(self, TW, TH, views, nviews, items, count, nullptr, 0, bg, out, out_size);
+    return render_impl(self, TW, TH, views, nviews, items, count, nullptr, 0, nullptr, 0, bg, out, out_size);
 }
 
 /* 图元 + 网格一次成帧（骨骼动画等任意三角网格走这里）。 */
@@ -4953,7 +4981,18 @@ static int32_t r_render_mesh_views(void* self, int32_t TW, int32_t TH,
                                    const mq_renderer_item* items, uint32_t count,
                                    const mq_renderer_mesh* meshes, uint32_t mesh_count,
                                    const float* bg, uint8_t* out, uint32_t out_size) {
-    return render_impl(self, TW, TH, views, nviews, items, count, meshes, mesh_count, bg, out, out_size);
+    return render_impl(self, TW, TH, views, nviews, items, count, meshes, mesh_count, nullptr, 0, bg, out, out_size);
+}
+
+/* v4：图元 + 网格 + 程序化 alpha mask。 */
+static int32_t r_render_ui_views(void* self, int32_t TW, int32_t TH,
+                                 const mq_renderer_view* views, uint32_t nviews,
+                                 const mq_renderer_item* items, uint32_t count,
+                                 const mq_renderer_mesh* meshes, uint32_t mesh_count,
+                                 const mq_renderer_mask* masks, uint32_t mask_count,
+                                 const float* bg, uint8_t* out, uint32_t out_size) {
+    return render_impl(self, TW, TH, views, nviews, items, count, meshes, mesh_count,
+                       masks, mask_count, bg, out, out_size);
 }
 
 } // extern "C"
@@ -4964,9 +5003,9 @@ static uint32_t r_last_2d_batches(void* self) {
     return dv ? dv->last2dBatches : 0;
 }
 
-static const mq_renderer_v3 g_api = {
-    { (uint32_t)sizeof(mq_renderer_v3), MQ_RENDERER_API_VERSION },
-    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views,
+static const mq_renderer_v4 g_api = {
+    { (uint32_t)sizeof(mq_renderer_v4), MQ_RENDERER_API_VERSION },
+    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views, r_render_ui_views,
     /* ---- 3D / 直接呈现（追加；plans/18-pbr-3d.md）---- */
     r_attach_window, r_resize_surface, r_caps, r_create_texture2, r_create_mesh, r_destroy_mesh,
     r_render_frame3d, r_present,

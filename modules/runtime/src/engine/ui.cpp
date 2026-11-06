@@ -316,6 +316,7 @@ void Engine::ui_step() {
                     }
                 }
                 if (status) {
+                    status->ui_mask_override = -1;              // 百分比不随内容淡出
                     int sid = -1;
                     for (int k : e->children) if (scene->at(k) == status) { sid = k; break; }
                     auto* sl = sid >= 0 ? component<scn::Label>(*status) : nullptr;

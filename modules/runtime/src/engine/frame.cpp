@@ -692,9 +692,14 @@ void Engine::step_frame(bool render_frame) {
         }  /* !skip2d */
     } else if (rapi && rself) {
         MQ_TRACY_ZONE_N(render, "frame");   // Tracy：渲染插件成帧 + 回读（颜色 = render 模块）
-        /* 有网格（骨骼动画）时走 render_mesh_views（图元 + 网格一次成帧、统一 layer/z 排序）；
-         * 没有网格时保持原路径（老插件/纯精灵场景零行为变化）。 */
-        if (!spine_meshes.empty() && rapi->render_mesh_views)
+        /* v4：图元 + 网格 + 程序化 alpha mask（ListView fade）一次成帧。 */
+        if (rapi->render_ui_views)
+            rapi->render_ui_views(rself, TW, SHpx, views.data(), (uint32_t)views.size(),
+                                  draws.data(), (uint32_t)draws.size(),
+                                  spine_meshes.data(), (uint32_t)spine_meshes.size(),
+                                  ui_masks.data(), (uint32_t)ui_masks.size(),
+                                  bg, pixels.data(), (uint32_t)pixels.size());
+        else if (!spine_meshes.empty() && rapi->render_mesh_views)
             rapi->render_mesh_views(rself, TW, SHpx, views.data(), (uint32_t)views.size(),
                                     draws.data(), (uint32_t)draws.size(),
                                     spine_meshes.data(), (uint32_t)spine_meshes.size(),

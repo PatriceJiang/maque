@@ -39,8 +39,10 @@ struct BatchInstance {
     float half[2];     /* 48 矩形半尺寸（两者都 > 0 才算矩形） */
     float shape;       /* 56 0=圆 1=矩形 */
     float snap;        /* 60 1=左上角吸附整数目标像素 */
+    int32_t mask;      /* 64 程序化 alpha mask 链头；0=无 */
+    int32_t pad[3];    /* 68 对齐到 80B，与 WGSL mask/pad 一致 */
 };
-static_assert(sizeof(BatchInstance) == 64, "BatchInstance 必须与 WGSL Inst 布局一致（stride 64）");
+static_assert(sizeof(BatchInstance) == 80, "BatchInstance 必须与 WGSL Inst 布局一致（stride 80）");
 
 /* 批次状态键：只有它相同的图元才能共享一次 drawcall。
  * texture < 0 = solid（无贴图）；nearest 选择采样器（字形/像素画用 nearest）。 */

@@ -55,6 +55,14 @@ float item_extent(float half_w, float half_h, float size) {
 }  // namespace
 
 void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
+    /* 程序化 alpha mask 链：0 号恒为 identity（item.mask=0 不需要查表）。 */
+    eng.ui_masks.clear();
+    {
+        mq_renderer_mask id{};
+        id.x0 = 0; id.y0 = 0; id.x1 = (float)eng.W; id.y1 = (float)eng.H;
+        id.opacity = 1.0F; id.curve = 1; id.next = -1;
+        eng.ui_masks.push_back(id);
+    }
     /* 粒子（docs/15 §4）：只读提取，alpha 随寿命衰减；在实体图元之后按稳定顺序输出 */
     for (auto& p : eng.systems.particles) {
         const float t = p.max_life > 0 ? p.life / p.max_life : 1.0F;
@@ -68,7 +76,8 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
 
     /* 递归提取（不能再用扁平 visit）：裁剪是**子树继承**的，必须在进入子节点时带着
      * 父节点的可见矩形集合。遍历顺序与 visit 完全一致（根升序、子升序）。 */
-    std::function<void(int, const ClipSet&)> walk = [&](int idx, const ClipSet& parent_clip) {
+    std::function<void(int, const ClipSet&, int)> walk = [&](int idx, const ClipSet& parent_clip,
+                                                            int parent_mask) {
         SceneNode* ep = at(idx);
         if (!ep) return;
         SceneNode& e = *ep;
@@ -78,6 +87,39 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
         if (eng.has_ui_components)
             compute_ui_clip(e, parent_clip, (float)eng.W, (float)eng.H, self_clip, child_clip);
         else { self_clip = parent_clip; child_clip = parent_clip; }
+
+        /* 程序化 alpha mask：ListView 把视口 + 四边 fade + content_alpha 推入链；
+         * 子节点继承，嵌套 ListView 自动相乘。滚动条/百分比使用父 mask（不随内容淡出）。 */
+        int self_mask = parent_mask, child_mask = parent_mask;
+        static const bool alpha_mask_enabled = [] {
+            const char* v = std::getenv("MAQUE_UI_ALPHA_MASK");
+            return !v || std::strcmp(v, "0") != 0;
+        }();
+        if (const auto* lv = component<ui::ListView>(e); lv && alpha_mask_enabled) {
+            const auto* ctl = component<ui::Control>(e);
+            const bool has_fade = lv->fade_top > 0.0F || lv->fade_bottom > 0.0F ||
+                                  lv->fade_left > 0.0F || lv->fade_right > 0.0F ||
+                                  lv->content_alpha < 0.999F;
+            if (ctl && has_fade) {
+                const float s = e.world_scale > 0.0F ? e.world_scale : 1.0F;
+                const float vw = ctl->offset_max.x * s, vh = ctl->offset_max.y * s;
+                if (vw > 0.0F && vh > 0.0F) {
+                    mq_renderer_mask m{};
+                    m.x0 = e.world_x;
+                    m.y0 = (float)eng.H - (e.world_y + vh);
+                    m.x1 = e.world_x + vw;
+                    m.y1 = (float)eng.H - e.world_y;
+                    m.fade_l = lv->fade_left * s; m.fade_t = lv->fade_top * s;
+                    m.fade_r = lv->fade_right * s; m.fade_b = lv->fade_bottom * s;
+                    m.opacity = lv->content_alpha;
+                    m.curve = (int)lv->fade_curve;
+                    m.next = parent_mask;
+                    eng.ui_masks.push_back(m);
+                    child_mask = (int)eng.ui_masks.size() - 1;
+                }
+            }
+        }
+        if (e.ui_mask_override >= -1) { self_mask = e.ui_mask_override; child_mask = e.ui_mask_override; }
 
         /* 节点级剔除：ListView 滚出视口的行 Label 不再排版/提交（text_h 是上一帧度量）。
          * 只对未旋转标签做保守 AABB；描边/阴影留 2px 余量。 */
@@ -112,11 +154,12 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 it.half_h = h * 0.5F;
                 it.r = r; it.g = g; it.b = b; it.a = 1.0F;
                 it.texture = -1; it.layer = 1; it.z = btn->z;
+                it.mask = self_mask;
                 emit_with_clip(out, it, self_clip, (float)eng.H);
                 continue;
             }
             if (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) {
-                eng.extract_text(eng, idx, e, d, out, e.world_opacity, self_clip);
+                eng.extract_text(eng, idx, e, d, out, e.world_opacity, self_clip, self_mask);
                 continue;
             }
             /* UI 图片（ui.Image，docs/17）：layer=1 的带纹理矩形。
@@ -153,6 +196,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 base.rotation = 0.0F;                       /* ui.Image 暂不支持旋转（轴心是节点左下角） */
                 base.layer = 1;
                 base.z = ctl ? ctl->z_index : e.z_index;    /* 默认 0 = 文字（z=100+）之下 */
+                base.mask = self_mask;
 
                 const float tex_w = img->texture_size.x, tex_h = img->texture_size.y;
                 const bool nine = (img->nine_patch_margin.x > 0.0F || img->nine_patch_margin.y > 0.0F ||
@@ -210,6 +254,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                             it.r = c.x; it.g = c.y; it.b = c.z;
                             it.a = c.w * e.world_opacity;
                             it.texture = -1; it.layer = 1; it.z = z;
+                            it.mask = self_mask;
                             emit_with_clip(out, it, clip, (float)eng.H);
                         };
                         const float cx = (bar.x0 + bar.x1) * 0.5F;
@@ -278,6 +323,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                     if (rt.handle == tex) { it.filter = rt.filter == 0 ? 1 : 0; break; }
             }
             it.layer = 0;                                        // 世界层
+            it.mask = self_mask;
             /* 节点 z_index 必须参与排序（docs/bugs/013）：此前只写实体 id，
              * 于是 scn.Sprite 图层永远按创建顺序画、z_index 静默无效 —— 树无法盖住坦克。
              * 与 UI/Spine 用同一套 "z_index*100000+id" 稳定键（同 z 时仍按 id，禁指针序）。 */
@@ -285,10 +331,10 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             emit_with_clip(out, it, self_clip, (float)eng.H);
         }
 
-        for (int k : e.children) walk(k, child_clip);
+        for (int k : e.children) walk(k, child_clip, child_mask);
     };
 
-    for (int r : roots) walk(r, ClipSet{});
+    for (int r : roots) walk(r, ClipSet{}, 0);
 }
 
 }  // namespace maque::rt

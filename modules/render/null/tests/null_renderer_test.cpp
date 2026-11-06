@@ -10,9 +10,9 @@ int failures = 0;
 }
 
 int main() {
-    const mq_renderer_v3* api = mq_renderer_null_api();
+    const mq_renderer_v4* api = mq_renderer_null_api();
     CHECK(api != nullptr);
-    CHECK(api->header.struct_size == sizeof(mq_renderer_v3));
+    CHECK(api->header.struct_size == sizeof(mq_renderer_v4));
     const char* backend = nullptr;
     void* self = api->create(&backend);
     CHECK(self != nullptr);

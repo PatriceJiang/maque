@@ -146,5 +146,39 @@ if [[ "$SCENE" == *ui_list/items.scn ]]; then
     [ -n "$items" ] || { echo "ui_list_e2e: 没有 ui_batch 统计"; exit 1; }
     [ "$items" -lt 700 ] || { echo "ui_list_e2e: 视口外子节点未剔除 items=$items"; exit 1; }
     echo "ui_list_e2e: culled items=$items"
+
+    # 程序化 alpha mask A/B：同样的 ListView 用 MAQUE_UI_ALPHA_MASK=0 关掉 fade，
+    # 顶部/底部边缘必须变暗，中间与滚动条必须逐字节不变。
+    env MAQUE_HEADLESS=1 MAQUE_UI_ALPHA_MASK=0 "$PLAYER" --shot "$WORK/ui_list_nofade.ppm" \
+        --shot-frame 1 "$SCENE" >"$WORK/ui_list_nofade.log" 2>&1 \
+        || { cat "$WORK/ui_list_nofade.log"; exit 1; }
+    "$PY" - "${WORK}/ui_list_1.ppm" "${WORK}/ui_list_nofade.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); parts = d.split(b'\n', 3)
+    w, h = map(int, parts[1].split()); return w, h, parts[3]
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+def px(p, x, y): return tuple(p[(y * w + x) * 3:(y * w + x) * 3 + 3])
+top_a, top_b = px(a, 75, 80), px(b, 75, 80)
+mid_a, mid_b = px(a, 75, 180), px(b, 75, 180)
+bot_a, bot_b = px(a, 75, 320), px(b, 75, 320)
+bar_a, bar_b = px(a, 601, 90), px(b, 601, 90)
+if sum(top_a) >= sum(top_b) * 0.9:
+    print(f'ui_list_e2e: 顶部 fade 未生效 {top_a} vs {top_b}')
+    sys.exit(1)
+if top_a == top_b:
+    print('ui_list_e2e: 顶部 fade 像素完全相同')
+    sys.exit(1)
+if mid_a != mid_b:
+    print(f'ui_list_e2e: 中间行被误淡出 {mid_a} vs {mid_b}')
+    sys.exit(1)
+if sum(bot_a) >= sum(bot_b) * 0.7:
+    print(f'ui_list_e2e: 底部 fade 未生效 {bot_a} vs {bot_b}')
+    sys.exit(1)
+if bar_a != bar_b:
+    print(f'ui_list_e2e: 滚动条被内容 fade 影响 {bar_a} vs {bar_b}')
+    sys.exit(1)
+print(f'ui_list_e2e: fade top={sum(top_a)}/{sum(top_b)} bottom={sum(bot_a)}/{sum(bot_b)} mid={mid_a}')
+PY
 fi
 echo "ui_list_e2e: ok"

@@ -131,7 +131,9 @@
           "clip_content": true,
           "scroll_pos": 0.0,
           "wheel_step": 48.0,
-          "show_scrollbar": true
+          "show_scrollbar": true,
+          "fade_top": 32.0,
+          "fade_bottom": 32.0
         }
       ],
       "children": [

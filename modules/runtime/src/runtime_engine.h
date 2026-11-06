@@ -70,7 +70,7 @@ struct SystemsRuntime {
 };
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
-    const mq_renderer_v3* rapi = nullptr;                 // 渲染器插件接口
+    const mq_renderer_v4* rapi = nullptr;                 // 渲染器插件接口
     void*               rself = nullptr;                  // 渲染器实例
     mq_vfs*             vfs = nullptr;
     /* 多脚本/多语言（docs/14 §多 VM）：**事件总线**持有全部 VM 并负责按声明顺序投递。
@@ -380,8 +380,10 @@ struct Engine {
         float r, g, b, a; int z;
         float rotation; int snap;                   // 节点旋转（屏幕空间弧度）与像素吸附
         float clip_x, clip_y, clip_w, clip_h;       // 裁剪矩形（设计坐标，屏幕 y 向下；w/h<=0=无）
+        int mask = 0;                               // 程序化 alpha mask 链头（0=无）
     };
     std::vector<PendingQuad> pending_quads;
+    std::vector<mq_renderer_mask> ui_masks;   // 每帧程序化 alpha mask 链（0 号 identity）
     void text_flush(std::vector<mq_renderer_item>& out);        // 阶段 2
     /* 退役纹理：图集增长后替换下来的旧纹理**延迟到下一帧**释放 ——
      * 同一帧里先前已排队的字形图元仍引用旧 id（帧内释放会导致悬空/崩溃）。 */
@@ -870,7 +872,7 @@ struct Engine {
     void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
     void extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc* d,
                       std::vector<mq_renderer_item>& out, float inherit_alpha,
-                      const ClipSet& clip);
+                      const ClipSet& clip, int mask);
     void step_tweens(float dt);                             // Tween 推进（补间）
     void step_schedules(float dt);                          // 定时器推进（定时器）
     void flush_pending_destroy();                           // 延迟销毁（帧末生效）

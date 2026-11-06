@@ -366,7 +366,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   - `textured`：一个实例 = 一个矩形/圆，逐实例一次变换 —— 精灵/字形/UI 用。
   - `mesh`：**逐顶点** pos/uv/color + 索引缓冲 —— 骨骼动画（Spine）那种"一帧一变形的网格"用。
     顶点缓冲 stride 32B（pos.xy / uv.xy / col.rgba，见 `assets/builtin/shaders/mesh/shader.wgsl` 顶部），
-    提交走 `mq_renderer_v3::render_mesh_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, bg, out, out_size)`。
+    提交走 `mq_renderer_v4::render_ui_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, masks, mask_count, bg, out, out_size)`。
   - 两者**共用同一份相机 uniform 布局**（48B：size/view/cam/zoom/rot/pan/eye），且顶点都已是
     "渲染目标像素空间、y 向下"→ 变换逐项一致（**不要再翻 y**）。
   - 剔除开关：`-DMAQUE_SHADER_MESH=OFF` 时不生成/不链接，gfx 取不到时打印原因并跳过网格图元。
@@ -413,8 +413,9 @@ tools\win\build.cmd -Sanitize address -RunTests
     因此同一裁剪区的 9-patch 块仍合批；reverse 的 4 条带各成一批（总 draw = 背景 + 4，
     而不是图元数）。嵌套 reverse 也精确（块数上限 64，超出退化为包围盒）。
     命中测试用同一矩形集合：洞内 `ui_hit_at=-1`。`mask_mode` 的圆角/纹理/stencil、`feather`
-    尚未实现（当前按矩形处理）。图元 ABI 追加 `clip_x/y/w/h`（设计坐标，屏幕 y 向下），
-    渲染器 v2 → **v3**（`maque.renderer.v3`）。测试场景**按特性独立**：
+    尚未实现（当前按矩形处理）。图元 ABI 追加 `clip_x/y/w/h`（设计坐标，屏幕 y 向下）+ v4
+    的 `mask` 索引/`mq_renderer_mask` 链；渲染器 **v2 → v3 → v4**（`maque.renderer.v4`）。
+    测试场景**按特性独立**：
     `scenes/ui_patch/{nine_patch,nine_patch_gallery,mask_normal,mask_reverse,mask_gallery,nine_patch_mask,mask_hit}.scn`，
     mask 子图统一用本目录的 `girl.png`（1024×1536 大图，不进 UI 图集）；
     CTest 分别为 `nine_patch_scene_e2e` / `ui_mask_{normal,reverse}_scene_e2e` /
@@ -431,9 +432,14 @@ tools\win\build.cmd -Sanitize address -RunTests
     滚动条**可触摸**（thumb 拖动/轨道跳转+拖动），thumb 长度=视口/内容，右下角
     `show_scroll_percent` 胶囊显示百分比；`scroll_offset/content_height/scroll_velocity` 为派生像素/速度。
     `clip_content=true` 时 `compute_ui_clip` 把子树裁到视口（与 `ui.Mask` 矩形集合求交），
-    提取期剔除视口外图元/字形/Label 节点（`ui_batch` items 可验证）。样例
+    提取期剔除视口外图元/字形/Label 节点（`ui_batch` items 可验证）。**程序化 alpha mask**：
+    `fade_top/bottom/left/right` + `fade_curve` 生成 mask 记录链，图元携带 `mask` 索引；
+    `solid`/`textured` shader 逐片元算四边 smoothstep，嵌套 ListView 相乘；`content_alpha`
+    可 tween 做整体淡入/淡出；滚动条/百分比不受内容 fade 影响。样例
     `scenes/ui_list/{list,items}.scn`，回归 `ctest -R 'ui_list_e2e|ui_list_items_e2e'`
-    （滚轮/拖拽/滚动条/惯性、视口外零像素变化、子节点剔除）。`item_template` 模板虚拟化仍是后续项。
+    （滚轮/拖拽/滚动条/惯性、视口外零像素变化、子节点剔除、fade A/B）。样例
+    `scenes/ui_list/fade.scn` 演示 `content_alpha` 正弦淡入淡出。`item_template`
+    模板虚拟化仍是后续项。
 - **性能分析 Tracy（docs/29）**：默认**零开销**（客户端手动启动，普通运行不监听端口/不占线程）；
   游戏里 **F3** 启动客户端并拉起 profiler GUI，或 `MAQUE_TRACY=1` 启动即开（等外部连）。
   GUI/CLI 二进制不入库：Windows 跑 `tools/tracy/get-profiler.ps1` 下载官方包；

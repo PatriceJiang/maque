@@ -1,0 +1,152 @@
+{
+  "title": "ui.ListView fade in/out (content_alpha tween)",
+  "width": 640,
+  "height": 360,
+  "seed": 41,
+  "entities": [
+    {
+      "name": "bg",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 320.0,
+          "y": 180.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 640.0,
+          "height": 360.0,
+          "r": 0.045,
+          "g": 0.055,
+          "b": 0.075
+        }
+      ]
+    },
+    {
+      "name": "panel",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 320.0,
+          "y": 167.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 576.0,
+          "height": 270.0,
+          "r": 0.025,
+          "g": 0.035,
+          "b": 0.055
+        }
+      ]
+    },
+    {
+      "name": "title",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 342.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "z": 200,
+          "text": "ui.ListView  ·  content_alpha fade in/out",
+          "font_size": 20.0,
+          "r": 0.95,
+          "g": 0.96,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 318.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "z": 200,
+          "text": "content_alpha is tweened by fade.js  |  edges use the procedural alpha mask",
+          "font_size": 13.0,
+          "r": 0.55,
+          "g": 0.68,
+          "b": 0.82,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 32.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 576.0,
+            "y": 270.0
+          }
+        },
+        {
+          "type": "ui.ListView",
+          "text": "[001] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[002] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[003] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[004] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[005] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[006] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[007] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[008] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[009] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[010] ---- section divider: scroll + clip ----\n[011] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[012] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[013] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[014] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[015] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[016] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[017] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[018] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[019] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[020] ---- section divider: scroll + clip ----\n[021] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[022] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[023] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[024] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[025] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[026] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[027] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[028] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[029] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[030] ---- section divider: scroll + clip ----\n[031] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[032] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[033] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[034] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[035] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[036] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[037] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[038] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[039] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[040] ---- section divider: scroll + clip ----\n[041] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[042] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[043] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[044] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[045] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[046] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[047] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[048] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[049] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[050] ---- section divider: scroll + clip ----\n[051] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[052] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[053] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[054] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[055] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[056] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[057] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[058] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[059] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[060] ---- section divider: scroll + clip ----\n[061] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[062] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[063] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[064] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[065] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[066] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[067] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[068] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[069] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[070] ---- section divider: scroll + clip ----\n[071] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[072] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[073] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[074] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[075] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[076] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[077] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[078] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[079] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[080] ---- section divider: scroll + clip ----\n[081] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[082] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[083] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[084] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[085] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[086] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[087] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[088] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[089] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[090] ---- section divider: scroll + clip ----\n[091] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[092] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[093] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[094] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[095] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[096] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[097] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[098] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[099] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[100] ---- section divider: scroll + clip ----\n[101] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[102] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[103] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[104] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[105] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[106] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[107] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[108] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[109] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[110] ---- section divider: scroll + clip ----\n[111] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[112] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[113] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[114] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[115] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[116] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[117] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[118] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[119] ListView row: large text viewport, wheel to scroll, clipped by Control.\n[120] ---- section divider: scroll + clip ----",
+          "font_size": 16.0,
+          "line_spacing": 4.0,
+          "text_color": {
+            "x": 0.86,
+            "y": 0.9,
+            "z": 0.98,
+            "w": 1.0
+          },
+          "padding": {
+            "x": 14.0,
+            "y": 14.0,
+            "z": 14.0,
+            "w": 14.0
+          },
+          "wrap": 1,
+          "scroll_pos": 0.0,
+          "wheel_step": 48.0,
+          "clip_content": true,
+          "fade_top": 28.0,
+          "fade_bottom": 28.0
+        }
+      ]
+    },
+    {
+      "name": "foot",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 32.0,
+          "y": 12.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "z": 200,
+          "text": "drag/wheel demo scene  ·  scenes/ui_list/list.scn",
+          "font_size": 12.0,
+          "r": 0.35,
+          "g": 0.42,
+          "b": 0.52,
+          "a": 1.0
+        }
+      ]
+    }
+  ],
+  "script": "fade.js"
+}

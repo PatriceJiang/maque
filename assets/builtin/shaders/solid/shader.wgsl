@@ -3,9 +3,32 @@ struct U {
   zoom: f32, rot: f32, pan: f32, eye: f32, zoom_y: f32, pad: f32,
 };
 @group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32 };
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32, mask: i32, pad0: i32, pad1: i32, pad2: i32 };
+struct Mask {
+  rect: vec4f, fade: vec4f, opacity: f32, curve: i32, next: i32, pad: i32,
+};
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
-struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f, @location(2) shape: f32 };
+@group(0) @binding(2) var<storage, read> masks: array<Mask>;
+struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f, @location(2) shape: f32, @location(3) mpos: vec2f, @location(4) @interpolate(flat) mask_idx: i32 };
+fn side_fade(d: f32, fade: f32, curve: i32) -> f32 {
+  if (fade <= 0.0) { return 1.0; }
+  var t = clamp(d / fade, 0.0, 1.0);
+  if (curve == 1) { t = t * t * (3.0 - 2.0 * t); }
+  return t;
+}
+fn mask_alpha(p: vec2f, m: Mask) -> f32 {
+  let dl = p.x - m.rect.x;
+  let dr = m.rect.z - p.x;
+  let dt = p.y - m.rect.y;
+  let db = m.rect.w - p.y;
+  if (dl < 0.0 || dr < 0.0 || dt < 0.0 || db < 0.0) { return 0.0; }
+  var a = m.opacity;
+  a *= side_fade(dl, m.fade.x, m.curve);
+  a *= side_fade(dt, m.fade.y, m.curve);
+  a *= side_fade(dr, m.fade.z, m.curve);
+  a *= side_fade(db, m.fade.w, m.curve);
+  return a;
+}
 @vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
   var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
                          vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
@@ -35,9 +58,20 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   let px = pc + kc;
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
-  o.uv = c[vi]; o.col = inst.color; o.shape = inst.shape; return o;
+  o.uv = c[vi]; o.col = inst.color; o.shape = inst.shape;
+  o.mpos = inst.pos + corner;
+  o.mask_idx = inst.mask;
+  return o;
 }
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
   if (in.shape < 0.5 && dot(in.uv, in.uv) > 1.0) { discard; }   // 圆形图元才裁角
-  return in.col;                                    // 直通 alpha（混合在管线做）
+  var a = 1.0;
+  var mi = in.mask_idx;
+  for (var i = 0; i < 8; i++) {
+    if (mi <= 0 || mi >= i32(arrayLength(&masks))) { break; }
+    let m = masks[mi];
+    a *= mask_alpha(in.mpos, m);
+    mi = m.next;
+  }
+  return vec4f(in.col.rgb, in.col.a * a);
 }

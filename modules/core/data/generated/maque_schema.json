@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 254,
+  "type_count": 255,
   "api_count": 325,
   "control_count": 62,
   "callback_count": 11,
@@ -14168,6 +14168,29 @@
       "fields": []
     },
     {
+      "name": "ui.FadeCurve",
+      "namespace": "ui",
+      "kind": "enum",
+      "type_id": 2555815200,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "ui/ui.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Linear",
+          "value": 0
+        },
+        {
+          "name": "Smoothstep",
+          "value": 1
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "ui.FillMode",
       "namespace": "ui",
       "kind": "enum",
@@ -15173,6 +15196,89 @@
             "range": [
               0,
               60
+            ]
+          }
+        },
+        {
+          "name": "fade_top",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              512
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "fade_bottom",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              512
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "fade_left",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              512
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "fade_right",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              512
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "fade_curve",
+          "type": "FadeCurve",
+          "kind": "enum",
+          "type_id": 2555815200,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "content_alpha",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
             ]
           }
         }

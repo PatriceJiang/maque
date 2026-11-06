@@ -42,7 +42,7 @@
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
 #include "maque_ifaces.h"
 #include "maque_control.h"
-#include "maque_events.h"                 // 生成：mq_renderer_v3（插件接口 ABI）
+#include "maque_events.h"                 // 生成：mq_renderer_v4（插件接口 ABI）
 #include "core/module/mq_module.h"          // mq_host（dlopen 加载插件）
 #ifdef MQ_RENDERER_STATIC_NULL
 #include "render/null/mq_renderer_null.h"
@@ -93,7 +93,7 @@ namespace maque::rt {
 namespace fs = std::filesystem;
 
 #define MQ_RENDERER_HAS(api, member) \
-    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v3, member) + sizeof((api)->member) && \
+    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v4, member) + sizeof((api)->member) && \
      (api)->member)
 
 /* 组件槽：map key（type_id）+ **描述符缓存** + 字节存储。
@@ -216,6 +216,9 @@ struct SceneNode {
     float world_scale = 1.0F;
     float world_opacity = 1.0F;
     int   depth = 0;
+    /* 运行期 alpha-mask 覆盖：-2=继承父，-1=强制无 mask（滚动条/百分比），>=0=固定链。
+     * 只由 ListView 自动生成节点使用；不是序列化字段。 */
+    int   ui_mask_override = -2;
     std::unordered_map<uint32_t, ComponentSlot> comps;   // type_id → 组件槽（含描述符缓存）
 };
 

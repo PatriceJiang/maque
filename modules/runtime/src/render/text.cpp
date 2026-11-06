@@ -122,7 +122,7 @@ int Engine::glyph_texture(const mq_font* f, float size) {
  * 支持 scn.Label（扁平字段）与 ui.TextLabel / ui.RichText（字段）。 */
 void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc* d,
                           std::vector<mq_renderer_item>& out, float inherit_alpha,
-                          const ClipSet& clip) {
+                          const ClipSet& clip, int mask) {
     std::string text, font_path_comp;
     float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, max_h = 0, line_spacing = 0;
     int align = 0, wrap = 0, overflow = 0;
@@ -274,6 +274,7 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
         const float half_w = gl.w * 0.5F * inv, half_h = gl.h * 0.5F * inv;
         PendingQuad q{};
         q.font = label_font; q.size = gl.device_size;
+        q.mask = mask;
         q.ax = gl.ax; q.ay = gl.ay;
         q.tw = (int)gl.w; q.th = (int)gl.h;
         q.cp = gl.codepoint;
@@ -375,6 +376,7 @@ void Engine::text_flush(std::vector<mq_renderer_item>& out) {
         it.layer = 1; it.z = q.z;
         it.clip_x = q.clip_x; it.clip_y = q.clip_y;
         it.clip_w = q.clip_w; it.clip_h = q.clip_h;
+        it.mask = q.mask;
         out.push_back(it);
     }
     int traced = 0;

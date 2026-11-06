@@ -46,6 +46,10 @@
         - { name: Word, value: 1 }
         - { name: Char, value: 2 }
         - { name: WordSmart, value: 3 }
+    - enum: FadeCurve
+      values:
+        - { name: Linear, value: 0 }
+        - { name: Smoothstep, value: 1 }
     - enum: StretchMode
       values:
         - { name: Scale, value: 0 }
@@ -435,6 +439,13 @@
         - { name: scroll_velocity, type: float, attrs: { transient: true, readonly: true } }
         - { name: inertia, type: bool, default: true }
         - { name: friction, type: float, default: 6.0F, attrs: { range: [0, 60] } }
+        # 程序化 alpha mask（v1：ListView 边缘淡出 + 内容整体淡入淡出）
+        - { name: fade_top, type: float, default: 0.0F, attrs: { unit: px, range: [0, 512] } }
+        - { name: fade_bottom, type: float, default: 0.0F, attrs: { unit: px, range: [0, 512] } }
+        - { name: fade_left, type: float, default: 0.0F, attrs: { unit: px, range: [0, 512] } }
+        - { name: fade_right, type: float, default: 0.0F, attrs: { unit: px, range: [0, 512] } }
+        - { name: fade_curve, type: FadeCurve, default: "FadeCurve::Smoothstep" }
+        - { name: content_alpha, type: float, default: 1.0F, attrs: { range: [0, 1] } }
     - struct: Mask
       roles: [ui_mask]
       doc: "UI 裁剪（ClippingNode）：Rect 模式 + invert 反选；P0 用 scissor，非矩形模式后续 stencil"

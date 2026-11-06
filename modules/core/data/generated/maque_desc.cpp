@@ -5020,6 +5020,18 @@ static double mq_acc_ui_ListView_inertia_getf(const void* p) { const auto& s = *
 static void mq_acc_ui_ListView_inertia_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.inertia = v != 0.0; }
 static double mq_acc_ui_ListView_friction_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.friction); }
 static void mq_acc_ui_ListView_friction_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.friction = static_cast<decltype(s.friction)>(v); }
+static double mq_acc_ui_ListView_fade_top_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.fade_top); }
+static void mq_acc_ui_ListView_fade_top_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.fade_top = static_cast<decltype(s.fade_top)>(v); }
+static double mq_acc_ui_ListView_fade_bottom_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.fade_bottom); }
+static void mq_acc_ui_ListView_fade_bottom_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.fade_bottom = static_cast<decltype(s.fade_bottom)>(v); }
+static double mq_acc_ui_ListView_fade_left_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.fade_left); }
+static void mq_acc_ui_ListView_fade_left_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.fade_left = static_cast<decltype(s.fade_left)>(v); }
+static double mq_acc_ui_ListView_fade_right_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.fade_right); }
+static void mq_acc_ui_ListView_fade_right_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.fade_right = static_cast<decltype(s.fade_right)>(v); }
+static double mq_acc_ui_ListView_fade_curve_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(static_cast<int64_t>(s.fade_curve)); }
+static void mq_acc_ui_ListView_fade_curve_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.fade_curve = static_cast<decltype(s.fade_curve)>(v); }
+static double mq_acc_ui_ListView_content_alpha_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.content_alpha); }
+static void mq_acc_ui_ListView_content_alpha_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.content_alpha = static_cast<decltype(s.content_alpha)>(v); }
 static const mq_field_accessor mq_acc_ui_ListView[] = {
     { 0, 0, 0, 0, mq_acc_ui_ListView_item_template_getp, mq_acc_ui_ListView_item_template_getmp },
     { 0, 0, 0, 0, mq_acc_ui_ListView_data_source_getp, mq_acc_ui_ListView_data_source_getmp },
@@ -5063,6 +5075,12 @@ static const mq_field_accessor mq_acc_ui_ListView[] = {
     { mq_acc_ui_ListView_scroll_velocity_getf, mq_acc_ui_ListView_scroll_velocity_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_inertia_getf, mq_acc_ui_ListView_inertia_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_friction_getf, mq_acc_ui_ListView_friction_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_fade_top_getf, mq_acc_ui_ListView_fade_top_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_fade_bottom_getf, mq_acc_ui_ListView_fade_bottom_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_fade_left_getf, mq_acc_ui_ListView_fade_left_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_fade_right_getf, mq_acc_ui_ListView_fade_right_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_fade_curve_getf, mq_acc_ui_ListView_fade_curve_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_content_alpha_getf, mq_acc_ui_ListView_content_alpha_setf, 0, 0, 0, 0 },
 };
 static const mq_field_desc mq_fields_ui_ListView[] = {
     { "item_template", (uint32_t)offsetof(ui::ListView, item_template), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[0] },
@@ -5107,6 +5125,12 @@ static const mq_field_desc mq_fields_ui_ListView[] = {
     { "scroll_velocity", (uint32_t)offsetof(ui::ListView, scroll_velocity), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[39] },
     { "inertia", (uint32_t)offsetof(ui::ListView, inertia), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[40] },
     { "friction", (uint32_t)offsetof(ui::ListView, friction), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[41] },
+    { "fade_top", (uint32_t)offsetof(ui::ListView, fade_top), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[42] },
+    { "fade_bottom", (uint32_t)offsetof(ui::ListView, fade_bottom), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[43] },
+    { "fade_left", (uint32_t)offsetof(ui::ListView, fade_left), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[44] },
+    { "fade_right", (uint32_t)offsetof(ui::ListView, fade_right), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[45] },
+    { "fade_curve", (uint32_t)offsetof(ui::ListView, fade_curve), MQ_TK_ENUM, 2555815200u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[46] },
+    { "content_alpha", (uint32_t)offsetof(ui::ListView, content_alpha), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[47] },
 };
 
 static double mq_acc_ui_Mask_mask_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.mask_mode)); }
@@ -6225,6 +6249,11 @@ static const mq_enum_value mq_values_ui_EditLineMode[] = {
     { "MultiLine", (int64_t)1 },
 };
 
+static const mq_enum_value mq_values_ui_FadeCurve[] = {
+    { "Linear", (int64_t)0 },
+    { "Smoothstep", (int64_t)1 },
+};
+
 static const mq_enum_value mq_values_ui_FillMode[] = {
     { "LeftToRight", (int64_t)0 },
     { "RightToLeft", (int64_t)1 },
@@ -6622,6 +6651,7 @@ static void mq_defaults_ui_ContainerMode(void* p) { new (p) ui::ContainerMode{};
 static void mq_defaults_ui_Control(void* p) { new (p) ui::Control{}; }
 static void mq_defaults_ui_EditBox(void* p) { new (p) ui::EditBox{}; }
 static void mq_defaults_ui_EditLineMode(void* p) { new (p) ui::EditLineMode{}; }
+static void mq_defaults_ui_FadeCurve(void* p) { new (p) ui::FadeCurve{}; }
 static void mq_defaults_ui_FillMode(void* p) { new (p) ui::FillMode{}; }
 static void mq_defaults_ui_FitMode(void* p) { new (p) ui::FitMode{}; }
 static void mq_defaults_ui_FlexBasisMode(void* p) { new (p) ui::FlexBasisMode{}; }
@@ -9620,6 +9650,20 @@ extern const mq_type_desc mq_type_ui_EditLineMode = {
     mq_defaults_ui_EditLineMode,
 };
 
+extern const mq_type_desc mq_type_ui_FadeCurve = {
+    "ui.FadeCurve",
+    2555815200u,
+    (uint32_t)sizeof(ui::FadeCurve),
+    (uint32_t)alignof(ui::FadeCurve),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_ui_FadeCurve,
+    2u,
+    mq_defaults_ui_FadeCurve,
+};
+
 extern const mq_type_desc mq_type_ui_FillMode = {
     "ui.FillMode",
     3297947197u,
@@ -9751,7 +9795,7 @@ extern const mq_type_desc mq_type_ui_ListView = {
     2237314706u,
     (uint32_t)sizeof(ui::ListView),
     (uint32_t)alignof(ui::ListView),
-    42u,
+    48u,
     mq_fields_ui_ListView,
     4u,
     MQ_ROLE_UI_LIST,
@@ -13899,6 +13943,24 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
         case 2770068155u:
             if (std::strcmp(name, "friction") == 0) return &type->fields[41];
             break;
+        case 834828679u:
+            if (std::strcmp(name, "fade_top") == 0) return &type->fields[42];
+            break;
+        case 2566629359u:
+            if (std::strcmp(name, "fade_bottom") == 0) return &type->fields[43];
+            break;
+        case 1886648261u:
+            if (std::strcmp(name, "fade_left") == 0) return &type->fields[44];
+            break;
+        case 1672877854u:
+            if (std::strcmp(name, "fade_right") == 0) return &type->fields[45];
+            break;
+        case 2538876207u:
+            if (std::strcmp(name, "fade_curve") == 0) return &type->fields[46];
+            break;
+        case 1502788025u:
+            if (std::strcmp(name, "content_alpha") == 0) return &type->fields[47];
+            break;
         }
         break;
     case 685868107u:
@@ -14487,6 +14549,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_Control,
     &mq_type_ui_EditBox,
     &mq_type_ui_EditLineMode,
+    &mq_type_ui_FadeCurve,
     &mq_type_ui_FillMode,
     &mq_type_ui_FitMode,
     &mq_type_ui_FlexBasisMode,
@@ -14532,7 +14595,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 254u;
+const uint32_t mq_schema_type_count = 255u;
 
 #ifdef __cplusplus
 } // extern "C"

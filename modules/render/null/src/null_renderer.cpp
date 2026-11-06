@@ -116,6 +116,16 @@ int32_t null_render_mesh_views(void* self, int32_t w, int32_t h,
     return fill(w, h, bg, out, out_size);
 }
 
+int32_t null_render_ui_views(void* self, int32_t w, int32_t h,
+                             const mq_renderer_view*, uint32_t,
+                             const mq_renderer_item*, uint32_t count,
+                             const mq_renderer_mesh*, uint32_t mesh_count,
+                             const mq_renderer_mask*, uint32_t,
+                             const float* bg, uint8_t* out, uint32_t out_size) {
+    if (auto* r = static_cast<NullRenderer*>(self)) r->last_2d_items = count + mesh_count;
+    return fill(w, h, bg, out, out_size);
+}
+
 int32_t null_attach_window(void*, const mq_renderer_window*) { return -1; }
 int32_t null_resize_surface(void*, int32_t, int32_t) { return -1; }
 
@@ -269,8 +279,8 @@ int32_t null_read_texture(void* self, int32_t id, uint8_t* out, uint32_t out_siz
     return 0;
 }
 
-const mq_renderer_v3 kApi = {
-    { static_cast<uint32_t>(sizeof(mq_renderer_v3)), MQ_RENDERER_API_VERSION },
+const mq_renderer_v4 kApi = {
+    { static_cast<uint32_t>(sizeof(mq_renderer_v4)), MQ_RENDERER_API_VERSION },
     null_create,
     null_destroy,
     null_destroy_texture,
@@ -278,6 +288,7 @@ const mq_renderer_v3 kApi = {
     null_has_texture,
     null_render_views,
     null_render_mesh_views,
+    null_render_ui_views,
     null_attach_window,
     null_resize_surface,
     null_caps,
@@ -305,4 +316,4 @@ const mq_renderer_v3 kApi = {
 
 } // namespace
 
-extern "C" const mq_renderer_v3* mq_renderer_null_api(void) { return &kApi; }
+extern "C" const mq_renderer_v4* mq_renderer_null_api(void) { return &kApi; }

@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **254** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **255** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -2225,7 +2225,7 @@ role: `transform2d`
 | `Python` | 2 |
 | `V8` | 3 |
 
-## ui（59） · `ui/ui.yaml`
+## ui（60） · `ui/ui.yaml`
 
 ### ui.Align — enum
 
@@ -2465,6 +2465,13 @@ role: `ui_control`
 | `SingleLine` | 0 |
 | `MultiLine` | 1 |
 
+### ui.FadeCurve — enum
+
+| 值 | 数值 |
+|----|------|
+| `Linear` | 0 |
+| `Smoothstep` | 1 |
+
 ### ui.FillMode — enum
 
 | 值 | 数值 |
@@ -2612,6 +2619,12 @@ role: `ui_list`
 | `scroll_velocity` | float | — | transient, readonly |
 | `inertia` | bool | true |  |
 | `friction` | float | 6.0F | range: 0,60 |
+| `fade_top` | float | 0.0F | unit: px, range: 0,512 |
+| `fade_bottom` | float | 0.0F | unit: px, range: 0,512 |
+| `fade_left` | float | 0.0F | unit: px, range: 0,512 |
+| `fade_right` | float | 0.0F | unit: px, range: 0,512 |
+| `fade_curve` | FadeCurve | FadeCurve::Smoothstep |  |
+| `content_alpha` | float | 1.0F | range: 0,1 |
 
 ### ui.Mask — struct (变长（含动态成员）)
 

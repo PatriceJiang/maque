@@ -957,6 +957,11 @@ enum class EditLineMode : int32_t {
     MultiLine  = 1,
 };
 
+enum class FadeCurve : int32_t {
+    Linear     = 0,
+    Smoothstep = 1,
+};
+
 enum class FillMode : int32_t {
     LeftToRight = 0,
     RightToLeft = 1,
@@ -1341,6 +1346,12 @@ struct ListView {
     float scroll_velocity;
     bool inertia = true;
     float friction = 6.0F;
+    float fade_top = 0.0F;
+    float fade_bottom = 0.0F;
+    float fade_left = 0.0F;
+    float fade_right = 0.0F;
+    ui::FadeCurve fade_curve = FadeCurve::Smoothstep;
+    float content_alpha = 1.0F;
 };
 
 struct Mask {
@@ -2677,6 +2688,7 @@ template <> inline constexpr uint32_t type_id_v<ui::MouseFilter> = 2414255908u;
 template <> inline constexpr uint32_t type_id_v<ui::ContainerMode> = 3458834513u;
 template <> inline constexpr uint32_t type_id_v<ui::Align> = 1234036308u;
 template <> inline constexpr uint32_t type_id_v<ui::TextWrap> = 1869600876u;
+template <> inline constexpr uint32_t type_id_v<ui::FadeCurve> = 2555815200u;
 template <> inline constexpr uint32_t type_id_v<ui::StretchMode> = 2031275343u;
 template <> inline constexpr uint32_t type_id_v<ui::ButtonState> = 1789463920u;
 template <> inline constexpr uint32_t type_id_v<ui::CheckState> = 2420402546u;
@@ -2933,6 +2945,7 @@ template <> struct type_of<2414255908u> { using type = ui::MouseFilter; };
 template <> struct type_of<3458834513u> { using type = ui::ContainerMode; };
 template <> struct type_of<1234036308u> { using type = ui::Align; };
 template <> struct type_of<1869600876u> { using type = ui::TextWrap; };
+template <> struct type_of<2555815200u> { using type = ui::FadeCurve; };
 template <> struct type_of<2031275343u> { using type = ui::StretchMode; };
 template <> struct type_of<1789463920u> { using type = ui::ButtonState; };
 template <> struct type_of<2420402546u> { using type = ui::CheckState; };

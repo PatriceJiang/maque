@@ -123,7 +123,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 #elif defined(MQ_RENDERER_STATIC_GFX)
     (void)renderer_override;
     const char* plugin = "static:gfx";
-    rapi = (const mq_renderer_v3*)mq_module_query(MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION);
+    rapi = (const mq_renderer_v4*)mq_module_query(MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION);
     if (!rapi) {
         std::print("runtime: static gfx renderer unavailable\n");
         return false;
@@ -142,7 +142,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     host = mq_host_create();
     mq_loaded_module* rmod = nullptr;
     if (mq_host_load(host, plugin, &rmod) != 0 ||
-        !(rapi = (const mq_renderer_v3*)mq_host_query(host, MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION))) {
+        !(rapi = (const mq_renderer_v4*)mq_host_query(host, MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION))) {
         std::print("runtime: cannot load renderer plugin '{}'\n", plugin);
         return false;
     }

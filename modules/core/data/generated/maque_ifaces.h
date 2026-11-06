@@ -43,7 +43,26 @@ typedef struct mq_renderer_item {
     float clip_y;
     float clip_w;
     float clip_h;
+    int32_t mask;
+    int32_t pad0;
+    int32_t pad1;
+    int32_t pad2;
 } mq_renderer_item;
+
+typedef struct mq_renderer_mask {
+    float x0;
+    float y0;
+    float x1;
+    float y1;
+    float fade_l;
+    float fade_t;
+    float fade_r;
+    float fade_b;
+    float opacity;
+    int32_t curve;
+    int32_t next;
+    int32_t pad;
+} mq_renderer_mask;
 
 typedef struct mq_renderer_mesh {
     const float* vertices;
@@ -345,9 +364,9 @@ typedef struct mq_renderer_resource_usage {
     uint64_t other_bytes;
 } mq_renderer_resource_usage;
 
-#define MQ_RENDERER_API_NAME "maque.renderer.v3"
-#define MQ_RENDERER_API_VERSION 3u
-typedef struct mq_renderer_v3 {
+#define MQ_RENDERER_API_NAME "maque.renderer.v4"
+#define MQ_RENDERER_API_VERSION 4u
+typedef struct mq_renderer_v4 {
     mq_api_header header;
     void* (*create)(const char** out_backend);
     void (*destroy)(void* self);
@@ -356,6 +375,7 @@ typedef struct mq_renderer_v3 {
     int32_t (*has_texture)(void* self, int32_t id);
     int32_t (*render_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const float* bg, uint8_t* out, uint32_t out_size);
     int32_t (*render_mesh_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const mq_renderer_mesh* meshes, uint32_t mesh_count, const float* bg, uint8_t* out, uint32_t out_size);
+    int32_t (*render_ui_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const mq_renderer_mesh* meshes, uint32_t mesh_count, const mq_renderer_mask* masks, uint32_t mask_count, const float* bg, uint8_t* out, uint32_t out_size);
     int32_t (*attach_window)(void* self, const mq_renderer_window* win);
     int32_t (*resize_surface)(void* self, int32_t w, int32_t h);
     int32_t (*caps)(void* self, mq_renderer_caps* out);
@@ -377,4 +397,4 @@ typedef struct mq_renderer_v3 {
     void (*destroy_shader_graph_pass)(void* self, int32_t id);
     int32_t (*create_shader_graph_target)(void* self, int32_t w, int32_t h, int32_t* out_id);
     uint32_t (*last_2d_batches)(void* self);
-} mq_renderer_v3;
+} mq_renderer_v4;

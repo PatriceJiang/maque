@@ -461,12 +461,13 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 跨 `.so` 的唯一函数表；宿主经 `maque::module`(dlopen) 加载并校验版本/结构大小。
 
-### renderer v3 — `maque.renderer.v3`
+### renderer v4 — `maque.renderer.v4`
 
 记录（POD）：
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float, zoom_y: float
-- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float
+- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, mask: int32_t, pad0: int32_t, pad1: int32_t, pad2: int32_t
+- `mask`：x0: float, y0: float, x1: float, y1: float, fade_l: float, fade_t: float, fade_r: float, fade_b: float, opacity: float, curve: int32_t, next: int32_t, pad: int32_t
 - `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, z: int32_t
 - `window`：kind: int32_t, display: void*, handle: void*, extra: void*, width: int32_t, height: int32_t
 - `caps`：max_texture_size: int32_t, max_lights: int32_t, max_samples: int32_t, target_format: int32_t, depth_format: int32_t, direct_present: int32_t, hdr: int32_t, reserved: int32_t
@@ -496,6 +497,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `has_texture` | self: self, id: int32_t | int32_t |
 | `render_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
 | `render_mesh_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
+| `render_ui_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, masks: const mq_renderer_mask*, mask_count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
 | `attach_window` | self: self, win: const mq_renderer_window* | int32_t |
 | `resize_surface` | self: self, w: int32_t, h: int32_t | int32_t |
 | `caps` | self: self, out: mq_renderer_caps* | int32_t |

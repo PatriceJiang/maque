@@ -3,11 +3,12 @@
 #
 # 版本化（docs/02）：v2 因 `view` 数组元素 stride 与 `frame3d` 布局变化使用独立 ABI 名称；
 # v3 因 `item` 记录追加裁剪矩形（数组元素 stride 变化）再次独立命名。
+# v4 因 `item` 追加程序化 alpha mask 索引（stride 变化）+ 新增 render_ui_views。
 # 版本内后续能力仍只在表尾追加，记录数组元素字段不得再无版本地改变。
 # 3D/PBR 扩展见 plans/18-pbr-3d.md §2（直接呈现 / 网格 GPU 资源 / PBR 帧描述）。
 - interface: renderer
-  version: 3
-  abi_name: "maque.renderer.v3"
+  version: 4
+  abi_name: "maque.renderer.v4"
   records:
     - record: view
       fields:
@@ -51,6 +52,28 @@
         - { name: clip_y,   type: float }
         - { name: clip_w,   type: float }
         - { name: clip_h,   type: float }
+        # 程序化 alpha mask 链头索引；0 = 无 mask（数组 0 号恒为 identity）。
+        # 尾部追加（v4）：旧调用方零初始化 = 无 mask。
+        - { name: mask,     type: int32_t }
+        - { name: pad0,     type: int32_t }
+        - { name: pad1,     type: int32_t }
+        - { name: pad2,     type: int32_t }
+    # 程序化 alpha mask（ListView 淡入淡出）：屏幕设计坐标 + 四边 fade + 透明度。
+    # next 指向父 mask（-1 结束），shader 沿链逐层相乘；0 号为 identity。
+    - record: mask
+      fields:
+        - { name: x0, type: float }
+        - { name: y0, type: float }
+        - { name: x1, type: float }
+        - { name: y1, type: float }
+        - { name: fade_l, type: float }
+        - { name: fade_t, type: float }
+        - { name: fade_r, type: float }
+        - { name: fade_b, type: float }
+        - { name: opacity, type: float }
+        - { name: curve, type: int32_t }   # 0=linear 1=smoothstep
+        - { name: next, type: int32_t }    # 父 mask 索引；-1 结束
+        - { name: pad, type: int32_t }
     # 网格图元（spine/骨骼网格/任意三角形网格）：顶点数组 + 索引 + 页纹理。
     # 为什么需要它：item 只能表达"矩形/圆 + 单张贴图 + 每实例一次变换"，
     # 而骨骼动画一帧是**任意四边形/三角形网格**（逐顶点 UV + 逐顶点颜色 + 索引）。
@@ -446,6 +469,10 @@
     - fn: render_mesh_views
       returns: int32_t
       args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: meshes, type: "const mq_renderer_mesh*" }, { name: mesh_count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
+    # 图元 + 网格 + 程序化 alpha mask（v4）。masks 为空时等价 render_mesh_views。
+    - fn: render_ui_views
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: meshes, type: "const mq_renderer_mesh*" }, { name: mesh_count, type: uint32_t }, { name: masks, type: "const mq_renderer_mask*" }, { name: mask_count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
     # ---- 3D / 直接呈现（追加；plans/18-pbr-3d.md）----
     - fn: attach_window
       returns: int32_t
