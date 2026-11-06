@@ -1,0 +1,8 @@
+{
+  "name": "ui_list_button_down",
+  "space": "world",
+  "events": [
+    { "frame": 2, "type": "pointer_down", "x": 200, "y": 280, "button": 0 },
+    { "frame": 6, "type": "pointer_up",   "x": 200, "y": 280, "button": 0 }
+  ]
+}

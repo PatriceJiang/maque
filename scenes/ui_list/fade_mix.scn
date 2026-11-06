@@ -90,7 +90,7 @@
         },
         {
           "type": "scn.Label",
-          "text": "fade test: button + sprite + text all inherit the ListView alpha mask",
+          "text": "button: click a row",
           "font_size": 12.0,
           "r": 0.35,
           "g": 0.42,
@@ -922,5 +922,6 @@
         }
       ]
     }
-  ]
+  ],
+  "script": "fade_mix.js"
 }
