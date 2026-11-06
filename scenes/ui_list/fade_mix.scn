@@ -172,16 +172,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.25,
-                  "g": 0.55,
-                  "b": 0.95
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -236,16 +237,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.29,
-                  "g": 0.55,
-                  "b": 0.9199999999999999
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -300,16 +302,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.33,
-                  "g": 0.55,
-                  "b": 0.8899999999999999
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -364,16 +367,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.37,
-                  "g": 0.55,
-                  "b": 0.86
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -428,16 +432,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.41000000000000003,
-                  "g": 0.55,
-                  "b": 0.83
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -492,16 +497,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.45,
-                  "g": 0.55,
-                  "b": 0.7999999999999999
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -556,16 +562,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.49,
-                  "g": 0.55,
-                  "b": 0.77
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -620,16 +627,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.53,
-                  "g": 0.55,
-                  "b": 0.74
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -684,16 +692,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.5700000000000001,
-                  "g": 0.55,
-                  "b": 0.71
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -748,16 +757,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.61,
-                  "g": 0.55,
-                  "b": 0.6799999999999999
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -812,16 +822,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.65,
-                  "g": 0.55,
-                  "b": 0.6499999999999999
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
@@ -876,16 +887,17 @@
               "components": [
                 {
                   "type": "scn.Transform2D",
-                  "x": 20.0,
+                  "x": 16.0,
                   "y": 16.0
                 },
                 {
                   "type": "scn.Sprite",
-                  "width": 16.0,
-                  "height": 16.0,
-                  "r": 0.69,
-                  "g": 0.55,
-                  "b": 0.62
+                  "width": 24.0,
+                  "height": 24.0,
+                  "r": 1.0,
+                  "g": 1.0,
+                  "b": 1.0,
+                  "texture": "textures/girl.png"
                 }
               ]
             },
