@@ -272,8 +272,7 @@ void Engine::ui_step() {
                             lv->drag_start_scroll = lv->scroll_pos;
                         } else {
                             const float denom = std::max(1.0F, bar.view_h - bar.thumb_h);
-                            const float off = (bar.y1 - mouse_y - bar.thumb_h * 0.5F);
-                            lv->scroll_pos = off / std::max(1.0F, content_h - vh);
+                            lv->scroll_pos = (bar.y1 - mouse_y - bar.thumb_h * 0.5F) / denom;
                             lv->drag_start_y = mouse_y;
                             lv->drag_start_scroll = lv->scroll_pos;
                         }

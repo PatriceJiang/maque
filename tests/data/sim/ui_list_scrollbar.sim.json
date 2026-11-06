@@ -2,8 +2,8 @@
   "name": "ui_list_scrollbar",
   "space": "world",
   "events": [
-    { "frame": 3, "type": "pointer_down", "x": 601, "y": 250, "button": 0 },
-    { "frame": 5, "type": "pointer_move", "x": 601, "y": 180 },
-    { "frame": 7, "type": "pointer_up", "x": 601, "y": 180, "button": 0 }
+    { "frame": 3, "type": "pointer_down", "x": 601, "y": 290, "button": 0 },
+    { "frame": 5, "type": "pointer_move", "x": 601, "y": 220 },
+    { "frame": 7, "type": "pointer_up", "x": 601, "y": 220, "button": 0 }
   ]
 }

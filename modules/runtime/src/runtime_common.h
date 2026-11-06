@@ -305,8 +305,11 @@ inline ListBarGeometry list_scrollbar_geometry(const ui::ListView& lv, float x, 
     const float ratio = std::clamp(h / g.content_h, 0.02F, 1.0F);
     g.thumb_h = std::max(24.0F * s, h * ratio);
     if (g.thumb_h > h) g.thumb_h = h;
-    const float off = lv.scroll_offset * s;
-    g.thumb_y1 = y + h - off;
+    /* thumb 在轨道内的行程 = 轨道长 - thumb 长；不要用像素 scroll_offset（它是
+     * content_h - view_h 的范围，和 thumb 行程不是同一个尺度）。 */
+    const float travel = std::max(0.0F, h - g.thumb_h);
+    const float pos = std::clamp(lv.scroll_pos, 0.0F, 1.0F);
+    g.thumb_y1 = y + h - pos * travel;
     g.thumb_y0 = g.thumb_y1 - g.thumb_h;
     return g;
 }

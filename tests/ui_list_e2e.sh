@@ -106,7 +106,16 @@ for y in range(h):
 if inside < 1000 or outside:
     print(f'ui_list_e2e: scrollbar inside={inside} outside={outside}')
     sys.exit(1)
-print(f'ui_list_e2e: scrollbar in={inside} out={outside}')
+# thumb 必须跟随鼠标 1:1：仿真里指针世界 y 从 250 → 180（屏幕下移 70px）。
+def thumb_span(px):
+    ys = [y for y in range(58, 328) for x in range(598, 605)
+          if sum(px[(y * w + x) * 3:(y * w + x) * 3 + 3]) > 300]
+    return (min(ys), max(ys)) if ys else None
+before, after = thumb_span(a), thumb_span(b)
+if not before or not after or abs((after[0] - before[0]) - 70) > 2:
+    print(f'ui_list_e2e: thumb 没跟随鼠标 before={before} after={after}')
+    sys.exit(1)
+print(f'ui_list_e2e: scrollbar in={inside} out={outside} thumb={before[0]}→{after[0]}')
 PY
 
 # 惯性：释放后继续滑动（帧 8 与帧 20 仍有差异），且不泄漏到视口外。
