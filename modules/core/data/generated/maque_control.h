@@ -32,6 +32,10 @@ int mq_control_Types_describe(void* user, const mq_json* params, char* out, size
 int mq_control_Scene_info(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.entities() */
 int mq_control_Scene_entities(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.pick(x: float, y: float) */
+int mq_control_Scene_pick(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.raycast(ox: float, oy: float, oz: float, dx: float, dy: float, dz: float, max_distance: float) */
+int mq_control_Scene_raycast(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.emit(id: float, event: string, value: float) */
 int mq_control_Scene_emit(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.get(id: float, path: string) */

@@ -27,6 +27,46 @@ extern "C" int mq_control_Scene_emit(void* u, const mq_json* params, char* out, 
     return 0;
 }
 
+/* Scene.pick / Scene.raycast：3D 拾取（只读；与脚本 scene_pick/scene_raycast 同一实现）。
+ * 命中返回实体 / 名字 / 距离 / 世界命中点；未命中 entity=-1。 */
+static void write_pick_json(Engine& eng, const Engine::PickHit& hit, char* out, size_t cap) {
+    if (hit.entity < 0) {
+        std::snprintf(out, cap, "{\"ok\":true,\"entity\":-1}");
+        return;
+    }
+    const SceneNode* node = eng.scene ? eng.scene->at(hit.entity) : nullptr;
+    std::snprintf(out, cap,
+                  "{\"ok\":true,\"entity\":%d,\"name\":\"%s\",\"distance\":%.5g,"
+                  "\"point\":{\"x\":%.5g,\"y\":%.5g,\"z\":%.5g}}",
+                  hit.entity, node ? node->name.c_str() : "", (double)hit.distance,
+                  (double)hit.point[0], (double)hit.point[1], (double)hit.point[2]);
+}
+
+extern "C" int mq_control_Scene_pick(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const float x = (float)mq_json_num(mq_json_get(params, "x"), 0.0);
+    const float y = (float)mq_json_num(mq_json_get(params, "y"), 0.0);
+    write_pick_json(*e, e->pick_screen(x, y), out, cap);
+    return 0;
+}
+
+extern "C" int mq_control_Scene_raycast(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const float origin[3] = {
+        (float)mq_json_num(mq_json_get(params, "ox"), 0.0),
+        (float)mq_json_num(mq_json_get(params, "oy"), 0.0),
+        (float)mq_json_num(mq_json_get(params, "oz"), 0.0),
+    };
+    const float dir[3] = {
+        (float)mq_json_num(mq_json_get(params, "dx"), 0.0),
+        (float)mq_json_num(mq_json_get(params, "dy"), 0.0),
+        (float)mq_json_num(mq_json_get(params, "dz"), 0.0),
+    };
+    const float max_distance = (float)mq_json_num(mq_json_get(params, "max_distance"), 0.0);
+    write_pick_json(*e, e->pick_ray(origin, dir, max_distance), out, cap);
+    return 0;
+}
+
 /* Scene.entities：实体/组件 dump（AI 可读；docs/12）。 */
 extern "C" int mq_control_Scene_entities(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;

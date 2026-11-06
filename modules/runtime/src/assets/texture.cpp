@@ -733,6 +733,22 @@ static void parse_prepared_mesh(mq_json* dom, const std::string& path, PreparedM
 static int32_t upload_prepared_mesh(Engine& e, const std::string& path, PreparedMeshData& pm,
                                     bool render3d_info, double elapsed_ms) {
     if (!pm.ok) return -1;
+    /* bounds 全 0（JSON 未给）→ 从顶点算：3D 拾取/阴影都依赖网格本地包围盒。 */
+    if (pm.bounds_min[0] == 0.0F && pm.bounds_min[1] == 0.0F && pm.bounds_min[2] == 0.0F &&
+        pm.bounds_max[0] == 0.0F && pm.bounds_max[1] == 0.0F && pm.bounds_max[2] == 0.0F &&
+        !pm.verts.empty() && pm.row_floats >= 3) {
+        for (int k = 0; k < 3; ++k) {
+            pm.bounds_min[k] = pm.verts[k];
+            pm.bounds_max[k] = pm.verts[k];
+        }
+        for (uint32_t i = 1; i < pm.vn; ++i) {
+            const float* p = pm.verts.data() + (size_t)i * pm.row_floats;
+            for (int k = 0; k < 3; ++k) {
+                if (p[k] < pm.bounds_min[k]) pm.bounds_min[k] = p[k];
+                if (p[k] > pm.bounds_max[k]) pm.bounds_max[k] = p[k];
+            }
+        }
+    }
     int32_t id = -1;
     const void* vptr = pm.packed.empty() ? (const void*)pm.verts.data() : (const void*)pm.packed.data();
     const uint64_t vbytes = pm.packed.empty()
@@ -777,6 +793,11 @@ static int32_t upload_prepared_mesh(Engine& e, const std::string& path, Prepared
     }
     e.mesh_layout[path] = (id >= 0) ? pm.vertex_layout : -1;
     e.mesh_cache[path] = id;
+    if (id >= 0) {
+        e.mesh_bounds[path] = Engine::MeshBounds{
+            { pm.bounds_min[0], pm.bounds_min[1], pm.bounds_min[2] },
+            { pm.bounds_max[0], pm.bounds_max[1], pm.bounds_max[2] } };
+    }
     if (id >= 0 && render3d_info)
         std::print("runtime: mesh '{}' vertices={} indices={} ({:.1f} ms)\n",
                    path, pm.vn, pm.in, elapsed_ms);

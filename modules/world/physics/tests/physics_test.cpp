@@ -8,6 +8,7 @@
 // test_scene_fall_onto_floor 三个用例钉住，权威说明见 docs/15 §3.1。
 #include "physics/mq_physics.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <print>
@@ -790,6 +791,107 @@ void test_scene_fall_onto_floor() {
     mq_physics_destroy(w);
 }
 
+/* 射线查询（plans/13 T-17..T-19）：最近命中 / 球与盒 / 未命中 / 超程 / 起点在内 / 只读。 */
+void test_raycast() {
+    mq_physics_config cfg = make_config();
+    mq_physics_world* w = mq_physics_create(&cfg);
+    CHECK(w != nullptr);
+
+    mq_physics_body_desc ball_d = make_ball(100.0F, 100.0F, 10.0F);
+    ball_d.type = MQ_PHYSICS_BODY_STATIC;
+    mq_physics_body ball{};
+    CHECK(mq_physics_add_body(w, &ball_d, &ball) == MQ_PHYSICS_OK);
+
+    mq_physics_body_desc box_d = make_ball(200.0F, 100.0F);
+    box_d.type = MQ_PHYSICS_BODY_STATIC;
+    box_d.shape = MQ_PHYSICS_SHAPE_CUBOID;
+    box_d.half_w = 20.0F;
+    box_d.half_h = 10.0F;
+    mq_physics_body box{};
+    CHECK(mq_physics_add_body(w, &box_d, &box) == MQ_PHYSICS_OK);
+
+    auto cast = [&](float ox, float oy, float dx, float dy, float max_toi,
+                    mq_physics_ray_hit& hit) {
+        mq_physics_ray ray{ ox, oy, dx, dy, max_toi };
+        return mq_physics_raycast(w, &ray, &hit);
+    };
+    mq_physics_ray_hit hit{};
+
+    /* ① 正面命中球：t = 90、外法线 (-1,0)，句柄 = 球的句柄 */
+    CHECK(cast(0.0F, 100.0F, 1.0F, 0.0F, 500.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 1u);
+    CHECK(hit.body.index == ball.index && hit.body.generation == ball.generation);
+    CHECK(std::fabs(hit.toi - 90.0F) < 1.0e-4F);
+    CHECK(std::fabs(hit.x - 90.0F) < 1.0e-4F && std::fabs(hit.y - 100.0F) < 1.0e-4F);
+    CHECK(std::fabs(hit.nx + 1.0F) < 1.0e-4F && std::fabs(hit.ny) < 1.0e-4F);
+
+    /* ② 从上方垂直命中球顶：t = 90、法线 (0,1) */
+    CHECK(cast(100.0F, 200.0F, 0.0F, -1.0F, 500.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 1u && std::fabs(hit.toi - 90.0F) < 1.0e-4F);
+    CHECK(std::fabs(hit.nx) < 1.0e-4F && std::fabs(hit.ny - 1.0F) < 1.0e-4F);
+
+    /* ③ 错开（y=200）→ 未命中 */
+    CHECK(cast(0.0F, 200.0F, 1.0F, 0.0F, 500.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 0u);
+
+    /* ④ 超程（max_toi=80 < 90）→ 未命中 */
+    CHECK(cast(0.0F, 100.0F, 1.0F, 0.0F, 80.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 0u);
+
+    /* ⑤ 最近者优先：移除球后命中盒左面 x=180 → t=180 */
+    CHECK(mq_physics_remove_body(w, ball) == MQ_PHYSICS_OK);
+    CHECK(cast(0.0F, 100.0F, 1.0F, 0.0F, 500.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 1u && hit.body.index == box.index);
+    CHECK(std::fabs(hit.toi - 180.0F) < 1.0e-4F);
+    CHECK(std::fabs(hit.nx + 1.0F) < 1.0e-4F && std::fabs(hit.ny) < 1.0e-4F);
+
+    /* ⑥ 盒顶（y=110）：从上方命中 → t=90、法线 (0,1) */
+    CHECK(cast(200.0F, 200.0F, 0.0F, -1.0F, 500.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 1u && std::fabs(hit.toi - 90.0F) < 1.0e-4F);
+    CHECK(std::fabs(hit.nx) < 1.0e-4F && std::fabs(hit.ny - 1.0F) < 1.0e-4F);
+
+    /* ⑦ 起点在形状内部 → t=0（法线取射线反方向） */
+    mq_physics_body_desc inner_d = make_ball(300.0F, 300.0F, 20.0F);
+    inner_d.type = MQ_PHYSICS_BODY_STATIC;
+    mq_physics_body inner{};
+    CHECK(mq_physics_add_body(w, &inner_d, &inner) == MQ_PHYSICS_OK);
+    CHECK(cast(300.0F, 300.0F, 1.0F, 0.0F, 100.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 1u && hit.toi == 0.0F && hit.body.index == inner.index);
+    CHECK(std::fabs(hit.nx + 1.0F) < 1.0e-4F && std::fabs(hit.ny) < 1.0e-4F);
+    CHECK(cast(200.0F, 100.0F, 1.0F, 0.0F, 100.0F, hit) == MQ_PHYSICS_OK); /* 盒内 */
+    CHECK(hit.has_hit == 1u && hit.toi == 0.0F && hit.body.index == box.index);
+
+    /* ⑧ 等距命中稳定取 index 小者（确定性） */
+    mq_physics_body dup_a{}, dup_b{};
+    mq_physics_body_desc dup_d = make_ball(400.0F, 400.0F, 5.0F);
+    dup_d.type = MQ_PHYSICS_BODY_STATIC;
+    CHECK(mq_physics_add_body(w, &dup_d, &dup_a) == MQ_PHYSICS_OK);
+    CHECK(mq_physics_add_body(w, &dup_d, &dup_b) == MQ_PHYSICS_OK);
+    CHECK(cast(300.0F, 400.0F, 1.0F, 0.0F, 500.0F, hit) == MQ_PHYSICS_OK);
+    CHECK(hit.has_hit == 1u);
+    CHECK(hit.body.index == std::min(dup_a.index, dup_b.index));
+
+    /* ⑨ 参数校验：max_toi<=0 / 非单位向量 / 零向量 / 空指针 */
+    CHECK(cast(0.0F, 100.0F, 1.0F, 0.0F, 0.0F, hit) == MQ_PHYSICS_ERR_INVALID_ARG);
+    CHECK(cast(0.0F, 100.0F, 2.0F, 0.0F, 500.0F, hit) == MQ_PHYSICS_ERR_INVALID_ARG);
+    CHECK(cast(0.0F, 100.0F, 0.0F, 0.0F, 500.0F, hit) == MQ_PHYSICS_ERR_INVALID_ARG);
+    mq_physics_ray ray{ 0.0F, 100.0F, 1.0F, 0.0F, 500.0F };
+    CHECK(mq_physics_raycast(w, &ray, nullptr) == MQ_PHYSICS_ERR_INVALID_ARG);
+    CHECK(mq_physics_raycast(nullptr, &ray, &hit) == MQ_PHYSICS_ERR_INVALID_ARG);
+    CHECK(mq_physics_raycast(w, nullptr, &hit) == MQ_PHYSICS_ERR_INVALID_ARG);
+
+    /* ⑩ 只读：raycast 不改变模拟状态（checksum 稳定） */
+    mq_physics_body_desc dyn_d = make_ball(0.0F, 0.0F, 8.0F);
+    mq_physics_body dyn{};
+    CHECK(mq_physics_add_body(w, &dyn_d, &dyn) == MQ_PHYSICS_OK);
+    CHECK(mq_physics_step(w) == MQ_PHYSICS_OK);
+    const uint64_t before = mq_physics_checksum(w);
+    for (int i = 0; i < 8; ++i) (void)cast(-100.0F, 0.0F, 1.0F, 0.0F, 1000.0F, hit);
+    CHECK(mq_physics_checksum(w) == before);
+
+    mq_physics_destroy(w);
+}
+
 } // namespace
 
 
@@ -803,6 +905,12 @@ static_assert(sizeof(mq_physics_body_desc) == 56, "mq_physics_body_desc ABI 变�
 static_assert(offsetof(mq_physics_body_desc, x) == 12, "字段偏移变更");
 static_assert(offsetof(mq_physics_body_desc, half_w) == 32, "字段偏移变更");
 static_assert(offsetof(mq_physics_body_desc, flags) == 52, "字段偏移变更");
+static_assert(sizeof(mq_physics_ray) == 20, "mq_physics_ray ABI 变更");
+static_assert(offsetof(mq_physics_ray, max_toi) == 16, "字段偏移变更");
+static_assert(sizeof(mq_physics_ray_hit) == 32, "mq_physics_ray_hit ABI 变更");
+static_assert(offsetof(mq_physics_ray_hit, body) == 4, "字段偏移变更");
+static_assert(offsetof(mq_physics_ray_hit, toi) == 12, "字段偏移变更");
+static_assert(offsetof(mq_physics_ray_hit, nx) == 24, "字段偏移变更");
 static_assert(sizeof(mq_physics_contact) == 20, "mq_physics_contact ABI 变更");
 static_assert(sizeof(mq_physics_v1) == 88, "插件 vtable 尺寸变更");
 static_assert(offsetof(mq_physics_v1, checksum) == 80, "vtable 槽位变更");
@@ -817,6 +925,7 @@ int main() {
     test_contacts_stable_order();
     test_snapshot_round_trip();
     test_interpolation_readonly();
+    test_raycast();
     test_plugin_vtable();
     test_body_kinds_and_isolation();
     test_coordinate_convention();

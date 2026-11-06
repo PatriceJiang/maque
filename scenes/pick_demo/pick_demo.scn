@@ -1,0 +1,249 @@
+{
+  "title": "4x4 pick demo — cubes & spheres",
+  "script": "pick_demo.js",
+  "width": 800,
+  "height": 600,
+  "views": 1,
+  "seed": 7,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 9.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.Camera3D", "projection": "CameraProjection::Orthographic",
+          "ortho_height": 7.0, "near": 0.1, "far": 100.0,
+          "clear_color": { "r": 0.025, "g": 0.03, "b": 0.045, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.65, "y": 0.55, "z": 0.0 } } },
+        { "type": "render.Light", "type": 0, "intensity": 2.2,
+          "color": { "r": 1.0, "g": 0.95, "b": 0.88, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "fill",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 4.0, "y": 4.0, "z": 6.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.Light", "type": 1, "intensity": 2.5, "range": 18.0,
+          "color": { "r": 0.35, "g": 0.55, "b": 1.0, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "hud_title",
+      "components": [
+        { "type": "scn.Label", "x": 24.0, "y": 566.0,
+          "text": "4x4 PICK DEMO — click any cube or sphere",
+          "font_size": 20.0, "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 }
+      ]
+    },
+    {
+      "name": "hud_status",
+      "components": [
+        { "type": "scn.Label", "x": 24.0, "y": 24.0,
+          "text": "last: none  ·  16 objects / 16 materials",
+          "font_size": 16.0, "r": 1.0, "g": 0.84, "b": 0.35, "a": 1.0 }
+      ]
+    },
+    {
+      "name": "cube_r0c0",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -2.4, "y": 2.4, "z": 0.0 },
+            "rotation": { "x": 0.16, "y": 0.35, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.7991, "g": 0.07227, "b": 0.04519, "a": 1.0 }, "metallic": 0, "roughness": 0.2 }
+      ]
+    },
+    {
+      "name": "sphere_r0c1",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -0.8, "y": 2.4, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.7913, "g": 0.20864, "b": 0.016, "a": 1.0 }, "metallic": 0.85, "roughness": 0.5 }
+      ]
+    },
+    {
+      "name": "cube_r0c2",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.8, "y": 2.4, "z": 0.0 },
+            "rotation": { "x": 0.16, "y": 0.59, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.87962, "g": 0.55201, "b": 0.00478, "a": 1.0 }, "metallic": 0.25, "roughness": 0.8 }
+      ]
+    },
+    {
+      "name": "sphere_r0c3",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.4, "y": 2.4, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.02732, "g": 0.60383, "b": 0.16513, "a": 1.0 }, "metallic": 0.9, "roughness": 0.35 }
+      ]
+    },
+    {
+      "name": "sphere_r1c0",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -2.4, "y": 0.8, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.01033, "g": 0.50289, "b": 0.33245, "a": 1.0 }, "metallic": 0, "roughness": 0.65 }
+      ]
+    },
+    {
+      "name": "cube_r1c1",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -0.8, "y": 0.8, "z": 0.0 },
+            "rotation": { "x": 0.21, "y": 0.47, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.03434, "g": 0.31399, "b": 0.70838, "a": 1.0 }, "metallic": 0.85, "roughness": 0.2 }
+      ]
+    },
+    {
+      "name": "sphere_r1c2",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.8, "y": 0.8, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.32778, "g": 0.0999, "b": 0.46778, "a": 1.0 }, "metallic": 0.25, "roughness": 0.5 }
+      ]
+    },
+    {
+      "name": "cube_r1c3",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.4, "y": 0.8, "z": 0.0 },
+            "rotation": { "x": 0.21, "y": 0.71, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.80695, "g": 0.05613, "b": 0.29177, "a": 1.0 }, "metallic": 0.9, "roughness": 0.8 }
+      ]
+    },
+    {
+      "name": "cube_r2c0",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -2.4, "y": -0.8, "z": 0.0 },
+            "rotation": { "x": 0.26, "y": 0.35, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.30054, "g": 0.37626, "b": 0.38133, "a": 1.0 }, "metallic": 0, "roughness": 0.35 }
+      ]
+    },
+    {
+      "name": "sphere_r2c1",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -0.8, "y": -0.8, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.65141, "g": 0.08866, "b": 0, "a": 1.0 }, "metallic": 0.85, "roughness": 0.65 }
+      ]
+    },
+    {
+      "name": "cube_r2c2",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.8, "y": -0.8, "z": 0.0 },
+            "rotation": { "x": 0.26, "y": 0.59, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.02029, "g": 0.42327, "b": 0.11697, "a": 1.0 }, "metallic": 0.25, "roughness": 0.2 }
+      ]
+    },
+    {
+      "name": "sphere_r2c3",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.4, "y": -0.8, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.02217, "g": 0.21586, "b": 0.48515, "a": 1.0 }, "metallic": 0.9, "roughness": 0.5 }
+      ]
+    },
+    {
+      "name": "sphere_r3c0",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -2.4, "y": -2.4, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.2705, "g": 0.05781, "b": 0.41789, "a": 1.0 }, "metallic": 0, "roughness": 0.8 }
+      ]
+    },
+    {
+      "name": "cube_r3c1",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -0.8, "y": -2.4, "z": 0.0 },
+            "rotation": { "x": 0.31, "y": 0.47, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.00802, "g": 0.35153, "b": 0.23455, "a": 1.0 }, "metallic": 0.85, "roughness": 0.35 }
+      ]
+    },
+    {
+      "name": "sphere_r3c2",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.8, "y": -2.4, "z": 0.0 },
+            "rotation": { "x": 0, "y": 0, "z": 0 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.52712, "g": 0.04092, "b": 0.02416, "a": 1.0 }, "metallic": 0.25, "roughness": 0.65 }
+      ]
+    },
+    {
+      "name": "cube_r3c3",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.4, "y": -2.4, "z": 0.0 },
+            "rotation": { "x": 0.31, "y": 0.71, "z": 0.08 },
+            "scale": { "x": 0.55, "y": 0.55, "z": 0.55 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.21223, "g": 0.26225, "b": 0.26636, "a": 1.0 }, "metallic": 0.9, "roughness": 0.2 }
+      ]
+    }
+  ]
+}

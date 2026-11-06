@@ -4,6 +4,8 @@
  * 实现与顺序不变；声明仍由 schema 的 api_list 生成（maque_api.h）。 */
 #include "../runtime_engine.h"
 
+#include <cmath>
+
 using namespace maque::rt;
 
 namespace host {
@@ -78,6 +80,33 @@ float physics_contact_normal_x(void* ctx, float i) {
 float physics_contact_normal_y(void* ctx, float i) {
     float nx = 0, ny = 0;
     return contact_normal_at((Engine*)ctx, i, &nx, &ny) ? ny : 0.0F;
+}
+
+/* 2D 射线查询（docs/15 §3）：世界坐标 + 方向 → 最近命中的物理实体 id（-1 = 未命中）。
+ * 命中句柄经两张表映射回实体：组件体（physics_role_bodies）与脚本球（balls）。 */
+float physics_raycast(void* ctx, float x, float y, float dx, float dy, float max_distance) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->physics) return -1.0F;
+    const float len = std::sqrt(dx * dx + dy * dy);
+    if (!(len > 1.0e-6F)) return -1.0F;
+    mq_physics_ray ray{};
+    ray.ox = x;
+    ray.oy = y;
+    ray.dx = dx / len;
+    ray.dy = dy / len;
+    ray.max_toi = max_distance > 0.0F ? max_distance : 1.0e30F;
+    mq_physics_ray_hit hit{};
+    if (mq_physics_raycast(eng->physics, &ray, &hit) != MQ_PHYSICS_OK || hit.has_hit == 0u)
+        return -1.0F;
+    for (const auto& [id, body] : eng->physics_role_bodies) {
+        if (body.index == hit.body.index && body.generation == hit.body.generation)
+            return (float)id;
+    }
+    for (const auto& b : eng->balls) {
+        if (b.body.index == hit.body.index && b.body.generation == hit.body.generation)
+            return (float)b.id;
+    }
+    return -1.0F;
 }
 
 float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) {

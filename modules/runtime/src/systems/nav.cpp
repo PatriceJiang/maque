@@ -101,6 +101,8 @@ void Engine::clear_asset_caches() {
     tex_size_cache.clear();
     material_cache.clear();
     mesh_cache.clear();
+    mesh_bounds.clear();
+    pick_cam_valid = false;
     env_tex_cache.clear();
     env_cube_cache.clear();
     gltf_models.clear();

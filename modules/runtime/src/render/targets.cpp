@@ -208,6 +208,7 @@ void Engine::sync_render_textures() {
 
 void Engine::setup_3d() {
     has_3d = false;
+    pick_cam_valid = false;      /* 新场景：等第一帧 extract_3d 写入相机后再允许拾取 */
     if (!scene) return;
     int n_cam = 0, n_mesh = 0, n_light = 0;
     for (auto& kv : scene->nodes) {

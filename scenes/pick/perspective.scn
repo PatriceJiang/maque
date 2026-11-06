@@ -1,0 +1,40 @@
+{
+  "title": "pick_perspective",
+  "script": "perspective.js",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "seed": 4,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 5.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.Camera3D", "projection": "CameraProjection::Perspective",
+          "fov_y": 60.0, "near": 0.1, "far": 100.0,
+          "clear_color": { "r": 0.05, "g": 0.06, "b": 0.08, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.7, "y": 0.4, "z": 0.0 } } },
+        { "type": "render.Light", "type": 0, "intensity": 1.2,
+          "color": { "r": 1.0, "g": 0.95, "b": 0.85, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "cube",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.5, "y": 0.5, "z": 0.5 } } },
+        { "type": "render.MeshRenderer" }
+      ]
+    }
+  ]
+}

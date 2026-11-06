@@ -195,6 +195,28 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 2D raycast + 3D 拾取（docs/15 §3、docs/19 §4）：
+#   ① scenes/pick/pick.scn：正交相机 → 设计坐标精确可算；屏幕点选 + scene_raycast + 距离限制
+#   ② scenes/pick/ray2d.scn：physics_raycast（盒命中/未命中/超程/起点在内）
+#   ③ scenes/pbr/pick_imported.scn：.mesh.json + glTF 直读，节点旋转 45° 的边缘 OBB 点选
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME pick_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/pick_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pick"
+             "${CMAKE_SOURCE_DIR}/scenes/pbr"
+             "${CMAKE_CURRENT_BINARY_DIR}/pick_e2e")
+endif()
+
+# 4x4 拾取 demo（scenes/pick_demo）：点击 cube/sphere → scene_pick 命中 → 换色 + 日志/HUD。
+#   ① 16 形状装配；② 世界空间模拟点击（设计坐标）；③ 二次点击 palette 递增且 base_color.r 改变；
+#   ④ 空隙 miss；⑤ 两次运行日志一致；⑥ --shot 非背景占比 / 颜色多样性。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME pick_demo_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/pick_demo_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pick_demo"
+             "${CMAKE_CURRENT_BINARY_DIR}/pick_demo_e2e")
+endif()
+
 # KHR_materials_volume 厚度单位端到端（第 28 轮）：thicknessFactor/thicknessTexture 是 mesh 空间厚度、
 # 随节点缩放；attenuationDistance 是世界空间。scenes/pbr/volume_scale.scn 两个同材质 cube（scale 1.0 vs 0.1）
 # → 世界厚度差 10× → 亮度必须显著不同（漏乘节点缩放会一样黑）；另断言同帧两次截图逐字节一致。

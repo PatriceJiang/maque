@@ -490,6 +490,10 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
         pr.layout = layout;
         pr.vertex_count = vn;
         pr.stride = stride;
+        for (int k = 0; k < 3; ++k) {
+            pr.bounds_min[k] = p.bounds_min[k];
+            pr.bounds_max[k] = p.bounds_max[k];
+        }
         pr.default_weights = p.morph_weights;
         pr.applied_weights = p.morph_weights;
         pr.variant_materials = p.variant_materials;

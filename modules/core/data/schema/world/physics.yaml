@@ -214,6 +214,24 @@
           - { name: restitution, type: "float", doc: "0..1，默认 0.5" }
           - { name: friction, type: "float", doc: "0..1，默认 0.2" }
           - { name: flags, type: "uint32_t", doc: "位0 锁旋转（no-op）；位1 关闭重力" }
+      - name: mq_physics_ray
+        doc: "2D 射线（世界坐标，y 向上）。dir 必须**已归一化**（|dir| ≈ 1）；max_toi > 0。"
+        fields:
+          - { name: ox, type: "float" }
+          - { name: oy, type: "float" }
+          - { name: dx, type: "float" }
+          - { name: dy, type: "float" }
+          - { name: max_toi, type: "float", doc: "最大参数距离（世界单位），必须 > 0" }
+      - name: mq_physics_ray_hit
+        doc: "raycast 结果：最近命中的刚体（has_hit=0 时其余字段为 0 / 未定义）。"
+        fields:
+          - { name: has_hit, type: "uint32_t" }
+          - { name: body, type: "mq_physics_body", doc: "命中刚体句柄（可用于 get_transform 等）" }
+          - { name: toi, type: "float", doc: "沿射线的参数距离（= 世界距离，dir 已归一化）" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: nx, type: "float", doc: "表面外法线（单位向量，指向射线来源一侧）" }
+          - { name: ny, type: "float" }
       - name: mq_physics_contact
         doc: "本帧接触（稳定按 (a_index,b_index) 升序；平面接触 b_index = PLANE）。"
         fields:
@@ -248,6 +266,7 @@
       - { fn: mq_physics_get_velocity,  returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: vx, type: "float*" }, { name: vy, type: "float*" } ] }
       - { fn: mq_physics_set_velocity,  returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: vx, type: "float" }, { name: vy, type: "float" } ] }
       - { fn: mq_physics_interpolate,   returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: alpha, type: "float" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_physics_raycast,       returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: ray, type: "const mq_physics_ray*" }, { name: out, type: "mq_physics_ray_hit*" } ], doc: "2D 射线查询（球/AABB，返回最近命中；只读，不改模拟状态）。dir 未归一化 / max_toi<=0 → INVALID_ARG" }
       - { fn: mq_physics_set_bounds,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: min_x, type: "float" }, { name: min_y, type: "float" }, { name: max_x, type: "float" }, { name: max_y, type: "float" } ], doc: "四条静态平面：min_y = y 小的一侧、max_y = y 大的一侧（世界 y 向上 → min_y 是屏幕下沿）；DYNAMIC 体被挡在 [min+ext, max-ext]" }
       - { fn: mq_physics_step,          returns: int,      args: [ { name: w, type: "mq_physics_world*" } ] }
       - { fn: mq_physics_step_count,    returns: uint32_t, args: [ { name: w, type: "mq_physics_world*" } ] }

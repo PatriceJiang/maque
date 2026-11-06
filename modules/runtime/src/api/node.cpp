@@ -285,13 +285,33 @@ float node_child_with_component(void* ctx, float id, const char* type) {
     return p ? (float)match(p->children) : -1.0F;
 }
 
-/* ---- 组件字段（反射读写）---- */
+/* ---- 组件字段（反射读写；field 支持嵌套路径，如 "base_color.r" / "position.x"）----
+ * 单字段路径与旧行为一致（快路径 read_num/write_num）；带点时经 mq_reflect_field_path
+ * 解析绝对偏移，再用叶字段描述符读写（生成访问器优先，故 Vec3/Color 成员同样适用）。 */
+static bool resolve_leaf(Engine& eng, const mq_type_desc* d, void* base, const char* field,
+                         const mq_field_desc** out_field, void** out_leaf) {
+    uint32_t off = 0;
+    const mq_field_desc* f = mq_reflect_field_path(eng.reflect, d, field, &off);
+    if (!f) return false;
+    *out_field = f;
+    /* 叶字段的“容器基址” = 绝对偏移 - 叶字段自身偏移（accessor 需要容器指针）。 */
+    *out_leaf = (uint8_t*)base + off - f->offset;
+    return true;
+}
+
 float node_get_number(void* ctx, float id, const char* comp, const char* field) {
     auto* eng = (Engine*)ctx;
     const mq_type_desc* d = nullptr;
     auto* blob = comp_by_name(*eng, (int)id, comp, &d);
     if (!blob || !d) return 0.0F;
-    return read_num(d, blob->data(), field ? field : "", 0.0F);
+    const char* path = field ? field : "";
+    const mq_field_desc* leaf = nullptr;
+    void* leaf_base = nullptr;
+    if (resolve_leaf(*eng, d, blob->data(), path, &leaf, &leaf_base)) {
+        double v = 0.0;
+        if (mq_reflect_get_f64(eng->reflect, leaf_base, leaf, &v) == 0) return (float)v;
+    }
+    return read_num(d, blob->data(), path, 0.0F);
 }
 
 float node_set_number(void* ctx, float id, const char* comp, const char* field, float value) {
@@ -299,7 +319,13 @@ float node_set_number(void* ctx, float id, const char* comp, const char* field, 
     const mq_type_desc* d = nullptr;
     auto* blob = comp_by_name(*eng, (int)id, comp, &d);
     if (!blob || !d) return 0.0F;
-    return write_num(d, blob->data(), field ? field : "", (double)value) ? 1.0F : 0.0F;
+    const char* path = field ? field : "";
+    const mq_field_desc* leaf = nullptr;
+    void* leaf_base = nullptr;
+    if (resolve_leaf(*eng, d, blob->data(), path, &leaf, &leaf_base)) {
+        if (mq_reflect_set_f64(eng->reflect, leaf_base, leaf, (double)value) == 0) return 1.0F;
+    }
+    return write_num(d, blob->data(), path, (double)value) ? 1.0F : 0.0F;
 }
 
 float node_get_bool(void* ctx, float id, const char* comp, const char* field) {

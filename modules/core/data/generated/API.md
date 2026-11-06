@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **325** 个 · 控制面方法 **62** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
+统计：脚本 API **328** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -100,6 +100,7 @@
 | `physics_contact_b` | i: float | float | ctx |
 | `physics_contact_normal_x` | i: float | float | ctx |
 | `physics_contact_normal_y` | i: float | float | ctx |
+| `physics_raycast` | x: float, y: float, dx: float, dy: float, max_distance: float | float | ctx |
 | `ball_clear` | — | void | ctx |
 | `set_label` | id: float, text: string | void | ctx |
 | `ui_hit_at` | x: float, y: float | float | ctx |
@@ -137,8 +138,8 @@
 | `node_component_count` | id: float | float | ctx |
 | `node_component_at` | id: float, index: float | string | ctx |
 | `node_child_with_component` | id: float, type: string | float | ctx |
-| `node_get_number` | id: float, comp: string, field: string | float | ctx · 按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API） |
-| `node_set_number` | id: float, comp: string, field: string, value: float | float | ctx · 按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API） |
+| `node_get_number` | id: float, comp: string, field: string | float | ctx · 按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）。field 支持嵌套路径，如 "base_color.r" / "local.position.x" |
+| `node_set_number` | id: float, comp: string, field: string, value: float | float | ctx · 按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）。field 支持嵌套路径，如 "base_color.r" / "local.position.x" |
 | `node_get_bool` | id: float, comp: string, field: string | float | ctx · 按名反射读 bool（慢路径） |
 | `node_set_bool` | id: float, comp: string, field: string, value: float | float | ctx · 按名反射写 bool（慢路径） |
 | `node_get_string` | id: float, comp: string, field: string | string | ctx · 按名反射读字符串（慢路径） |
@@ -173,6 +174,8 @@
 | `scene_title` | — | string | ctx · 当前场景 title（scn.Scene.title） |
 | `scene_dir` | — | string | ctx · 当前场景所在目录（相对/绝对，取决于启动参数） |
 | `scene_path` | — | string | ctx · 当前场景路径（启动/切场景时给出的原始路径） |
+| `scene_pick` | x: float, y: float | float | ctx · 主 Camera3D 从**设计坐标** (x,y)（= input_x/input_y 同一套）发射线 → 最近命中的 3D 网格实体（最近成帧相机；无命中/首帧前 = -1） |
+| `scene_raycast` | ox: float, oy: float, oz: float, dx: float, dy: float, dz: float, max_distance: float | float | ctx · **世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限） |
 | `scene_instantiate` | parent: float, path: string, params: string | float | ctx · 实例化一个 .scn（parent=-1 挂到世界根；params=JSON 参数，可省略）；返回实例句柄（-1=失败） |
 | `scene_unload` | instance: float | float | ctx · 卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM） |
 | `scene_reload` | instance: float | float | ctx |
@@ -386,6 +389,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Types.describe` | — | — |
 | `Scene.info` | — | — |
 | `Scene.entities` | — | — |
+| `Scene.pick` | x: float, y: float | number, number |
+| `Scene.raycast` | ox: float, oy: float, oz: float, dx: float, dy: float, dz: float, max_distance: float | number, number, number, number, number, number, number |
 | `Scene.emit` | id: float, event: string, value: float | number, string, number |
 | `Scene.get` | id: float, path: string | number, string |
 | `Scene.set` | id: float, path: string, value: json, dry_run: bool | number, string, object, boolean |
@@ -1074,6 +1079,8 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 - `mq_physics_body`：index: uint32_t, generation: uint32_t
 - `mq_physics_config`：struct_size: uint32_t, gravity_x: float, gravity_y: float, fixed_dt: float, solver_iterations: uint32_t, max_bodies: uint32_t, seed: uint64_t
 - `mq_physics_body_desc`：struct_size: uint32_t, type: uint32_t, shape: uint32_t, x: float, y: float, vx: float, vy: float, radius: float, half_w: float, half_h: float, mass: float, restitution: float, friction: float, flags: uint32_t
+- `mq_physics_ray`：ox: float, oy: float, dx: float, dy: float, max_toi: float
+- `mq_physics_ray_hit`：has_hit: uint32_t, body: mq_physics_body, toi: float, x: float, y: float, nx: float, ny: float
 - `mq_physics_contact`：a_index: uint32_t, b_index: uint32_t, nx: float, ny: float, depth: float
 - `mq_physics_v1`：abi_version: uint32_t, name: const char*, create: mq_physics_world* (*)(const mq_physics_config*), destroy: void (*)(mq_physics_world*), add_body: int (*)(mq_physics_world*, const mq_physics_body_desc*, mq_physics_body*), remove_body: int (*)(mq_physics_world*, mq_physics_body), step: int (*)(mq_physics_world*), get_transform: int (*)(mq_physics_world*, mq_physics_body, float*, float*), set_transform: int (*)(mq_physics_world*, mq_physics_body, float, float), set_velocity: int (*)(mq_physics_world*, mq_physics_body, float, float), checksum: uint64_t (*)(mq_physics_world*)
 
@@ -1090,6 +1097,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_physics_get_velocity` | int | w: mq_physics_world*, b: mq_physics_body, vx: float*, vy: float* |
 | `mq_physics_set_velocity` | int | w: mq_physics_world*, b: mq_physics_body, vx: float, vy: float |
 | `mq_physics_interpolate` | int | w: mq_physics_world*, b: mq_physics_body, alpha: float, x: float*, y: float* |
+| `mq_physics_raycast` | int | w: mq_physics_world*, ray: const mq_physics_ray*, out: mq_physics_ray_hit* |
 | `mq_physics_set_bounds` | int | w: mq_physics_world*, min_x: float, min_y: float, max_x: float, max_y: float |
 | `mq_physics_step` | int | w: mq_physics_world* |
 | `mq_physics_step_count` | uint32_t | w: mq_physics_world* |

@@ -2,8 +2,8 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 256,
-  "api_count": 325,
-  "control_count": 62,
+  "api_count": 328,
+  "control_count": 64,
   "callback_count": 11,
   "module_count": 26,
   "types": [
@@ -18179,6 +18179,38 @@
       "manual": null
     },
     {
+      "name": "host.physics_raycast",
+      "namespace": "host",
+      "fn": "physics_raycast",
+      "global": true,
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "dx",
+          "type": "float"
+        },
+        {
+          "name": "dy",
+          "type": "float"
+        },
+        {
+          "name": "max_distance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
       "name": "host.ball_clear",
       "namespace": "host",
       "fn": "ball_clear",
@@ -18897,7 +18929,7 @@
       ],
       "returns": "float",
       "ctx": true,
-      "doc": "按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）",
+      "doc": "按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）。field 支持嵌套路径，如 \"base_color.r\" / \"local.position.x\"",
       "manual": null
     },
     {
@@ -18925,7 +18957,7 @@
       ],
       "returns": "float",
       "ctx": true,
-      "doc": "按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）",
+      "doc": "按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）。field 支持嵌套路径，如 \"base_color.r\" / \"local.position.x\"",
       "manual": null
     },
     {
@@ -19471,6 +19503,66 @@
       "returns": "string",
       "ctx": true,
       "doc": "当前场景路径（启动/切场景时给出的原始路径）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_pick",
+      "namespace": "host",
+      "fn": "scene_pick",
+      "global": true,
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "主 Camera3D 从**设计坐标** (x,y)（= input_x/input_y 同一套）发射线 → 最近命中的 3D 网格实体（最近成帧相机；无命中/首帧前 = -1）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_raycast",
+      "namespace": "host",
+      "fn": "scene_raycast",
+      "global": true,
+      "args": [
+        {
+          "name": "ox",
+          "type": "float"
+        },
+        {
+          "name": "oy",
+          "type": "float"
+        },
+        {
+          "name": "oz",
+          "type": "float"
+        },
+        {
+          "name": "dx",
+          "type": "float"
+        },
+        {
+          "name": "dy",
+          "type": "float"
+        },
+        {
+          "name": "dz",
+          "type": "float"
+        },
+        {
+          "name": "max_distance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "**世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限）",
       "manual": null
     },
     {
@@ -23097,6 +23189,54 @@
       "method": "Scene.entities",
       "namespace": "control",
       "args": []
+    },
+    {
+      "method": "Scene.pick",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Scene.raycast",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "ox",
+          "type": "float"
+        },
+        {
+          "name": "oy",
+          "type": "float"
+        },
+        {
+          "name": "oz",
+          "type": "float"
+        },
+        {
+          "name": "dx",
+          "type": "float"
+        },
+        {
+          "name": "dy",
+          "type": "float"
+        },
+        {
+          "name": "dz",
+          "type": "float"
+        },
+        {
+          "name": "max_distance",
+          "type": "float"
+        }
+      ]
     },
     {
       "method": "Scene.emit",
@@ -31585,6 +31725,27 @@
           ]
         },
         {
+          "name": "mq_physics_raycast",
+          "returns": "int",
+          "args": [
+            {
+              "name": "w",
+              "type": "mq_physics_world*",
+              "doc": null
+            },
+            {
+              "name": "ray",
+              "type": "const mq_physics_ray*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_physics_ray_hit*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_physics_set_bounds",
           "returns": "int",
           "args": [
@@ -31873,6 +32034,76 @@
               "name": "flags",
               "type": "uint32_t",
               "doc": "位0 锁旋转（no-op）；位1 关闭重力"
+            }
+          ]
+        },
+        {
+          "name": "mq_physics_ray",
+          "fields": [
+            {
+              "name": "ox",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "oy",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dx",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dy",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "max_toi",
+              "type": "float",
+              "doc": "最大参数距离（世界单位），必须 > 0"
+            }
+          ]
+        },
+        {
+          "name": "mq_physics_ray_hit",
+          "fields": [
+            {
+              "name": "has_hit",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "body",
+              "type": "mq_physics_body",
+              "doc": "命中刚体句柄（可用于 get_transform 等）"
+            },
+            {
+              "name": "toi",
+              "type": "float",
+              "doc": "沿射线的参数距离（= 世界距离，dir 已归一化）"
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "nx",
+              "type": "float",
+              "doc": "表面外法线（单位向量，指向射线来源一侧）"
+            },
+            {
+              "name": "ny",
+              "type": "float",
+              "doc": null
             }
           ]
         },

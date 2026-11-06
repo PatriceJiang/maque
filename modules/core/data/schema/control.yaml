@@ -35,6 +35,14 @@
     - { method: Types.describe, args: [] }
     - { method: Scene.info, args: [] }
     - { method: Scene.entities, args: [] }
+    # 3D 拾取（只读）：与脚本 scene_pick / scene_raycast 同一实现；返回最近命中的实体与命中点。
+    - { method: Scene.pick, args: [ { name: x, type: float }, { name: y, type: float } ],
+        summary: "主 Camera3D 从设计坐标 (x,y) 发射线 → {entity,name,distance,point}（最近成帧相机；无命中/首帧前 entity=-1）" }
+    - { method: Scene.raycast, args: [ { name: ox, type: float }, { name: oy, type: float },
+                                       { name: oz, type: float }, { name: dx, type: float },
+                                       { name: dy, type: float }, { name: dz, type: float },
+                                       { name: max_distance, type: float } ],
+        summary: "世界坐标射线拾取 → {entity,name,distance,point}（dir 内部归一化，max_distance<=0 = 无限）" }
     # 宿主/工具 → 脚本：触发节点事件（与脚本内 node_emit_number 同一路径；多语言按处理器名路由）
     - { method: Scene.emit,   args: [ { name: id, type: float }, { name: event, type: string },
                                       { name: value, type: float } ] }

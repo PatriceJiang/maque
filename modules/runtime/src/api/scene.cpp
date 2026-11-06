@@ -35,6 +35,20 @@ const char* scene_dir(void* ctx) { return ((Engine*)ctx)->scn_dir.c_str(); }
 
 const char* scene_path(void* ctx) { return ((Engine*)ctx)->scn_full_path.c_str(); }
 
+/* ---- 3D 拾取（docs/19 §4）：主相机屏幕射线 / 显式世界射线 → 最近命中的 MeshRenderer 实体 ---- */
+float scene_pick(void* ctx, float x, float y) {
+    auto* eng = (Engine*)ctx;
+    return (float)eng->pick_screen(x, y).entity;
+}
+
+float scene_raycast(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz,
+                    float max_distance) {
+    auto* eng = (Engine*)ctx;
+    const float origin[3] = { ox, oy, oz };
+    const float dir[3] = { dx, dy, dz };
+    return (float)eng->pick_ray(origin, dir, max_distance).entity;
+}
+
 /* ---- 场景实例（docs/32 §7.1）：句柄立即分配，构建/卸载在帧边界（apply_instance_ops） ---- */
 float scene_instantiate(void* ctx, float parent, const char* path, const char* params) {
     auto* eng = (Engine*)ctx;

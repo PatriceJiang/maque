@@ -18,6 +18,8 @@ typedef struct mq_physics_world mq_physics_world;
 typedef struct mq_physics_body mq_physics_body;
 typedef struct mq_physics_config mq_physics_config;
 typedef struct mq_physics_body_desc mq_physics_body_desc;
+typedef struct mq_physics_ray mq_physics_ray;
+typedef struct mq_physics_ray_hit mq_physics_ray_hit;
 typedef struct mq_physics_contact mq_physics_contact;
 typedef struct mq_physics_v1 mq_physics_v1;
 
@@ -77,6 +79,26 @@ typedef struct mq_physics_body_desc {
     uint32_t flags;   /* 位0 锁旋转（no-op）；位1 关闭重力 */
 } mq_physics_body_desc;
 
+/* 2D 射线（世界坐标，y 向上）。dir 必须**已归一化**（|dir| ≈ 1）；max_toi > 0。 */
+typedef struct mq_physics_ray {
+    float ox;
+    float oy;
+    float dx;
+    float dy;
+    float max_toi;   /* 最大参数距离（世界单位），必须 > 0 */
+} mq_physics_ray;
+
+/* raycast 结果：最近命中的刚体（has_hit=0 时其余字段为 0 / 未定义）。 */
+typedef struct mq_physics_ray_hit {
+    uint32_t has_hit;
+    mq_physics_body body;   /* 命中刚体句柄（可用于 get_transform 等） */
+    float toi;   /* 沿射线的参数距离（= 世界距离，dir 已归一化） */
+    float x;
+    float y;
+    float nx;   /* 表面外法线（单位向量，指向射线来源一侧） */
+    float ny;
+} mq_physics_ray_hit;
+
 /* 本帧接触（稳定按 (a_index,b_index) 升序；平面接触 b_index = PLANE）。 */
 typedef struct mq_physics_contact {
     uint32_t a_index;
@@ -122,6 +144,8 @@ int mq_physics_set_transform(mq_physics_world* w, mq_physics_body b, float x, fl
 int mq_physics_get_velocity(mq_physics_world* w, mq_physics_body b, float* vx, float* vy);
 int mq_physics_set_velocity(mq_physics_world* w, mq_physics_body b, float vx, float vy);
 int mq_physics_interpolate(mq_physics_world* w, mq_physics_body b, float alpha, float* x, float* y);
+/* 2D 射线查询（球/AABB，返回最近命中；只读，不改模拟状态）。dir 未归一化 / max_toi<=0 → INVALID_ARG */
+int mq_physics_raycast(mq_physics_world* w, const mq_physics_ray* ray, mq_physics_ray_hit* out);
 /* 四条静态平面：min_y = y 小的一侧、max_y = y 大的一侧（世界 y 向上 → min_y 是屏幕下沿）；DYNAMIC 体被挡在 [min+ext, max-ext] */
 int mq_physics_set_bounds(mq_physics_world* w, float min_x, float min_y, float max_x, float max_y);
 int mq_physics_step(mq_physics_world* w);

@@ -718,6 +718,16 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     v.clear_color[2] = clear.b; v.clear_color[3] = clear.a;
     v.layer_mask = camera_mask;
     out_views.push_back(v);
+    /* 3D 拾取缓存（docs/19 §4）：主相机（camera_entity < 0）的 view/proj/目标像素视口。
+     * 拾取在脚本 update / 控制面帧边界调用 → 用**最近一次成帧**的相机，与画面一致。 */
+    if (camera_entity < 0) {
+        std::memcpy(pick_view, view, sizeof view);
+        std::memcpy(pick_proj, proj, sizeof proj);
+        std::memcpy(pick_viewport, v.viewport, sizeof pick_viewport);
+        pick_tw = tw;
+        pick_th = th;
+        pick_cam_valid = true;
+    }
     if (render3d_info && !gltf_frame_info) {
         gltf_frame_info = true;
         std::print("runtime: 3d frame0 draws={} skins={} morph={} anim_pose={} names={} "

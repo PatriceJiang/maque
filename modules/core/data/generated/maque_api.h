@@ -76,6 +76,7 @@ namespace host {
   float physics_contact_b(void* ctx, float i);
   float physics_contact_normal_x(void* ctx, float i);
   float physics_contact_normal_y(void* ctx, float i);
+  float physics_raycast(void* ctx, float x, float y, float dx, float dy, float max_distance);
   void ball_clear(void* ctx);
   void set_label(void* ctx, float id, const char* text);
   float ui_hit_at(void* ctx, float x, float y);
@@ -149,6 +150,8 @@ namespace host {
   const char* scene_title(void* ctx);
   const char* scene_dir(void* ctx);
   const char* scene_path(void* ctx);
+  float scene_pick(void* ctx, float x, float y);
+  float scene_raycast(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz, float max_distance);
   float scene_instantiate(void* ctx, float parent, const char* path, const char* params);
   float scene_unload(void* ctx, float instance);
   float scene_reload(void* ctx, float instance);

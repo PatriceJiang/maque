@@ -565,6 +565,9 @@ struct Engine {
     std::unordered_map<std::string, int32_t> mesh_cache;
     struct MeshStats { uint32_t vertex_count = 0, index_count = 0; };
     std::unordered_map<int32_t, MeshStats> mesh_stats;   // 网格句柄 → stats 几何计数（含内建 cube / glTF）
+    /* 3D 拾取用的网格本地包围盒（.mesh.json 的 bounds；glTF 在 GltfGpuModel::Prim 里自带）。 */
+    struct MeshBounds { float min[3] = { 0.0F, 0.0F, 0.0F }; float max[3] = { 0.0F, 0.0F, 0.0F }; };
+    std::unordered_map<std::string, MeshBounds> mesh_bounds;
     /* ---- 运行时 glTF/GLB 直接加载（plans/23）：mesh_path 指向 .gltf/.glb 时走这里 ----
      * 装配期解析一次并上传（网格/纹理句柄由本 Engine 持有，切场景统一销毁）。
      * plans/24：蒙皮/动画/morph/材质扩展/灯光相机全部在装配期解析，模拟帧内只读缓存。 */
@@ -626,6 +629,8 @@ struct Engine {
             int layout = 0;               /* 0/1 (无蒙皮) 或 2/3 (蒙皮) */
             uint32_t vertex_count = 0;
             uint32_t stride = 0;
+            float bounds_min[3] = { 0.0F, 0.0F, 0.0F };   /* 网格本地包围盒（拾取/阴影/诊断） */
+            float bounds_max[3] = { 0.0F, 0.0F, 0.0F };
             std::vector<uint8_t> base;    /* 打包后的基础顶点（morph 重算起点；无 morph 时为空） */
             std::vector<MorphTarget> morph_targets;
             std::vector<float> default_weights;
@@ -866,6 +871,22 @@ struct Engine {
                     std::vector<mq_renderer_draw3d>& out_draws,
                     std::vector<mq_renderer_skin>& out_skins,
                     int camera_entity = -1, bool allow_orbit = true);
+    /* 3D 拾取（docs/19 §4）：对 render.MeshRenderer 的**本地包围盒**做 OBB 射线求交
+     * （glTF / .mesh.json 的 bounds；内建 cube ±0.6；蒙皮/morph 用绑定姿态 bounds）。
+     * 相机射线用 extract_3d 缓存的 view/proj（与上一帧画面一致）；无 3D 内容 → 未命中。 */
+    struct PickHit {
+        int entity = -1;
+        float distance = 0.0F;
+        float point[3] = { 0.0F, 0.0F, 0.0F };
+    };
+    PickHit pick_ray(const float origin[3], const float dir[3], float max_distance = 0.0F);
+    PickHit pick_screen(float x, float y);   /* **设计坐标**（与 input_x/input_y 同一套；2D 场景里即世界坐标） */
+    bool  pick_cam_valid = false;
+    float pick_view[16] = {};
+    float pick_proj[16] = {};
+    float pick_viewport[4] = {};             /* 目标像素 x,y,w,h（extract_3d 每帧写） */
+    int   pick_tw = 0, pick_th = 0;
+    std::vector<int> pick_scratch;           /* 拾取遍历复用（避免逐帧分配；单线程） */
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）

@@ -186,6 +186,9 @@ int b_host_physics_contact_normal_x(void* user, int, const double* a, double* re
 int b_host_physics_contact_normal_y(void* user, int, const double* a, double* ret) {
   *ret = (double)host::physics_contact_normal_y(user, (float)a[0]); return 0;
 }
+int b_host_physics_raycast(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_raycast(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3], (float)a[4]); return 0;
+}
 int b_host_ball_clear(void* user, int, const double* a, double* ret) {
   host::ball_clear(user); return 0;
 }
@@ -404,6 +407,12 @@ int b_host_scene_dir(void* user, int, const double* a, char* ret, int cap) {
 }
 int b_host_scene_path(void* user, int, const double* a, char* ret, int cap) {
   std::snprintf(ret, (size_t)cap, "%s", host::scene_path(user)); return 0;
+}
+int b_host_scene_pick(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_pick(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_scene_raycast(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_raycast(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3], (float)a[4], (float)a[5], (float)a[6]); return 0;
 }
 int b_host_scene_instantiate(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::scene_instantiate(user, (float)a[0], s[0], s[1]); return 0;
@@ -1050,6 +1059,7 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "physics_contact_b", b_host_physics_contact_b, ctx);
   mq_script_register_num(vm, "physics_contact_normal_x", b_host_physics_contact_normal_x, ctx);
   mq_script_register_num(vm, "physics_contact_normal_y", b_host_physics_contact_normal_y, ctx);
+  mq_script_register_num(vm, "physics_raycast", b_host_physics_raycast, ctx);
   mq_script_register_num(vm, "ball_clear", b_host_ball_clear, ctx);
   mq_script_register_mixed(vm, "set_label", b_host_set_label, ctx);
   mq_script_register_num(vm, "ui_hit_at", b_host_ui_hit_at, ctx);
@@ -1123,6 +1133,8 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_ret_str(vm, "scene_title", b_host_scene_title, ctx);
   mq_script_register_ret_str(vm, "scene_dir", b_host_scene_dir, ctx);
   mq_script_register_ret_str(vm, "scene_path", b_host_scene_path, ctx);
+  mq_script_register_num(vm, "scene_pick", b_host_scene_pick, ctx);
+  mq_script_register_num(vm, "scene_raycast", b_host_scene_raycast, ctx);
   mq_script_register_multi(vm, "scene_instantiate", "nss", b_host_scene_instantiate, ctx);
   mq_script_register_num(vm, "scene_unload", b_host_scene_unload, ctx);
   mq_script_register_num(vm, "scene_reload", b_host_scene_reload, ctx);

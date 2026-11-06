@@ -63,6 +63,11 @@
     - { fn: physics_contact_b,        ctx: true, args: [ { name: i, type: float } ], returns: float }
     - { fn: physics_contact_normal_x, ctx: true, args: [ { name: i, type: float } ], returns: float }
     - { fn: physics_contact_normal_y, ctx: true, args: [ { name: i, type: float } ], returns: float }
+    # 2D 射线查询（docs/15 §3）：世界坐标 (x,y) + 方向 (dx,dy) → 最近命中的物理实体 id（-1 = 未命中）。
+    # 只读（不改模拟状态）；dir 内部归一化，max_distance<=0 = 无限。命中映射按组件体/脚本球两套句柄表。
+    - { fn: physics_raycast, ctx: true, args: [ { name: x, type: float }, { name: y, type: float },
+                                               { name: dx, type: float }, { name: dy, type: float },
+                                               { name: max_distance, type: float } ], returns: float }
     - { fn: ball_clear,    ctx: true }
     # 组件字段（脚本改文本等；引擎按 role 定位组件，不认具体类型名）
     - { fn: set_label,     ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ] }
@@ -112,8 +117,8 @@
     - { fn: node_child_with_component, ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
     # 组件字段（按名反射；**慢路径**：仅脚本/自定义组件使用，引擎内部一律类型化直读；
     # comp 必须是全名 ns.Type —— 短名不再解析，避免歧义（scn.Button vs ui.Button）与全表扫描）
-    - { fn: node_get_number,     ctx: true, doc: "按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
-    - { fn: node_set_number,     ctx: true, doc: "按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: node_get_number,     ctx: true, doc: "按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）。field 支持嵌套路径，如 \"base_color.r\" / \"local.position.x\"", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
+    - { fn: node_set_number,     ctx: true, doc: "按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）。field 支持嵌套路径，如 \"base_color.r\" / \"local.position.x\"", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
     - { fn: node_get_bool,       ctx: true, doc: "按名反射读 bool（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
     - { fn: node_set_bool,       ctx: true, doc: "按名反射写 bool（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
     - { fn: node_get_string,     ctx: true, doc: "按名反射读字符串（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: string }
@@ -155,6 +160,17 @@
     - { fn: scene_title,   ctx: true, returns: string, doc: "当前场景 title（scn.Scene.title）" }
     - { fn: scene_dir,     ctx: true, returns: string, doc: "当前场景所在目录（相对/绝对，取决于启动参数）" }
     - { fn: scene_path,    ctx: true, returns: string, doc: "当前场景路径（启动/切场景时给出的原始路径）" }
+    # 3D 拾取（docs/19 §4）：相机屏幕射线 / 显式世界射线 → 最近命中的 render.MeshRenderer 实体。
+    # 坐标：scene_pick 与 input_x/input_y 同一套（**设计坐标**；2D 场景里就是世界坐标）；
+    #       scene_raycast 用 **3D 世界坐标**（3D 场景里想要"点某个世界点"用它）。无 3D 内容/未命中/首帧前 → -1。
+    # 命中几何 = 网格本地包围盒（glTF / .mesh.json 的 bounds，内建 cube ±0.6）；蒙皮/morph 用绑定姿态 bounds。
+    - { fn: scene_pick,    ctx: true, args: [ { name: x, type: float }, { name: y, type: float } ], returns: float,
+        doc: "主 Camera3D 从**设计坐标** (x,y)（= input_x/input_y 同一套）发射线 → 最近命中的 3D 网格实体（最近成帧相机；无命中/首帧前 = -1）" }
+    - { fn: scene_raycast, ctx: true, args: [ { name: ox, type: float }, { name: oy, type: float },
+                                             { name: oz, type: float }, { name: dx, type: float },
+                                             { name: dy, type: float }, { name: dz, type: float },
+                                             { name: max_distance, type: float } ], returns: float,
+        doc: "**世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限）" }
 
     # ---- 场景实例（docs/32）：`.scn` = 节点树 + 行为；每个实例独立 VM/生命周期/事件作用域 ----
     # 变更类：句柄**立即分配**，实体/VM/on_start 在**下一个帧边界**完成（docs/32 §7）。

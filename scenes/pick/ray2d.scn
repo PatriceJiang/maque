@@ -1,0 +1,21 @@
+{
+  "title": "ray2d",
+  "script": "ray2d.js",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "seed": 3,
+  "gravity_y": 0,
+  "entities": [
+    {
+      "name": "wall",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 120 },
+        { "type": "scn.Sprite", "width": 40, "height": 40, "r": 0.8, "g": 0.4, "b": 0.2 },
+        { "type": "physics.RigidBody", "body_type": "BodyType::Static" },
+        { "type": "physics.Collider", "shape_type": "ShapeType::Box",
+          "half_extents": { "x": 20.0, "y": 20.0, "z": 0.5 } }
+      ]
+    }
+  ]
+}

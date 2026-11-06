@@ -415,6 +415,81 @@ void reset_body_to_defaults(PhysicsBody& body) {
     body.friction = 0.2F;
 }
 
+/* ---------- 射线查询（2D；只读，不改模拟状态） ----------
+ * 语义与 plans/13 T-17..T-19 对齐：dir 必须归一化（调用方保证，ABI 入口再校验）、
+ * max_toi > 0、返回**最近的**命中；sensor 暂未建模（求解器无 sensor 标志）。
+ * 起点落在形状内部 → t=0、法线取射线反方向（"把射线推出去"的一面）。 */
+
+/* 射线-球（解二次方程；取最近非负根）。 */
+bool ray_vs_ball(float ox, float oy, float dx, float dy, const PhysicsBody& b, float max_toi,
+                 float& t, float& out_nx, float& out_ny) {
+    const float mx = ox - b.x, my = oy - b.y;
+    const float c = mx * mx + my * my - b.radius * b.radius;
+    if (c <= 0.0F) {                       /* 起点在球内 */
+        t = 0.0F;
+        out_nx = -dx;
+        out_ny = -dy;
+        return true;
+    }
+    const float proj = mx * dx + my * dy;
+    const float disc = proj * proj - c;
+    if (disc < 0.0F)
+        return false;
+    const float sq = std::sqrt(disc);
+    t = -proj - sq;
+    if (t < 0.0F)
+        t = -proj + sq;                    /* 起点在球后 → 取远端根（正） */
+    if (t < 0.0F || t > max_toi)
+        return false;
+    const float rx = (ox + dx * t) - b.x;
+    const float ry = (oy + dy * t) - b.y;
+    const float len = std::sqrt(rx * rx + ry * ry);
+    if (len > 1.0e-8F) {
+        out_nx = rx / len;
+        out_ny = ry / len;
+    } else {
+        out_nx = -dx;
+        out_ny = -dy;
+    }
+    return true;
+}
+
+/* 射线-AABB（2D slab；法线取进入面）。 */
+bool ray_vs_box(float ox, float oy, float dx, float dy, const PhysicsBody& b, float max_toi,
+                float& t, float& out_nx, float& out_ny) {
+    const float min_x = b.x - b.half_w, max_x = b.x + b.half_w;
+    const float min_y = b.y - b.half_h, max_y = b.y + b.half_h;
+    float tmin = 0.0F, tmax = max_toi;
+    float nx = 0.0F, ny = 0.0F;
+    auto slab = [&](float o, float d, float lo, float hi, float axis_x, float axis_y) -> bool {
+        if (std::fabs(d) < 1.0e-8F)
+            return o >= lo && o <= hi;     /* 平行于该轴：起点必须已在板内 */
+        float t1 = (lo - o) / d, t2 = (hi - o) / d;
+        float n1x = -axis_x, n1y = -axis_y;
+        float n2x = axis_x, n2y = axis_y;
+        if (t1 > t2) {
+            std::swap(t1, t2);
+            std::swap(n1x, n2x);
+            std::swap(n1y, n2y);
+        }
+        if (t1 > tmin) { tmin = t1; nx = n1x; ny = n1y; }
+        if (t2 < tmax) tmax = t2;
+        return tmin <= tmax;
+    };
+    if (!slab(ox, dx, min_x, max_x, 1.0F, 0.0F)) return false;
+    if (!slab(oy, dy, min_y, max_y, 0.0F, 1.0F)) return false;
+    if (tmax < 0.0F || tmin > max_toi) return false;
+    t = tmin;
+    if (t <= 0.0F) {                       /* 起点在盒内：进入面不唯一 → 取射线反方向 */
+        out_nx = -dx;
+        out_ny = -dy;
+    } else {
+        out_nx = nx;
+        out_ny = ny;
+    }
+    return true;
+}
+
 } // namespace
 
 extern "C" {
@@ -626,6 +701,61 @@ int mq_physics_interpolate(mq_physics_world* w, mq_physics_body b, float alpha, 
         return MQ_PHYSICS_ERR_INVALID_HANDLE;
     *x = body->prev_x + (body->x - body->prev_x) * alpha;
     *y = body->prev_y + (body->y - body->prev_y) * alpha;
+    return MQ_PHYSICS_OK;
+}
+
+int mq_physics_raycast(mq_physics_world* w, const mq_physics_ray* ray, mq_physics_ray_hit* out) {
+    if (w == nullptr || ray == nullptr || out == nullptr)
+        return MQ_PHYSICS_ERR_INVALID_ARG;
+    *out = mq_physics_ray_hit{};
+    if (!(ray->max_toi > 0.0F))
+        return MQ_PHYSICS_ERR_INVALID_ARG;
+    const float dir_len_sq = ray->dx * ray->dx + ray->dy * ray->dy;
+    if (!(dir_len_sq > 0.0F))
+        return MQ_PHYSICS_ERR_INVALID_ARG;
+    /* 约定：dir 已归一化（plans/13 §2.3）；容差 1e-3 吸收脚本/工具里的 float 误差。 */
+    if (std::fabs(std::sqrt(dir_len_sq) - 1.0F) > 1.0e-3F)
+        return MQ_PHYSICS_ERR_INVALID_ARG;
+
+    bool found = false;
+    float best_t = ray->max_toi;
+    float best_nx = 0.0F, best_ny = 0.0F;
+    uint32_t best_index = 0;
+    uint32_t best_generation = 0;
+    /* live 恒升序 → 同距离命中稳定取 index 小者（确定性，docs/10 D4）。 */
+    for (const uint32_t index : w->live) {
+        const BodySlot& slot = w->slots[index];
+        if (!slot.live)
+            continue;
+        const PhysicsBody& body = slot.body;
+        float t = 0.0F, nx = 0.0F, ny = 0.0F;
+        const bool hit = (body.shape == MQ_PHYSICS_SHAPE_BALL)
+                             ? ray_vs_ball(ray->ox, ray->oy, ray->dx, ray->dy, body, ray->max_toi,
+                                           t, nx, ny)
+                             : ray_vs_box(ray->ox, ray->oy, ray->dx, ray->dy, body, ray->max_toi,
+                                          t, nx, ny);
+        if (!hit)
+            continue;
+        if (found && t >= best_t)
+            continue;                      /* 严格更近才替换：等距保留先出现（index 小）的 */
+        found = true;
+        best_t = t;
+        best_nx = nx;
+        best_ny = ny;
+        best_index = index;
+        best_generation = slot.generation;
+    }
+    if (!found)
+        return MQ_PHYSICS_OK;
+
+    out->has_hit = 1u;
+    out->body.index = best_index;
+    out->body.generation = best_generation;
+    out->toi = best_t;
+    out->x = ray->ox + ray->dx * best_t;
+    out->y = ray->oy + ray->dy * best_t;
+    out->nx = best_nx;
+    out->ny = best_ny;
     return MQ_PHYSICS_OK;
 }
 

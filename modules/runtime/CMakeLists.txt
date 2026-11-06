@@ -34,9 +34,9 @@ add_library(maque_runtime STATIC
     # 脚本宿主（模块 VM / 热重载 / 覆盖层 / 全局脚本）与运行时控制
     src/script/module.cpp src/script/reload.cpp src/script/overlay.cpp src/script/global.cpp
     src/engine/run.cpp src/engine/crash.cpp
-    # 场景（树 / 加载 / 实例 / 世界变换 / 快照编解码 / 2D 提取）
+    # 场景（树 / 加载 / 实例 / 世界变换 / 快照编解码 / 2D 提取 / 3D 拾取）
     src/scene/tree.cpp src/scene/loader.cpp src/scene/instance.cpp
-    src/scene/world.cpp src/scene/codec.cpp src/scene/world_state.cpp
+    src/scene/world.cpp src/scene/codec.cpp src/scene/world_state.cpp src/scene/pick.cpp
     src/render/items2d.cpp)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")

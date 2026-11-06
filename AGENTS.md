@@ -299,6 +299,17 @@ tools\win\build.cmd -Sanitize address -RunTests
   手动/脚本点击真实窗口：`python3 tools/xclick.py <窗口类名|标题> <窗口内 x> <窗口内 y>`
   （⚠️ 本机 Wayland 会话下 **XTest 注入无效**：指针不动，故 CI 用 `MAQUE_SIM_CLICK`）。
   演示时窗口易被其它窗口遮挡 → `MAQUE_ALWAYS_ON_TOP=1`、`MAQUE_WINDOW_POS=x,y`。
+- **2D raycast / 3D 拾取（docs/15 §3.2、docs/19 §4）**：物理 `mq_physics_raycast`（2D 球/盒精确求交，
+  `dir` 必须已归一化、`max_toi>0`；只读，不改模拟状态/checksum）；脚本 `physics_raycast(x,y,dx,dy,max)`
+  → 实体 id。3D 拾取**不走物理**：脚本 `scene_pick(x,y)`（主 Camera3D 屏幕射线，坐标同 `input_x/input_y`）/
+  `scene_raycast(ox,oy,oz,dx,dy,dz,max)`，控制面 `Scene.pick` / `Scene.raycast`（返回 name/distance/point）。
+  命中几何 = `render.MeshRenderer` 网格**本地包围盒**（glTF primitive bounds / `.mesh.json` bounds / 内建 cube ±0.6）
+  经节点世界矩阵的 **OBB**，**不是三角形级**；蒙皮/morph 用绑定姿态 bounds。相机矩阵取 `extract_3d` 缓存的
+  **最近成帧** view/proj（首帧前 -1）。`scene_pick` 收**设计坐标**（同 `input_x/input_y`；2D 场景里即世界坐标），
+  `scene_raycast` 收 **3D 世界坐标**。样例 `scenes/pick/`、`scenes/pick_demo/`（4x4 点击换色 demo）、
+  `scenes/pbr/pick_imported.scn`；回归 `ctest -R 'pick_e2e|pick_demo_e2e|physics'`。
+  `input.InputTarget.pickable/pick_layer` 仍是声明（自动 hit-test 未接）。
+  诊断：`MAQUE_PICK_INFO=1` 打印屏幕→NDC→世界射线的中间量（tx/ty、视口、near/far）。
 - **输入模拟器（一等机制，docs/19）**：`modules/input/simulator`（接口 DSL 声明 → `abi/sim.h`）。
   场景文件 `.sim.json`（帧索引事件：pointer_move/down/up、click、wheel、key_down/up、text；
   `frame` 绝对或 `delay` 相对；`space` window/world；`loop` 循环），样例见

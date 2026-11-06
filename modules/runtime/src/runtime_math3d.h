@@ -90,8 +90,7 @@ inline void m4_mul(const float* a, const float* b, float* o) {
                            a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
 }
 
-inline void m4_from_qtrs(const float t[3], const float q[4], const float s[3], float* m) {
-    const float x = q[0], y = q[1], z = q[2], w = q[3];
+inline void m4_from_qtrs(const float t[3], const float q[4], const float s[3], float* m) {    const float x = q[0], y = q[1], z = q[2], w = q[3];
     const float xx = x * x, yy = y * y, zz = z * z;
     const float xy = x * y, xz = x * z, yz = y * z;
     const float wx = w * x, wy = w * y, wz = w * z;
@@ -111,6 +110,65 @@ inline void m4_from_qtrs(const float t[3], const float q[4], const float s[3], f
     m[13] = t[1];
     m[14] = t[2];
     m[15] = 1.0F;
+}
+
+/* 列主序 4×4 逆矩阵（MESA gluInvertMatrix 同式）：返回 false = 奇异（调用方跳过）。
+ * 3D 拾取用：相机射线 = invert(view*proj) 变换 NDC 两点；OBB 测试 = invert(world) 变换射线。 */
+inline bool m4_invert(const float* m, float* out) {
+    float inv[16];
+    inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] +
+             m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+    inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] -
+             m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+    inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] +
+             m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+    inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] -
+              m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+    inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] -
+             m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+    inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] +
+             m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+    inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] -
+             m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+    inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] +
+              m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+    inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] +
+             m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+    inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] -
+             m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+    inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] +
+              m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+    inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] -
+              m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+    inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] -
+             m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+    inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] +
+             m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+    inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] -
+              m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+    inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] +
+              m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+    const float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+    if (std::fabs(det) < 1.0e-20F)
+        return false;
+    const float inv_det = 1.0F / det;
+    for (int i = 0; i < 16; ++i) out[i] = inv[i] * inv_det;
+    return true;
+}
+
+/* (x,y,z,w) → 齐次除法（w≈0 视为无效，返回 false）。 */
+inline bool m4_project4(const float* m, float x, float y, float z, float w, float out[3]) {
+    const float rx = m[0] * x + m[4] * y + m[8] * z + m[12] * w;
+    const float ry = m[1] * x + m[5] * y + m[9] * z + m[13] * w;
+    const float rz = m[2] * x + m[6] * y + m[10] * z + m[14] * w;
+    const float rw = m[3] * x + m[7] * y + m[11] * z + m[15] * w;
+    if (std::fabs(rw) < 1.0e-12F)
+        return false;
+    const float inv = 1.0F / rw;
+    out[0] = rx * inv;
+    out[1] = ry * inv;
+    out[2] = rz * inv;
+    return true;
 }
 
 }  // namespace maque::rt
