@@ -124,9 +124,25 @@ void Engine::ui_step() {
                 if (root_id < 0) continue;
                 lv->content_root.id = (uint32_t)root_id;
                 lv->content_root.generation = 0;
+                /* 百分比 label 是 ListView 自身子节点，不参与内容滚动（不能收进 content_root）。 */
+                SceneNode* status = lv->scroll_label.id > 0 ? scene->at((int)lv->scroll_label.id) : nullptr;
+                int status_id = -1;
+                if (status && status->parent == id) {
+                    for (int k : e->children) if (scene->at(k) == status) { status_id = k; break; }
+                }
+                if (status_id < 0) {
+                    const std::string status_name = e->name + ".scroll_label";
+                    for (int k : e->children) {
+                        SceneNode* ke = scene->at(k);
+                        if (ke && ke->name == status_name && component<scn::Label>(*ke)) {
+                            status = ke; status_id = k; lv->scroll_label.id = (uint32_t)k;
+                            break;
+                        }
+                    }
+                }
                 /* 把 ListView 的其余直接子节点（包括旧版直接挂的 Label）移到内容根下。 */
                 const std::vector<int> kids = e->children;
-                for (int k : kids) if (k != root_id) scene->attach(k, root_id);
+                for (int k : kids) if (k != root_id && k != status_id) scene->attach(k, root_id);
 
                 const float pad_l = lv->padding.x, pad_t = lv->padding.y;
                 const float pad_r = lv->padding.z, pad_b = lv->padding.w;
@@ -218,23 +234,109 @@ void Engine::ui_step() {
                 float max_off = content_h - vh;
                 if (max_off < 0.0F) max_off = 0.0F;
                 lv->content_height = content_h;
-                if (max_off <= 0.0F) lv->scroll_pos = 0.0F;
+                if (max_off <= 0.0F) { lv->scroll_pos = 0.0F; lv->scroll_velocity = 0.0F; }
                 const bool inside = mouse_x >= e->world_x && mouse_x <= e->world_x + vw &&
                                     mouse_y >= e->world_y && mouse_y <= e->world_y + vh;
-                if (max_off > 0.0F && inside && wheel_dy != 0.0F)
+                constexpr float kDt = 1.0F / 60.0F;
+                ListBarGeometry bar = list_scrollbar_geometry(*lv, e->world_x, e->world_y, vw, vh);
+                /* 滚轮：只在指针位于视口内生效；滚轮后不额外加速，保持可预测。 */
+                if (max_off > 0.0F && inside && wheel_dy != 0.0F) {
                     lv->scroll_pos += wheel_dy * lv->wheel_step / max_off;
-                const bool down = input && mq_input_pointer_down(input, 0) != 0;
-                if (!down) {
-                    lv->dragging = false;
-                } else if (!lv->dragging && inside && max_off > 0.0F) {
-                    lv->dragging = true;
-                    lv->drag_start_y = mouse_y;
-                    lv->drag_start_scroll = lv->scroll_pos;
+                    lv->scroll_velocity = 0.0F;
                 }
-                if (lv->dragging && down && max_off > 0.0F)
-                    lv->scroll_pos = lv->drag_start_scroll + (mouse_y - lv->drag_start_y) / max_off;
+                const bool down = input && mq_input_pointer_down(input, 0) != 0;
+                const bool in_bar = bar.visible && mouse_x >= bar.x0 && mouse_x <= bar.x1 &&
+                                    mouse_y >= bar.y0 && mouse_y <= bar.y1;
+                if (!down) {
+                    const bool was_drag = lv->dragging || lv->scrollbar_dragging;
+                    lv->dragging = false;
+                    lv->scrollbar_dragging = false;
+                    if (was_drag && !lv->inertia) lv->scroll_velocity = 0.0F;
+                } else if (lv->scrollbar_dragging) {
+                    /* thumb 往下拖（世界 y 减小）= 看后面的内容 → scroll_pos 增加。 */
+                    const float denom = std::max(1.0F, bar.view_h - bar.thumb_h);
+                    lv->scroll_pos = lv->drag_start_scroll - (mouse_y - lv->drag_start_y) / denom;
+                    lv->scroll_velocity = -(mouse_y - lv->drag_last_y) / kDt / denom;
+                } else if (lv->dragging) {
+                    lv->scroll_pos = lv->drag_start_scroll + (mouse_y - lv->drag_start_y) / std::max(1.0F, max_off);
+                    lv->scroll_velocity = (mouse_y - lv->drag_last_y) / kDt / std::max(1.0F, max_off);
+                } else if (inside && max_off > 0.0F) {
+                    if (in_bar) {
+                        /* 滚动条可触摸：按在 thumb 上直接拖；按在轨道上先跳转再拖。 */
+                        lv->scrollbar_dragging = true;
+                        lv->dragging = false;
+                        lv->drag_last_y = mouse_y;
+                        lv->scroll_velocity = 0.0F;
+                        if (mouse_y >= bar.thumb_y0 && mouse_y <= bar.thumb_y1) {
+                            lv->drag_start_y = mouse_y;
+                            lv->drag_start_scroll = lv->scroll_pos;
+                        } else {
+                            const float denom = std::max(1.0F, bar.view_h - bar.thumb_h);
+                            const float off = (bar.y1 - mouse_y - bar.thumb_h * 0.5F);
+                            lv->scroll_pos = off / std::max(1.0F, content_h - vh);
+                            lv->drag_start_y = mouse_y;
+                            lv->drag_start_scroll = lv->scroll_pos;
+                        }
+                    } else {
+                        lv->dragging = true;
+                        lv->scrollbar_dragging = false;
+                        lv->drag_start_y = mouse_y;
+                        lv->drag_start_scroll = lv->scroll_pos;
+                        lv->drag_last_y = mouse_y;
+                        lv->scroll_velocity = 0.0F;
+                    }
+                }
+                if (down && (lv->dragging || lv->scrollbar_dragging))
+                    lv->drag_last_y = mouse_y;                 // 速度按**相邻两步**计算，不累积
+                /* 惯性：拖拽释放后按速度继续滑动，指数摩擦；固定步长 → 可回放。 */
+                if (!down && lv->inertia && max_off > 0.0F && std::abs(lv->scroll_velocity) > 0.0005F) {
+                    lv->scroll_pos += lv->scroll_velocity * kDt;
+                    lv->scroll_velocity *= std::exp(-std::max(0.0F, lv->friction) * kDt);
+                    if (std::abs(lv->scroll_velocity) < 0.0005F) lv->scroll_velocity = 0.0F;
+                }
                 lv->scroll_pos = lv->scroll_pos < 0.0F ? 0.0F : (lv->scroll_pos > 1.0F ? 1.0F : lv->scroll_pos);
                 lv->scroll_offset = lv->scroll_pos * max_off;
+                lv->scroll_percent = (float)std::lround(lv->scroll_pos * 100.0F);
+
+                /* 百分比指示：ListView 自身子节点（不滚），显示在右上、滚动条左侧。 */
+                if (!status || status->parent != id) {
+                    const std::string status_name = e->name + ".scroll_label";
+                    for (int k : e->children) {
+                        SceneNode* ke = scene->at(k);
+                        if (ke && ke->name == status_name && component<scn::Label>(*ke)) {
+                            status = ke; lv->scroll_label.id = (uint32_t)k; break;
+                        }
+                    }
+                    if (!status) {
+                        const int sid = scene->spawn();
+                        scene->attach(sid, id);
+                        attach_component(*this, sid, "scn.Label");
+                        status = scene->at(sid);
+                        if (status) status->name = status_name;
+                        lv->scroll_label.id = (uint32_t)sid;
+                    }
+                }
+                if (status) {
+                    int sid = -1;
+                    for (int k : e->children) if (scene->at(k) == status) { sid = k; break; }
+                    auto* sl = sid >= 0 ? component<scn::Label>(*status) : nullptr;
+                    if (sl) {
+                        lv->scroll_label.id = (uint32_t)sid;
+                        const bool show = lv->show_scroll_percent && bar.visible;
+                        const std::string ptxt = show
+                            ? (std::to_string((int)lv->scroll_percent) + "%") : std::string();
+                        if (sl->text != ptxt) sl->text = ptxt;
+                        sl->x = std::max(0.0F, vw - 78.0F);
+                        sl->y = 20.0F;                       /* 视口底部靠右，文字向上留 10px */
+                        sl->z = 900;
+                        sl->font = lv->font;
+                        sl->font_size = 10.0F;
+                        sl->r = lv->scrollbar_color.x; sl->g = lv->scrollbar_color.y;
+                        sl->b = lv->scrollbar_color.z; sl->a = 0.95F;
+                        sl->wrap = ui::TextWrap::None;
+                        sl->max_width = 0.0F;
+                    }
+                }
                 /* 内容根局部坐标：内容顶部 = 视口顶 - padding.top + 滚动偏移。
                  * 子节点局部坐标保持作者声明（向下排列用负 y），随内容根整体移动。 */
                 const float cy = vh - pad_t + lv->scroll_offset;

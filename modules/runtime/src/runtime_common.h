@@ -280,6 +280,48 @@ inline void compute_ui_clip(SceneNode& e, const ClipSet& parent, float W, float 
     if (list && list->clip_content) kids = clip_apply(kids, r, false, W, H);
 }
 
+/* ---- ListView 滚动条几何（ui_step 与提取共用同一套，避免“能看见但点不到”）----
+ * 世界坐标 y 向上；thumb 高度 = 视口/内容比例，位置由 scroll_offset 决定。 */
+struct ListBarGeometry {
+    bool  visible = false;
+    float x0 = 0, x1 = 0;             // 轨道左右
+    float y0 = 0, y1 = 0;             // 轨道上下（视口）
+    float thumb_y0 = 0, thumb_y1 = 0; // 滑块上下
+    float thumb_h = 0;
+    float content_h = 0, view_h = 0;
+};
+inline ListBarGeometry list_scrollbar_geometry(const ui::ListView& lv, float x, float y,
+                                               float w, float h, float s = 1.0F) {
+    ListBarGeometry g{};
+    g.view_h = h;
+    g.content_h = lv.content_height * s;
+    if (!lv.show_scrollbar || !(w > 0.0F) || !(h > 0.0F) || !(g.content_h > h + 0.5F)) return g;
+    g.visible = true;
+    g.y0 = y; g.y1 = y + h;
+    const float bw = std::clamp(lv.scrollbar_width * s, 1.0F, w * 0.5F);
+    const float margin = std::clamp(lv.scrollbar_margin * s, 0.0F, w * 0.25F);
+    g.x0 = x + w - margin - bw;
+    g.x1 = x + w - margin;
+    const float ratio = std::clamp(h / g.content_h, 0.02F, 1.0F);
+    g.thumb_h = std::max(24.0F * s, h * ratio);
+    if (g.thumb_h > h) g.thumb_h = h;
+    const float off = lv.scroll_offset * s;
+    g.thumb_y1 = y + h - off;
+    g.thumb_y0 = g.thumb_y1 - g.thumb_h;
+    return g;
+}
+
+/* 屏幕坐标 AABB 与可见裁剪集合是否相交（文本/节点快速剔除用）。 */
+inline bool clip_intersects_screen_aabb(const ClipSet& clip, float x0, float y0,
+                                        float x1, float y1, float H) {
+    if (!clip.active) return true;
+    for (const ClipRect& r : clip.rects) {
+        const float cx0 = r.x0, cy0 = H - r.y1, cx1 = r.x1, cy1 = H - r.y0;
+        if (x0 < cx1 && x1 > cx0 && y0 < cy1 && y1 > cy0) return true;
+    }
+    return false;
+}
+
 /* ---- glTF 片段 / 蒙皮 / morph 运行时状态（plans/22 §6）----
  * 全部是**派生缓存**：真相仍是场景组件（Transform3D.local / AnimationPlayer 字段 / 资源文件），
  * 不进快照、不进校验和；切场景由 clear_asset_caches() 统一清空。 */

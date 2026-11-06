@@ -1325,6 +1325,9 @@ struct ListView {
     float scrollbar_margin = 4.0F;
     math::Vec4 scrollbar_color = {0.62F, 0.74F, 0.92F, 0.9F};
     math::Vec4 scrollbar_track_color = {0.12F, 0.16F, 0.22F, 0.8F};
+    bool show_scroll_percent = true;
+    float scroll_percent;
+    maque::EntityRef scroll_label;
     float scroll_offset;
     float content_height;
     maque::EntityRef content_root;
@@ -1332,6 +1335,12 @@ struct ListView {
     bool dragging;
     float drag_start_y;
     float drag_start_scroll;
+    bool scrollbar_dragging;
+    float scrollbar_drag_start_y;
+    float drag_last_y;
+    float scroll_velocity;
+    bool inertia = true;
+    float friction = 6.0F;
 };
 
 struct Mask {

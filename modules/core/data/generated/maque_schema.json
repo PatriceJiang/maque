@@ -14973,6 +14973,44 @@
           "attrs": {}
         },
         {
+          "name": "show_scroll_percent",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "scroll_percent",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              100
+            ],
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "scroll_label",
+          "type": "entity_ref",
+          "kind": "entity_ref",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "ref": "Label",
+            "transient": true
+          }
+        },
+        {
           "name": "scroll_offset",
           "type": "float",
           "kind": "f32",
@@ -15063,6 +15101,79 @@
             ],
             "readonly": true,
             "transient": true
+          }
+        },
+        {
+          "name": "scrollbar_dragging",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "scrollbar_drag_start_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true,
+            "unit": "px"
+          }
+        },
+        {
+          "name": "drag_last_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true,
+            "unit": "px"
+          }
+        },
+        {
+          "name": "scroll_velocity",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "inertia",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "friction",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              60
+            ]
           }
         }
       ]

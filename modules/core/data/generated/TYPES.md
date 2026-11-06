@@ -2596,6 +2596,9 @@ role: `ui_list`
 | `scrollbar_margin` | float | 4.0F | unit: px, range: 0,64 |
 | `scrollbar_color` | math.Vec4 | {0.62F, 0.74F, 0.92F, 0.9F} |  |
 | `scrollbar_track_color` | math.Vec4 | {0.12F, 0.16F, 0.22F, 0.8F} |  |
+| `show_scroll_percent` | bool | true |  |
+| `scroll_percent` | float | — | range: 0,100, transient, readonly |
+| `scroll_label` | entity_ref | — | ref: Label, transient, readonly |
 | `scroll_offset` | float | — | unit: px, transient, readonly |
 | `content_height` | float | — | unit: px, transient, readonly |
 | `content_root` | entity_ref | — | ref: Node, transient, readonly |
@@ -2603,6 +2606,12 @@ role: `ui_list`
 | `dragging` | bool | — | transient, readonly |
 | `drag_start_y` | float | — | unit: px, transient, readonly |
 | `drag_start_scroll` | float | — | range: 0,1, transient, readonly |
+| `scrollbar_dragging` | bool | — | transient, readonly |
+| `scrollbar_drag_start_y` | float | — | unit: px, transient, readonly |
+| `drag_last_y` | float | — | unit: px, transient, readonly |
+| `scroll_velocity` | float | — | transient, readonly |
+| `inertia` | bool | true |  |
+| `friction` | float | 6.0F | range: 0,60 |
 
 ### ui.Mask — struct (变长（含动态成员）)
 

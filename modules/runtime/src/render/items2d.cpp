@@ -79,6 +79,21 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             compute_ui_clip(e, parent_clip, (float)eng.W, (float)eng.H, self_clip, child_clip);
         else { self_clip = parent_clip; child_clip = parent_clip; }
 
+        /* 节点级剔除：ListView 滚出视口的行 Label 不再排版/提交（text_h 是上一帧度量）。
+         * 只对未旋转标签做保守 AABB；描边/阴影留 2px 余量。 */
+        if (self_clip.active && e.world_angle == 0.0F) {
+            if (const auto* l = component<scn::Label>(e); l && l->text_h > 0.0F && l->text_w > 0.0F) {
+                const float pad = std::max(0.0F, l->outline_size) + 2.0F;
+                const float x0 = e.world_x + l->x - pad;
+                const float x1 = x0 + l->text_w + pad * 2.0F;
+                const float ytop = e.world_y + l->y + pad;
+                const float y0 = (float)eng.H - ytop;
+                const float y1 = y0 + l->text_h + pad * 2.0F;
+                if (!clip_intersects_screen_aabb(self_clip, x0, y0, x1, y1, (float)eng.H))
+                    return;
+            }
+        }
+
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = blob.desc;
             if (!d) continue;
@@ -177,13 +192,11 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
              * 滑块高度按“视口/内容”比例，位置按 scroll_offset；只在内容超过视口时出现。 */
             if (const auto* lv = as_component<ui::ListView>(d, blob.data())) {
                 const auto* ctl = component<ui::Control>(e);
-                if (ctl && lv->show_scrollbar) {
+                if (ctl) {
                     const float s = e.world_scale > 0.0F ? e.world_scale : 1.0F;
                     const float vw = ctl->offset_max.x * s, vh = ctl->offset_max.y * s;
-                    if (vw > 0.0F && vh > 0.0F && lv->content_height > vh + 0.5F) {
-                        const float sbw = std::clamp(lv->scrollbar_width, 1.0F, vw * 0.5F);
-                        const float margin = std::clamp(lv->scrollbar_margin, 0.0F, vw * 0.25F);
-                        const float cx = e.world_x + vw - margin - sbw * 0.5F;
+                    const ListBarGeometry bar = list_scrollbar_geometry(*lv, e.world_x, e.world_y, vw, vh, s);
+                    if (bar.visible) {
                         /* 视口内裁剪（再与父 Mask/ListView 裁剪求交）。 */
                         ClipSet clip = self_clip;
                         const ClipRect vr{ e.world_x, e.world_y, e.world_x + vw, e.world_y + vh };
@@ -199,14 +212,20 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                             it.texture = -1; it.layer = 1; it.z = z;
                             emit_with_clip(out, it, clip, (float)eng.H);
                         };
-                        const float top = (float)eng.H - (e.world_y + vh);
-                        solid(cx, top + vh * 0.5F, sbw * 0.5F, vh * 0.5F,
+                        const float cx = (bar.x0 + bar.x1) * 0.5F;
+                        const float track_cy = (float)eng.H - (bar.y0 + bar.y1) * 0.5F;
+                        const float thumb_cy = (float)eng.H - (bar.thumb_y0 + bar.thumb_y1) * 0.5F;
+                        solid(cx, track_cy, (bar.x1 - bar.x0) * 0.5F, (bar.y1 - bar.y0) * 0.5F,
                               lv->scrollbar_track_color, 800);
-                        const float ratio = std::clamp(vh / lv->content_height, 0.02F, 1.0F);
-                        const float thumb_h = std::max(24.0F, vh * ratio);
-                        const float thumb_cy = top + lv->scroll_offset * s + thumb_h * 0.5F;
-                        solid(cx, thumb_cy, sbw * 0.5F, thumb_h * 0.5F,
+                        solid(cx, thumb_cy, (bar.x1 - bar.x0) * 0.5F, bar.thumb_h * 0.5F,
                               lv->scrollbar_color, 801);
+                        if (lv->show_scroll_percent) {
+                            /* 百分比数字由 ui_step 生成的 label 画；这里只铺一个暗底保证可读。 */
+                            const float pill_cx = e.world_x + vw - 64.0F;
+                            const float pill_cy = (float)eng.H - (e.world_y + 15.0F);
+                            solid(pill_cx, pill_cy, 20.0F, 8.0F,
+                                  lv->scrollbar_track_color, 899);
+                        }
                     }
                 }
                 continue;

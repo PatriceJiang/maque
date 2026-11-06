@@ -211,12 +211,16 @@
 - 纯子节点模式用 `item_count`/`item_extent`/`spacing` 定义虚拟内容高度；没有这些字段时按直接
   子节点的粗略范围兜底（向下排列使用负局部 y）。
 - `scroll_pos`（0..1）为归一化滚动位置；指针位于视口内时滚轮按 `wheel_step` 改它，
-  在视口内按下并拖动也可直接滚（`dragging`/`drag_start_y`/`drag_start_scroll` 为运行期派生）。
-  `scroll_offset`（像素）与 `content_height` 是运行期派生，可脚本读取。
-- `show_scrollbar`（默认 true）绘制右侧轨道+按内容比例缩放的滑块；`scrollbar_width/margin/color/track_color`
-  可调，滑块随滚动位置移动。
+  在视口内按下并拖动也可直接滚（`dragging`/`drag_start_y`/`drag_start_scroll` 为运行期派生）；
+  释放后按 `inertia`/`friction` 继续惯性滑动。
+  `scroll_offset`（像素）、`content_height`、`scroll_velocity` 是运行期派生，可脚本读取。
+- `show_scrollbar`（默认 true）绘制右侧轨道+按 `视口/内容` 比例缩放的滑块；滑块**可触摸**：
+  按在 thumb 上拖动，按在轨道上先跳到该位置再拖。`scrollbar_width/margin/color/track_color` 可调。
+- `show_scroll_percent`（默认 true）在视口右下角绘制 `scroll_percent` 百分比胶囊；
+  百分比 = `scroll_pos × 100`。
 - `clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的裁剪集合求交），
   因此内容不会越界；`clip_content=false` 可做溢出预览。
+- 提取期会剔除视口外的图元/文字/子节点 Label（`items` 统计可验证），只对可见行排版提交。
 - `item_template/data_source` 的模板虚拟化仍是后续项；当前 `item_count` 只用于长度，不实例化模板。
 - 脚本：`node_set_string(id,"ui.ListView","text",...)`、`node_set_number(id,"ui.ListView","scroll_pos",0.5)`。
 - 场景示例：`scenes/ui_list/list.scn`（大文本）与 `scenes/ui_list/items.scn`（20 行

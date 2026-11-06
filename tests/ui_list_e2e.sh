@@ -14,9 +14,9 @@ SCENE="${3:-$ROOT/scenes/ui_list/list.scn}"
 PPM="$WORK/ui_list"
 
 run_seq() {
-    local sim="$1"; local prefix="$2"
+    local sim="$1"; local prefix="$2"; local frames="${3:-1,8}"
     env MAQUE_HEADLESS=1 MAQUE_SIM="$sim" "$PLAYER" \
-        --shot-seq "${prefix}_{}.ppm" --shot-frames 1,8 "$SCENE" >"$WORK/ui_list.log" 2>&1 \
+        --shot-seq "${prefix}_{}.ppm" --shot-frames "$frames" "$SCENE" >"$WORK/ui_list.log" 2>&1 \
         || { cat "$WORK/ui_list.log"; echo "ui_list_e2e: player failed"; exit 1; }
 }
 
@@ -87,4 +87,55 @@ if inside < 1000 or outside:
     sys.exit(1)
 print(f'ui_list_e2e: drag in={inside} out={outside}')
 PY
+
+# 滚动条可触摸：按在 thumb 上往下拖，内容应滚动且不泄漏。
+run_seq "$ROOT/tests/data/sim/ui_list_scrollbar.sim.json" "$WORK/ui_list_bar"
+"$PY" - "${WORK}/ui_list_bar_1.ppm" "${WORK}/ui_list_bar_8.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); parts = d.split(b'\n', 3)
+    w, h = map(int, parts[1].split()); return w, h, parts[3]
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+inside = outside = 0
+for y in range(h):
+    for x in range(w):
+        i = (y * w + x) * 3
+        if a[i:i+3] == b[i:i+3]: continue
+        if 32 <= x < 608 and 58 <= y < 328: inside += 1
+        else: outside += 1
+if inside < 1000 or outside:
+    print(f'ui_list_e2e: scrollbar inside={inside} outside={outside}')
+    sys.exit(1)
+print(f'ui_list_e2e: scrollbar in={inside} out={outside}')
+PY
+
+# 惯性：释放后继续滑动（帧 8 与帧 20 仍有差异），且不泄漏到视口外。
+run_seq "$ROOT/tests/data/sim/ui_list_fling.sim.json" "$WORK/ui_list_fling" "1,8,20"
+"$PY" - "${WORK}/ui_list_fling_8.ppm" "${WORK}/ui_list_fling_20.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); parts = d.split(b'\n', 3)
+    w, h = map(int, parts[1].split()); return w, h, parts[3]
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+inside = outside = 0
+for y in range(h):
+    for x in range(w):
+        i = (y * w + x) * 3
+        if a[i:i+3] == b[i:i+3]: continue
+        if 32 <= x < 608 and 58 <= y < 328: inside += 1
+        else: outside += 1
+if inside < 1000 or outside:
+    print(f'ui_list_e2e: inertia inside={inside} outside={outside}')
+    sys.exit(1)
+print(f'ui_list_e2e: inertia in={inside} out={outside}')
+PY
+
+# 子节点列表的剔除：20 行只有视口附近的项应提交（无剔除会 >1000 个图元）。
+if [[ "$SCENE" == *ui_list/items.scn ]]; then
+    trace=$(env MAQUE_HEADLESS=1 MAQUE_TRACE_BATCH=1 "$PLAYER" --frames 2 "$SCENE" 2>&1)
+    items=$(printf '%s\n' "$trace" | sed -n 's/.*\[ui_batch\] items=\([0-9][0-9]*\) .*/\1/p' | tail -1)
+    [ -n "$items" ] || { echo "ui_list_e2e: 没有 ui_batch 统计"; exit 1; }
+    [ "$items" -lt 700 ] || { echo "ui_list_e2e: 视口外子节点未剔除 items=$items"; exit 1; }
+    echo "ui_list_e2e: culled items=$items"
+fi
 echo "ui_list_e2e: ok"

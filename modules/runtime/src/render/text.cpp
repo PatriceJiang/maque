@@ -126,6 +126,7 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
     std::string text, font_path_comp;
     float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, max_h = 0, line_spacing = 0;
     int align = 0, wrap = 0, overflow = 0;
+    int base_z = 100;                                  /* 文字默认在 UI 图元（z=0）之上 */
     bool bold = false, italic = false;
     float ox = 0.0F, oy = 0.0F;
     float outline_size = 0.0F, orr = 0.0F, ogg = 0.0F, obb = 0.0F, oaa = 1.0F;
@@ -143,6 +144,7 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
         shx = l->shadow_x; shy = l->shadow_y;
         shr = l->shadow_r; shg = l->shadow_g; shb = l->shadow_b; sha = l->shadow_a;
         ox = l->x; oy = l->y;
+        base_z = 100 + l->z;                            /* scn.Label.z 参与排序（此前被忽略） */
     } else if (const auto* tl = as_component<ui::TextLabel>(d, tb)) {
         text = tl->text; size = tl->font_size; line_spacing = tl->line_spacing;
         r = tl->color.x; g = tl->color.y; b = tl->color.z; a = tl->color.w;
@@ -284,12 +286,25 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
         q.snap = rotated ? 0 : 1;                        /* 旋转后不能再按轴对齐左上角吸附 */
         q.half_w = half_w; q.half_h = half_h;
         q.r = cr; q.g = cg; q.b = cb; q.a = ca;
-        q.z = 100 + zi;
-        /* 裁剪：reverse Mask 可能给出多个互不重叠的可见矩形 → 同一字形按矩形各推一份。
-         * 字形是像素对齐的矩形，scissor 会裁出硬边（与 UI 其余图元一致）。 */
+        q.z = base_z + zi;
+        /* 裁剪：reverse Mask/ListView 可能给出多个互不重叠的可见矩形 → 同一字形按矩形各推一份。
+         * 先做可见性剔除：ListView 里滚出视口的行不再提交任何字形（scissor 只负责边缘硬切）。 */
         if (clip.active) {
             if (clip.rects.empty()) return;
+            const float ex = q.half_w + q.half_h;              // 旋转保守包围盒
+            bool visible = false;
             for (const ClipRect& r : clip.rects) {
+                const float cx0 = r.x0, cy0 = (float)eng.H - r.y1;
+                const float cx1 = r.x1, cy1 = (float)eng.H - r.y0;
+                if (q.x - ex < cx1 && q.x + ex > cx0 && q.y - ex < cy1 && q.y + ex > cy0) {
+                    visible = true; break;
+                }
+            }
+            if (!visible) return;
+            for (const ClipRect& r : clip.rects) {
+                const float cx0 = r.x0, cy0 = (float)eng.H - r.y1;
+                const float cx1 = r.x1, cy1 = (float)eng.H - r.y0;
+                if (q.x + ex <= cx0 || q.x - ex >= cx1 || q.y + ex <= cy0 || q.y - ex >= cy1) continue;
                 PendingQuad qc = q;
                 qc.clip_x = r.x0;
                 qc.clip_y = (float)eng.H - r.y1;

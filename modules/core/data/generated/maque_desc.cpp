@@ -4988,6 +4988,12 @@ static const void* mq_acc_ui_ListView_scrollbar_color_getp(const void* p) { cons
 static void* mq_acc_ui_ListView_scrollbar_color_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.scrollbar_color; }
 static const void* mq_acc_ui_ListView_scrollbar_track_color_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.scrollbar_track_color; }
 static void* mq_acc_ui_ListView_scrollbar_track_color_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.scrollbar_track_color; }
+static double mq_acc_ui_ListView_show_scroll_percent_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return s.show_scroll_percent ? 1.0 : 0.0; }
+static void mq_acc_ui_ListView_show_scroll_percent_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.show_scroll_percent = v != 0.0; }
+static double mq_acc_ui_ListView_scroll_percent_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scroll_percent); }
+static void mq_acc_ui_ListView_scroll_percent_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scroll_percent = static_cast<decltype(s.scroll_percent)>(v); }
+static const void* mq_acc_ui_ListView_scroll_label_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.scroll_label; }
+static void* mq_acc_ui_ListView_scroll_label_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.scroll_label; }
 static double mq_acc_ui_ListView_scroll_offset_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scroll_offset); }
 static void mq_acc_ui_ListView_scroll_offset_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scroll_offset = static_cast<decltype(s.scroll_offset)>(v); }
 static double mq_acc_ui_ListView_content_height_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.content_height); }
@@ -5002,6 +5008,18 @@ static double mq_acc_ui_ListView_drag_start_y_getf(const void* p) { const auto& 
 static void mq_acc_ui_ListView_drag_start_y_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.drag_start_y = static_cast<decltype(s.drag_start_y)>(v); }
 static double mq_acc_ui_ListView_drag_start_scroll_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.drag_start_scroll); }
 static void mq_acc_ui_ListView_drag_start_scroll_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.drag_start_scroll = static_cast<decltype(s.drag_start_scroll)>(v); }
+static double mq_acc_ui_ListView_scrollbar_dragging_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return s.scrollbar_dragging ? 1.0 : 0.0; }
+static void mq_acc_ui_ListView_scrollbar_dragging_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scrollbar_dragging = v != 0.0; }
+static double mq_acc_ui_ListView_scrollbar_drag_start_y_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scrollbar_drag_start_y); }
+static void mq_acc_ui_ListView_scrollbar_drag_start_y_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scrollbar_drag_start_y = static_cast<decltype(s.scrollbar_drag_start_y)>(v); }
+static double mq_acc_ui_ListView_drag_last_y_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.drag_last_y); }
+static void mq_acc_ui_ListView_drag_last_y_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.drag_last_y = static_cast<decltype(s.drag_last_y)>(v); }
+static double mq_acc_ui_ListView_scroll_velocity_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scroll_velocity); }
+static void mq_acc_ui_ListView_scroll_velocity_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scroll_velocity = static_cast<decltype(s.scroll_velocity)>(v); }
+static double mq_acc_ui_ListView_inertia_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return s.inertia ? 1.0 : 0.0; }
+static void mq_acc_ui_ListView_inertia_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.inertia = v != 0.0; }
+static double mq_acc_ui_ListView_friction_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.friction); }
+static void mq_acc_ui_ListView_friction_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.friction = static_cast<decltype(s.friction)>(v); }
 static const mq_field_accessor mq_acc_ui_ListView[] = {
     { 0, 0, 0, 0, mq_acc_ui_ListView_item_template_getp, mq_acc_ui_ListView_item_template_getmp },
     { 0, 0, 0, 0, mq_acc_ui_ListView_data_source_getp, mq_acc_ui_ListView_data_source_getmp },
@@ -5029,6 +5047,9 @@ static const mq_field_accessor mq_acc_ui_ListView[] = {
     { mq_acc_ui_ListView_scrollbar_margin_getf, mq_acc_ui_ListView_scrollbar_margin_setf, 0, 0, 0, 0 },
     { 0, 0, 0, 0, mq_acc_ui_ListView_scrollbar_color_getp, mq_acc_ui_ListView_scrollbar_color_getmp },
     { 0, 0, 0, 0, mq_acc_ui_ListView_scrollbar_track_color_getp, mq_acc_ui_ListView_scrollbar_track_color_getmp },
+    { mq_acc_ui_ListView_show_scroll_percent_getf, mq_acc_ui_ListView_show_scroll_percent_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_scroll_percent_getf, mq_acc_ui_ListView_scroll_percent_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ListView_scroll_label_getp, mq_acc_ui_ListView_scroll_label_getmp },
     { mq_acc_ui_ListView_scroll_offset_getf, mq_acc_ui_ListView_scroll_offset_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_content_height_getf, mq_acc_ui_ListView_content_height_setf, 0, 0, 0, 0 },
     { 0, 0, 0, 0, mq_acc_ui_ListView_content_root_getp, mq_acc_ui_ListView_content_root_getmp },
@@ -5036,6 +5057,12 @@ static const mq_field_accessor mq_acc_ui_ListView[] = {
     { mq_acc_ui_ListView_dragging_getf, mq_acc_ui_ListView_dragging_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_drag_start_y_getf, mq_acc_ui_ListView_drag_start_y_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_drag_start_scroll_getf, mq_acc_ui_ListView_drag_start_scroll_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_scrollbar_dragging_getf, mq_acc_ui_ListView_scrollbar_dragging_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_scrollbar_drag_start_y_getf, mq_acc_ui_ListView_scrollbar_drag_start_y_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_drag_last_y_getf, mq_acc_ui_ListView_drag_last_y_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_scroll_velocity_getf, mq_acc_ui_ListView_scroll_velocity_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_inertia_getf, mq_acc_ui_ListView_inertia_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_friction_getf, mq_acc_ui_ListView_friction_setf, 0, 0, 0, 0 },
 };
 static const mq_field_desc mq_fields_ui_ListView[] = {
     { "item_template", (uint32_t)offsetof(ui::ListView, item_template), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[0] },
@@ -5064,13 +5091,22 @@ static const mq_field_desc mq_fields_ui_ListView[] = {
     { "scrollbar_margin", (uint32_t)offsetof(ui::ListView, scrollbar_margin), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[23] },
     { "scrollbar_color", (uint32_t)offsetof(ui::ListView, scrollbar_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[24] },
     { "scrollbar_track_color", (uint32_t)offsetof(ui::ListView, scrollbar_track_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[25] },
-    { "scroll_offset", (uint32_t)offsetof(ui::ListView, scroll_offset), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[26] },
-    { "content_height", (uint32_t)offsetof(ui::ListView, content_height), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[27] },
-    { "content_root", (uint32_t)offsetof(ui::ListView, content_root), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[28] },
-    { "content", (uint32_t)offsetof(ui::ListView, content), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[29] },
-    { "dragging", (uint32_t)offsetof(ui::ListView, dragging), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[30] },
-    { "drag_start_y", (uint32_t)offsetof(ui::ListView, drag_start_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[31] },
-    { "drag_start_scroll", (uint32_t)offsetof(ui::ListView, drag_start_scroll), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[32] },
+    { "show_scroll_percent", (uint32_t)offsetof(ui::ListView, show_scroll_percent), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[26] },
+    { "scroll_percent", (uint32_t)offsetof(ui::ListView, scroll_percent), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[27] },
+    { "scroll_label", (uint32_t)offsetof(ui::ListView, scroll_label), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[28] },
+    { "scroll_offset", (uint32_t)offsetof(ui::ListView, scroll_offset), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[29] },
+    { "content_height", (uint32_t)offsetof(ui::ListView, content_height), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[30] },
+    { "content_root", (uint32_t)offsetof(ui::ListView, content_root), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[31] },
+    { "content", (uint32_t)offsetof(ui::ListView, content), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[32] },
+    { "dragging", (uint32_t)offsetof(ui::ListView, dragging), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[33] },
+    { "drag_start_y", (uint32_t)offsetof(ui::ListView, drag_start_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[34] },
+    { "drag_start_scroll", (uint32_t)offsetof(ui::ListView, drag_start_scroll), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[35] },
+    { "scrollbar_dragging", (uint32_t)offsetof(ui::ListView, scrollbar_dragging), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[36] },
+    { "scrollbar_drag_start_y", (uint32_t)offsetof(ui::ListView, scrollbar_drag_start_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[37] },
+    { "drag_last_y", (uint32_t)offsetof(ui::ListView, drag_last_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[38] },
+    { "scroll_velocity", (uint32_t)offsetof(ui::ListView, scroll_velocity), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[39] },
+    { "inertia", (uint32_t)offsetof(ui::ListView, inertia), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[40] },
+    { "friction", (uint32_t)offsetof(ui::ListView, friction), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[41] },
 };
 
 static double mq_acc_ui_Mask_mask_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.mask_mode)); }
@@ -9715,7 +9751,7 @@ extern const mq_type_desc mq_type_ui_ListView = {
     2237314706u,
     (uint32_t)sizeof(ui::ListView),
     (uint32_t)alignof(ui::ListView),
-    33u,
+    42u,
     mq_fields_ui_ListView,
     4u,
     MQ_ROLE_UI_LIST,
@@ -13815,26 +13851,53 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
         case 4075609837u:
             if (std::strcmp(name, "scrollbar_track_color") == 0) return &type->fields[25];
             break;
+        case 3736305594u:
+            if (std::strcmp(name, "show_scroll_percent") == 0) return &type->fields[26];
+            break;
+        case 2381090934u:
+            if (std::strcmp(name, "scroll_percent") == 0) return &type->fields[27];
+            break;
+        case 3368347425u:
+            if (std::strcmp(name, "scroll_label") == 0) return &type->fields[28];
+            break;
         case 2440652662u:
-            if (std::strcmp(name, "scroll_offset") == 0) return &type->fields[26];
+            if (std::strcmp(name, "scroll_offset") == 0) return &type->fields[29];
             break;
         case 2578945784u:
-            if (std::strcmp(name, "content_height") == 0) return &type->fields[27];
+            if (std::strcmp(name, "content_height") == 0) return &type->fields[30];
             break;
         case 3553276491u:
-            if (std::strcmp(name, "content_root") == 0) return &type->fields[28];
+            if (std::strcmp(name, "content_root") == 0) return &type->fields[31];
             break;
         case 2428421058u:
-            if (std::strcmp(name, "content") == 0) return &type->fields[29];
+            if (std::strcmp(name, "content") == 0) return &type->fields[32];
             break;
         case 755686860u:
-            if (std::strcmp(name, "dragging") == 0) return &type->fields[30];
+            if (std::strcmp(name, "dragging") == 0) return &type->fields[33];
             break;
         case 3142349204u:
-            if (std::strcmp(name, "drag_start_y") == 0) return &type->fields[31];
+            if (std::strcmp(name, "drag_start_y") == 0) return &type->fields[34];
             break;
         case 2121294924u:
-            if (std::strcmp(name, "drag_start_scroll") == 0) return &type->fields[32];
+            if (std::strcmp(name, "drag_start_scroll") == 0) return &type->fields[35];
+            break;
+        case 1767263215u:
+            if (std::strcmp(name, "scrollbar_dragging") == 0) return &type->fields[36];
+            break;
+        case 2739914495u:
+            if (std::strcmp(name, "scrollbar_drag_start_y") == 0) return &type->fields[37];
+            break;
+        case 61612440u:
+            if (std::strcmp(name, "drag_last_y") == 0) return &type->fields[38];
+            break;
+        case 3913191038u:
+            if (std::strcmp(name, "scroll_velocity") == 0) return &type->fields[39];
+            break;
+        case 3447918833u:
+            if (std::strcmp(name, "inertia") == 0) return &type->fields[40];
+            break;
+        case 2770068155u:
+            if (std::strcmp(name, "friction") == 0) return &type->fields[41];
             break;
         }
         break;
