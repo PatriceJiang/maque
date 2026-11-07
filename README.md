@@ -125,6 +125,8 @@ plans/            各模块开发计划
 
 ## 文档
 
+- **用户指南（最佳实践）**：[`USER_GUIDE.md`](USER_GUIDE.md)：按“稳定面 → 场景/脚本/确定性 →
+  渲染/资源/调试/测试/发布”的顺序给出可执行的做法与反模式。
 - 设计文档系列：`docs/README.md`（根为 `docs/00-设计哲学与约束.md`）。
 - 里程碑与路线图：`docs/milestones/00-路线图.md`。
 - 模块开发计划：`plans/README.md`。
