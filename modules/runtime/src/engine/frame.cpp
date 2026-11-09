@@ -890,7 +890,11 @@ void Engine::step_frame(bool render_frame) {
         }
         /* 静态帧跳过（docs/29 / docs/bugs/009）：画面输入完全不变时不再提交 GPU。
          * 只对"没有逐帧动画/外部像素消费者/覆盖层"的 3D 直呈帧启用；脚本/物理仍每帧推进。
-         * 每 60 帧强制重画一次，兜住窗口 expose/驱动 surface 变化。 */
+         * 每 60 帧强制重画一次，兜住窗口 expose/驱动 surface 变化。
+         * ⚠️ 只要存在**逐帧变化的视觉输入**就不能跳过：3D 粒子（模拟状态在 systems.particles3d，
+         * 渲染走 frame3d.particles，不在 draws3d/views3d 里）与脚本每帧 upload 的
+         * ParticleField3D 都必须列在这；否则画面会 1FPS（每 60 帧才被强制重画一次）。
+         * 下面的 hash 也显式混入粒子数组 —— 双保险，未来新增粒子来源不会又漏。 */
         bool skip3d = false;
         {
             const bool idle_ok =
@@ -898,6 +902,7 @@ void Engine::step_frame(bool render_frame) {
                 !std::getenv("MAQUE_CAPTURE_WGPU") &&
                 !imgui_on && !imgui_backend && !has_shader_pass && !has_shader_graph &&
                 !gltf_dynamic && spine_rt.items.empty() && systems.particles.empty() &&
+                systems.particles3d.empty() && particle_fields.empty() &&
                 morph_meshes.empty() && skins3d.empty() &&
                 (render_textures.empty() || scene_visual_unchanged) && spine_meshes.empty() &&
                 iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;
@@ -916,6 +921,8 @@ void Engine::step_frame(bool render_frame) {
                 mixv(views); mixv(draws); mixv(ui_masks);
                 mixv(views3d); mixv(lights3d); mixv(mats3d); mixv(draws3d);
                 mixv(skins3d); mixv(passes3d);
+                /* plans/28：morph 权重与粒子实例/系统是独立数组（不在 draws3d/mats3d 里）→ 必须单独混入。 */
+                mixv(morph_weights3d); mixv(particles3d); mixv(particle_systems3d);
                 if (h == idle_render_hash && idle_render_frames < 60) {
                     skip3d = true;
                     ++idle_render_frames;

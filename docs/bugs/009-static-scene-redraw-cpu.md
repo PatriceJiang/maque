@@ -35,6 +35,13 @@ render pass/command buffer 并提交、present。对 1 个 draw 的场景，这�
 - **RenderTexture（默认 EveryFrame）也纳入静态判定**：对整棵场景（实体/组件 blob/派生世界矩阵）
   做视觉哈希，场景不变且所有 RT 都 `!dirty && ready` 时跳过全部 RT pass；否则逐帧更新。
 - 动画/蒙皮/morph/粒子/Spine/shader/ImGui/输入/截图一律视为动态，保持每帧渲染。
+- **2026-11 回归修复（plans/28）**：3D 粒子拆成独立数组（`frame3d.particles`，不再进
+  `draws3d`）后，排除条件只保留了 2D `systems.particles` → `scenes/pbr/particles3d.scn`
+  被误判为"静态帧"：鼠标不动且未开 F2/F4 时只有每 60 帧一次的强制重画，表现约 **1 FPS**；
+  移动鼠标（输入事件）或打开 ImGui（`imgui_on`）才恢复。现在排除条件显式包含
+  `systems.particles3d` 与脚本上传的 `particle_fields`，视觉哈希也混入
+  `morph_weights3d / particles3d / particle_systems3d`（双保险，新增粒子来源不会再次漏掉）。
+  回归：真实窗口抓帧 0.2s 间隔下 `particles3d.scn` 像素持续变化，静态 `cube.scn` 仍逐帧相同。
 
 脚本、物理、动画采样等**非视觉逻辑仍每帧推进**，只是不提交 GPU 帧。
 
