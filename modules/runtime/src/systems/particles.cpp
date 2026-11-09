@@ -62,4 +62,82 @@ void Engine::particles_step(float dt) {
     }
 }
 
+/* plans/27 3D 粒子：3D 粒子（CPU 确定性）：固定步长、引擎 RNG；渲染在 extract_3d 里合成
+ * billboard 动态网格（一个发射器一次 draw），后续 plans/28 再换 GPU instanced。 */
+void Engine::particles3d_step(float dt) {
+    if (!scene || dt <= 0.0F) return;
+    size_t w = 0;
+    for (size_t i = 0; i < systems.particles3d.size(); ++i) {
+        SystemsRuntime::Particle3D& p = systems.particles3d[i];
+        p.age += dt;
+        if (p.age >= p.life) continue;
+        p.vx += p.gx * dt; p.vy += p.gy * dt; p.vz += p.gz * dt;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        systems.particles3d[w++] = p;
+    }
+    systems.particles3d.resize(w);
+
+    std::vector<int> ids;
+    scene->collect_preorder(ids);
+    constexpr float kTau = 6.28318530718F;
+    for (int id : ids) {
+        SceneNode* e = scene->at(id);
+        if (!e) continue;
+        const mq_type_desc* dp = nullptr;
+        auto* pb = comp_by_name(*this, id, "render.ParticleEmitter3D", &dp);
+        const auto* pe = (pb && dp) ? as_component<render::ParticleEmitter3D>(dp, pb->data()) : nullptr;
+        if (!pe || !pe->emitting || !node_active_effective(*this, id)) continue;
+        const float rate = std::max(pe->rate, 0.0F);
+        if (rate <= 0.0F) continue;
+        const uint32_t max_count = std::clamp(pe->max_count, 1u, 4096u);
+        uint32_t alive = 0;
+        for (const auto& p : systems.particles3d) if (p.owner == id) ++alive;
+
+        uint32_t& acc = systems.particle3d_accum[id];
+        acc += (uint32_t)(rate * dt * 1024.0F);
+        const int per_emit = (int)(acc / 1024u);
+        acc -= (uint32_t)per_emit * 1024u;
+
+        float base_dir[3] = { pe->direction.x, pe->direction.y, pe->direction.z };
+        float bl = std::sqrt(base_dir[0] * base_dir[0] + base_dir[1] * base_dir[1] + base_dir[2] * base_dir[2]);
+        if (!(bl > 1e-6F)) { base_dir[0] = 0.0F; base_dir[1] = 1.0F; base_dir[2] = 0.0F; bl = 1.0F; }
+        for (int i = 0; i < per_emit; ++i) {
+            if (systems.particles3d.size() >= 4096) break;
+            if (alive >= max_count) break;
+            const float u1 = next_rng() / 4294967296.0F;
+            const float u2 = next_rng() / 4294967296.0F;
+            const float u3 = next_rng() / 4294967296.0F;
+            const float u4 = next_rng() / 4294967296.0F;
+            const float z = 2.0F * u1 - 1.0F;
+            const float rr = std::sqrt(std::max(0.0F, 1.0F - z * z));
+            const float ph = kTau * u2;
+            float dir[3] = {
+                base_dir[0] / bl * (1.0F - pe->spread) + rr * std::cos(ph) * pe->spread,
+                base_dir[1] / bl * (1.0F - pe->spread) + z * pe->spread,
+                base_dir[2] / bl * (1.0F - pe->spread) + rr * std::sin(ph) * pe->spread,
+            };
+            float dl = std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+            if (!(dl > 1e-6F)) { dir[0] = 0.0F; dir[1] = 1.0F; dir[2] = 0.0F; dl = 1.0F; }
+            const float spd = pe->speed * (0.75F + 0.5F * u3);
+            SystemsRuntime::Particle3D p;
+            p.owner = id;
+            p.x = e->world_m[12]; p.y = e->world_m[13]; p.z = e->world_m[14];
+            p.vx = dir[0] / dl * spd;
+            p.vy = dir[1] / dl * spd;
+            p.vz = dir[2] / dl * spd;
+            p.gx = pe->gravity.x; p.gy = pe->gravity.y; p.gz = pe->gravity.z;
+            p.life = std::max(pe->lifetime, 0.01F) * (0.75F + 0.5F * u4);
+            p.size0 = pe->size_start; p.size1 = pe->size_end;
+            p.rot = pe->rotation + (u3 - 0.5F) * 3.14159265F;
+            p.rot_speed = pe->rotation_speed;
+            p.c0[0] = pe->color_start.r; p.c0[1] = pe->color_start.g;
+            p.c0[2] = pe->color_start.b; p.c0[3] = pe->color_start.a;
+            p.c1[0] = pe->color_end.r; p.c1[1] = pe->color_end.g;
+            p.c1[2] = pe->color_end.b; p.c1[3] = pe->color_end.a;
+            systems.particles3d.push_back(p);
+            ++alive;
+        }
+    }
+}
+
 }  // namespace maque::rt

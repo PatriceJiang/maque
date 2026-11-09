@@ -326,7 +326,22 @@ bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_v
     return false;
 }
 
+void Engine::fill_atmosphere(mq_renderer_frame3d& fr) {
+    fr.atmosphere = mq_renderer_atmosphere{};
+    if (!scene) return;
+    fr.atmosphere.fog_mode = (int32_t)scene->desc.fog_mode;
+    fr.atmosphere.fog_color[0] = scene->desc.fog_color.r;
+    fr.atmosphere.fog_color[1] = scene->desc.fog_color.g;
+    fr.atmosphere.fog_color[2] = scene->desc.fog_color.b;
+    fr.atmosphere.fog_color[3] = 1.0F;
+    fr.atmosphere.fog_near = scene->desc.fog_near;
+    fr.atmosphere.fog_far = scene->desc.fog_far;
+    fr.atmosphere.fog_density = scene->desc.fog_density;
+    fr.atmosphere.tone_mapping = (int32_t)scene->desc.tone_mapping;
+}
+
 void Engine::fill_frame_environment(mq_renderer_frame3d& fr) {
+    fill_atmosphere(fr);
     fr.env = mq_renderer_environment{};
     fr.env.sky_texture = -1;
     fr.env.env_texture = -1;
@@ -579,7 +594,10 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             std::vector<mq_renderer_pbr_material> m3;
             std::vector<mq_renderer_draw3d> d3;
             std::vector<mq_renderer_skin> s3;
-            extract_3d(rt.width, rt.height, v3, l3, m3, d3, s3, rt.entity, false);
+            std::vector<float> mw3;
+            std::vector<mq_renderer_particle> p3;
+            std::vector<mq_renderer_particle_system> ps3;
+            extract_3d(rt.width, rt.height, v3, l3, m3, d3, s3, mw3, p3, ps3, rt.entity, false);
             if (v3.empty()) continue;
             if (rt.include_ui) {
                 for (const auto& item : draws) if (item.layer == 1) target_items.push_back(item);
@@ -592,6 +610,12 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             fr.materials = m3.data(); fr.material_count = (uint32_t)m3.size();
             fr.draws = d3.data(); fr.draw_count = (uint32_t)d3.size();
             fr.skins = s3.data(); fr.skin_count = (uint32_t)s3.size();
+            fr.morph_weights = mw3.empty() ? nullptr : mw3.data();
+            fr.morph_weight_count = (uint32_t)(mw3.size() / 8u);
+            fr.particles = p3.empty() ? nullptr : p3.data();
+            fr.particle_count = (uint32_t)p3.size();
+            fr.particle_systems = ps3.empty() ? nullptr : ps3.data();
+            fr.particle_system_count = (uint32_t)ps3.size();
             fr.items = target_items.data(); fr.item_count = (uint32_t)target_items.size();
             fr.meshes = target_meshes.data(); fr.mesh_count = (uint32_t)target_meshes.size();
             fr.masks = ui_masks.data(); fr.mask_count = (uint32_t)ui_masks.size();

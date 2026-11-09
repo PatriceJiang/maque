@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 256,
-  "api_count": 331,
+  "type_count": 263,
+  "api_count": 344,
   "control_count": 64,
   "callback_count": 11,
   "module_count": 27,
@@ -8366,6 +8366,49 @@
       "fields": []
     },
     {
+      "name": "render.MeshGeometry",
+      "namespace": "render",
+      "kind": "enum",
+      "type_id": 488514272,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "render/render.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Cube",
+          "value": 0
+        },
+        {
+          "name": "Sphere",
+          "value": 1
+        },
+        {
+          "name": "Plane",
+          "value": 2
+        },
+        {
+          "name": "Cylinder",
+          "value": 3
+        },
+        {
+          "name": "Cone",
+          "value": 4
+        },
+        {
+          "name": "Torus",
+          "value": 5
+        },
+        {
+          "name": "Capsule",
+          "value": 6
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "render.MeshRenderer",
       "namespace": "render",
       "kind": "struct",
@@ -8536,6 +8579,35 @@
           "type": "string",
           "kind": "string",
           "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "geometry",
+          "type": "MeshGeometry",
+          "kind": "enum",
+          "type_id": 488514272,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "geometry_size",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "m"
+          }
+        },
+        {
+          "name": "geometry_segments",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
           "count": 0,
           "offset": null,
           "attrs": {}
@@ -8740,6 +8812,323 @@
           "count": 0,
           "offset": null,
           "attrs": {
+            "transient": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "render.ParticleBlend",
+      "namespace": "render",
+      "kind": "enum",
+      "type_id": 1437811370,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "render/render.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Alpha",
+          "value": 0
+        },
+        {
+          "name": "Additive",
+          "value": 1
+        },
+        {
+          "name": "Multiply",
+          "value": 2
+        }
+      ],
+      "fields": []
+    },
+    {
+      "name": "render.ParticleEmitter3D",
+      "namespace": "render",
+      "kind": "struct",
+      "type_id": 1442787732,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "render/render.yaml",
+      "fields": [
+        {
+          "name": "emitting",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "rate",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "1/s"
+          }
+        },
+        {
+          "name": "lifetime",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "s"
+          }
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "m/s"
+          }
+        },
+        {
+          "name": "spread",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "direction",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "gravity",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "size_start",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "m"
+          }
+        },
+        {
+          "name": "size_end",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "m"
+          }
+        },
+        {
+          "name": "color_start",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "color_end",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "rotation",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "radian"
+          }
+        },
+        {
+          "name": "rotation_speed",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "rad/s"
+          }
+        },
+        {
+          "name": "texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "max_count",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              1,
+              4096
+            ]
+          }
+        },
+        {
+          "name": "blend",
+          "type": "ParticleBlend",
+          "kind": "enum",
+          "type_id": 1437811370,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "facing",
+          "type": "ParticleFacing",
+          "kind": "enum",
+          "type_id": 1267734405,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "sort",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "culling_mask",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "bitmask": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "render.ParticleFacing",
+      "namespace": "render",
+      "kind": "enum",
+      "type_id": 1267734405,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "render/render.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "ViewPlane",
+          "value": 0
+        },
+        {
+          "name": "YAxisLocked",
+          "value": 1
+        }
+      ],
+      "fields": []
+    },
+    {
+      "name": "render.ParticleField3D",
+      "namespace": "render",
+      "kind": "struct",
+      "type_id": 3432332610,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "render/render.yaml",
+      "fields": [
+        {
+          "name": "enabled",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "max_count",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              1,
+              8192
+            ]
+          }
+        },
+        {
+          "name": "texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "count",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
             "transient": true
           }
         }
@@ -11353,6 +11742,33 @@
       ]
     },
     {
+      "name": "scn.FogMode",
+      "namespace": "scn",
+      "kind": "enum",
+      "type_id": 32639722,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "world/scn.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "None",
+          "value": 0
+        },
+        {
+          "name": "Linear",
+          "value": 1
+        },
+        {
+          "name": "Exp2",
+          "value": 2
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "scn.Label",
       "namespace": "scn",
       "kind": "struct",
@@ -12149,6 +12565,66 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "fog_mode",
+          "type": "FogMode",
+          "kind": "enum",
+          "type_id": 32639722,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "fog_color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "fog_near",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "m"
+          }
+        },
+        {
+          "name": "fog_far",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "m"
+          }
+        },
+        {
+          "name": "fog_density",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "1/m"
+          }
+        },
+        {
+          "name": "tone_mapping",
+          "type": "ToneMapping",
+          "kind": "enum",
+          "type_id": 1117886059,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },
@@ -12368,6 +12844,41 @@
           "attrs": {}
         }
       ]
+    },
+    {
+      "name": "scn.ToneMapping",
+      "namespace": "scn",
+      "kind": "enum",
+      "type_id": 1117886059,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "world/scn.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "None",
+          "value": 0
+        },
+        {
+          "name": "Linear",
+          "value": 1
+        },
+        {
+          "name": "Reinhard",
+          "value": 2
+        },
+        {
+          "name": "Cineon",
+          "value": 3
+        },
+        {
+          "name": "ACESFilmic",
+          "value": 4
+        }
+      ],
+      "fields": []
     },
     {
       "name": "scn.Transform2D",
@@ -18749,6 +19260,260 @@
       "manual": null
     },
     {
+      "name": "host.node_set_local_position",
+      "namespace": "host",
+      "fn": "node_set_local_position",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": "写 scene.Transform3D.local.position（局部空间）",
+      "manual": null
+    },
+    {
+      "name": "host.node_set_local_rotation",
+      "namespace": "host",
+      "fn": "node_set_local_rotation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": "写 scene.Transform3D.local.rotation（弧度，Euler；与引擎 m4_from_trs 同一约定）",
+      "manual": null
+    },
+    {
+      "name": "host.node_set_local_scale",
+      "namespace": "host",
+      "fn": "node_set_local_scale",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": "写 scene.Transform3D.local.scale（局部空间）",
+      "manual": null
+    },
+    {
+      "name": "host.node_local_position",
+      "namespace": "host",
+      "fn": "node_local_position",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "读 Transform3D.local.position（缺组件 = 0,0,0）",
+      "manual": null
+    },
+    {
+      "name": "host.node_local_rotation",
+      "namespace": "host",
+      "fn": "node_local_rotation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "读 Transform3D.local.rotation（弧度）",
+      "manual": null
+    },
+    {
+      "name": "host.node_local_scale",
+      "namespace": "host",
+      "fn": "node_local_scale",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "读 Transform3D.local.scale（缺组件 = 1,1,1）",
+      "manual": null
+    },
+    {
+      "name": "host.node_world_position",
+      "namespace": "host",
+      "fn": "node_world_position",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "读派生世界矩阵的平移（three.js getWorldPosition）",
+      "manual": null
+    },
+    {
+      "name": "host.node_world_rotation",
+      "namespace": "host",
+      "fn": "node_world_rotation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "读世界矩阵的 Euler（弧度；three.js world quaternion 的 Euler 形式）",
+      "manual": null
+    },
+    {
+      "name": "host.node_local_to_world",
+      "namespace": "host",
+      "fn": "node_local_to_world",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "p",
+          "type": "math.Vec3",
+          "value": {
+            "fqName": "math.Vec3",
+            "cpp": "math::Vec3",
+            "flat": [
+              "x",
+              "y",
+              "z"
+            ],
+            "count": 3,
+            "names": "x,y,z"
+          }
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "局部点 → 世界点（three.js localToWorld）",
+      "manual": null
+    },
+    {
+      "name": "host.node_world_to_local",
+      "namespace": "host",
+      "fn": "node_world_to_local",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "p",
+          "type": "math.Vec3",
+          "value": {
+            "fqName": "math.Vec3",
+            "cpp": "math::Vec3",
+            "flat": [
+              "x",
+              "y",
+              "z"
+            ],
+            "count": 3,
+            "names": "x,y,z"
+          }
+        }
+      ],
+      "returns": "math.Vec3",
+      "ctx": true,
+      "doc": "世界点 → 局部点（three.js worldToLocal）",
+      "manual": null
+    },
+    {
+      "name": "host.node_look_at",
+      "namespace": "host",
+      "fn": "node_look_at",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": "让本地 -Z 指向世界坐标目标、+Y 向上（相机约定；three.js Object3D.lookAt 的相机分支）；只改 rotation",
+      "manual": null
+    },
+    {
       "name": "host.node_set_content_size",
       "namespace": "host",
       "fn": "node_set_content_size",
@@ -23155,6 +23920,42 @@
       "returns": "float",
       "ctx": true,
       "doc": "上一帧导出的绘制命令数（0 = 面板没画东西）",
+      "manual": null
+    },
+    {
+      "name": "host.particles3d_upload",
+      "namespace": "host",
+      "fn": "particles3d_upload",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "returns": "bytes",
+      "ctx": true,
+      "doc": "上传粒子数据（返回空 bytes；用 particles3d_count 查数量）",
+      "manual": null
+    },
+    {
+      "name": "host.particles3d_count",
+      "namespace": "host",
+      "fn": "particles3d_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "当前粒子数（-1=无 ParticleField3D）",
       "manual": null
     }
   ],
@@ -29229,7 +30030,7 @@
     {
       "module": "script",
       "abi_name": "maque.script",
-      "version": 4,
+      "version": 5,
       "language": "c",
       "header": "abi/script.h",
       "fns": [
@@ -30284,6 +31085,47 @@
             {
               "name": "fn",
               "type": "mq_script_multi_ret_str_fn",
+              "doc": null
+            },
+            {
+              "name": "user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_register_value",
+          "returns": "int",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "kinds",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "ret_count",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "ret_names",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "mq_script_multi_fn",
               "doc": null
             },
             {

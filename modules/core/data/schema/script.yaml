@@ -51,7 +51,7 @@
         - { name: init_err, type: uint16_t, default: 0, attrs: { transient: true, readonly: true } }
   module_abi:
     module: script
-    version: 4
+    version: 5
     abi_name: "maque.script"
     includes: [ "<stddef.h>", "<stdint.h>" ]
     opaque: [ mq_script_vm, mq_script_module, mq_script_instance, mq_script_bus ]
@@ -181,6 +181,8 @@
       - { fn: mq_script_register_mixed, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_mixed_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_multi, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_multi_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_multi_ret_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_multi_ret_str_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_value, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: ret_count, type: "int32_t" }, { name: ret_names, type: "const char*" }, { name: fn, type: "mq_script_multi_fn" }, { name: user, type: "void*" } ],
+          doc: "注册值类型返回（docs/21 §6.1）：ret_count 个 double 写入 ret[]，ret_names 为逗号分隔字段名（JS 对象 / Lua table）；kinds 的 2/3/4 = 值参数分量数" }
       - { fn: mq_script_register_bytes, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_bytes_fn" }, { name: user, type: "void*" } ],
           doc: "注册二进制函数：JS bytes=Uint8Array/ArrayBuffer/UTF-8 string，Lua bytes=二进制 string" }
   # 脚本事件回调（docs/14 §4、docs/19 §8）：引擎按声明调用，名字与参数统一来自 DSL

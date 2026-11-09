@@ -1,0 +1,229 @@
+{
+  "title": "atmosphere",
+  "width": 1280,
+  "height": 480,
+  "views": 1,
+  "env_color": {
+    "r": 0.1,
+    "g": 0.11,
+    "b": 0.14,
+    "a": 1.0
+  },
+  "env_intensity": 1.0,
+  "env_sky_color": {
+    "r": 0.3,
+    "g": 0.35,
+    "b": 0.45,
+    "a": 1.0
+  },
+  "env_ground_color": {
+    "r": 0.05,
+    "g": 0.05,
+    "b": 0.06,
+    "a": 1.0
+  },
+  "env_highlight": 1.2,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.2,
+              "z": 5.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 35.0,
+          "near": 0.1,
+          "far": 100.0,
+          "clear_color": {
+            "r": 0.02,
+            "g": 0.02,
+            "b": 0.03,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -0.5,
+              "y": -0.4,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.0,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "near",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.5,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "geometry": 1,
+          "geometry_size": {
+            "x": 0.55,
+            "y": 0.55,
+            "z": 0.55
+          },
+          "geometry_segments": {
+            "x": 48.0,
+            "y": 24.0,
+            "z": 8.0
+          }
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.85,
+            "g": 0.45,
+            "b": 0.18,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.45,
+          "emissive": {
+            "x": 1.6,
+            "y": 0.9,
+            "z": 0.4
+          },
+          "emissive_intensity": 1.0
+        }
+      ]
+    },
+    {
+      "name": "mid",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -5.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "geometry": 1,
+          "geometry_size": {
+            "x": 0.55,
+            "y": 0.55,
+            "z": 0.55
+          },
+          "geometry_segments": {
+            "x": 48.0,
+            "y": 24.0,
+            "z": 8.0
+          }
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.85,
+            "g": 0.45,
+            "b": 0.18,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.45,
+          "emissive": {
+            "x": 1.6,
+            "y": 0.9,
+            "z": 0.4
+          },
+          "emissive_intensity": 1.0
+        }
+      ]
+    },
+    {
+      "name": "far",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.0,
+              "y": 0.0,
+              "z": -10.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "geometry": 1,
+          "geometry_size": {
+            "x": 0.55,
+            "y": 0.55,
+            "z": 0.55
+          },
+          "geometry_segments": {
+            "x": 48.0,
+            "y": 24.0,
+            "z": 8.0
+          }
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.85,
+            "g": 0.45,
+            "b": 0.18,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.45,
+          "emissive": {
+            "x": 1.6,
+            "y": 0.9,
+            "z": 0.4
+          },
+          "emissive_intensity": 1.0
+        }
+      ]
+    }
+  ],
+  "fog_mode": 1,
+  "fog_color": {
+    "r": 0.3,
+    "g": 0.35,
+    "b": 0.45,
+    "a": 1.0
+  },
+  "fog_near": 5.0,
+  "fog_far": 15.0,
+  "fog_density": 0.08,
+  "tone_mapping": 4
+}

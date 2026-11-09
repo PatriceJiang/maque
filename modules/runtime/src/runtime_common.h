@@ -55,6 +55,7 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 #include <print>
 #include <string>
 #include <vector>
+#include <utility>
 #include <fstream>
 #include <deque>
 #include <map>
@@ -376,7 +377,43 @@ struct MorphMesh {
     int owner_entity = -1;                            /* 共享 mesh：首实体驱动（其余忽略 + 告警一次） */
     bool warned_shared = false;
     bool warned_no_update = false;
+    /* plans/28：GPU morph 路径（增量在 create_mesh 时已上传）；CPU targets/base 保留给回退。 */
+    bool gpu_ok = false;
+    bool gpu_normals = false;
 };
+
+/* GPU morph 增量打包（plans/28 §3.3）：target 主序、32B/目标/顶点 = [pos.xyz, pad, nrm.xyz, pad]。
+ * targets[t] = {positions, normals}（各 3 float/顶点；normals 可为空 → 该 target 法线增量全 0）。
+ * 返回：-1 = 失败（顶点数/目标数非法），0 = 无 normal 增量，1 = 含 normal 增量。
+ * glTF 直读与 .mesh.json 两条装配路共用它（单测覆盖两条路径产出的字节一致）。 */
+inline int pack_morph_deltas(uint32_t vertex_count, uint32_t target_count,
+                             const std::pair<const float*, const float*>* targets,
+                             std::vector<float>& out) {
+    out.clear();
+    if (vertex_count == 0 || target_count == 0 || target_count > 8 || !targets) return -1;
+    for (uint32_t t = 0; t < target_count; ++t)
+        if (!targets[t].first) return -1;
+    out.assign((size_t)target_count * vertex_count * 8u, 0.0F);
+    bool has_normals = false;
+    for (uint32_t t = 0; t < target_count; ++t) {
+        const float* pos = targets[t].first;
+        const float* nrm = targets[t].second;
+        if (nrm) has_normals = true;
+        float* dst = out.data() + (size_t)t * vertex_count * 8u;
+        for (uint32_t v = 0; v < vertex_count; ++v) {
+            float* row = dst + (size_t)v * 8u;
+            row[0] = pos[(size_t)v * 3u + 0];
+            row[1] = pos[(size_t)v * 3u + 1];
+            row[2] = pos[(size_t)v * 3u + 2];
+            if (nrm) {
+                row[4] = nrm[(size_t)v * 3u + 0];
+                row[5] = nrm[(size_t)v * 3u + 1];
+                row[6] = nrm[(size_t)v * 3u + 2];
+            }
+        }
+    }
+    return has_normals ? 1 : 0;
+}
 
 /* 已解析字段的直读/直写（生成访问器优先；容器/未知类型回退 offset）。 */
 static inline bool field_get_bool(const mq_field_desc* f, const void* p, bool def = false) {
@@ -516,5 +553,11 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
                 std::vector<std::string>* chain = nullptr, int depth = 0);
 void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out);
 void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices);
+/* plans/27 M1-1：程序化图元（render.MeshRenderer.geometry）。
+ * build_geometry 写 48B 规范顶点（pos3|normal3|tangent4|uv2）与三角索引；
+ * primitive_bounds 给拾取/阴影拟合用的本地 AABB（与生成网格一致，不分配）。 */
+void build_geometry(int32_t kind, const float size[3], const float seg[3],
+                    std::vector<float>& verts, std::vector<uint32_t>& indices);
+void primitive_bounds(int32_t kind, const float size[3], float out_min[3], float out_max[3]);
 
 }  // namespace maque::rt

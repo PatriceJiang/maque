@@ -88,12 +88,15 @@ void Engine::clear_asset_caches() {
         }
         if (rapi->destroy_mesh) {
             for (auto& [k, id] : mesh_cache) if (id >= 0) rapi->destroy_mesh(rself, id);
+            /* plans/27 M1-1：程序化图元句柄随场景资源销毁（cube_mesh 例外，跨场景保留）。 */
+            for (auto& [k, id] : primitive_meshes) if (id >= 0) rapi->destroy_mesh(rself, id);
             for (auto& [k, gm] : gltf_models)
                 for (const auto& pr : gm.prims)
                     if (pr.mesh >= 0) rapi->destroy_mesh(rself, pr.mesh);
         }
     }
     for (const auto& [k, id] : mesh_cache) mesh_stats.erase(id);
+    for (const auto& [k, id] : primitive_meshes) mesh_stats.erase(id);
     for (const auto& [k, gm] : gltf_models)
         for (const auto& pr : gm.prims) mesh_stats.erase(pr.mesh);
     /* cube_mesh 跨场景保留，其 stats 也保留；其余句柄随缓存销毁同步失效。 */
@@ -101,6 +104,10 @@ void Engine::clear_asset_caches() {
     tex_size_cache.clear();
     material_cache.clear();
     mesh_cache.clear();
+    primitive_meshes.clear();
+    particle_fields.clear();
+    systems.particles3d.clear();
+    systems.particle3d_accum.clear();
     mesh_bounds.clear();
     pick_cam_valid = false;
     env_tex_cache.clear();

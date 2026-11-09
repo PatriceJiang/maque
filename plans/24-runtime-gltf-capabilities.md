@@ -33,7 +33,7 @@
 | 动画 | translation / rotation / scale 通道 | ✅ | P2：STEP / LINEAR / CUBICSPLINE；自动播放首个 clip（`gltf_runtime_anim_e2e` B） |
 | 动画 | `weights` 通道（morph 权重） | ✅ | P3：与 morph targets 联动（`gltf_runtime_anim_e2e` C） |
 | 动画 | 组件控制（clip/playing/loop/speed/time） | ✅ | P2：`render.MeshRenderer` 新增字段，`time/duration` 运行期回写 |
-| Morph | targets（POSITION/NORMAL 增量）、default weights | ✅ | P3：CPU morph + `update_mesh`；`MAQUE_MORPH=0` 对照 |
+| Morph | targets（POSITION/NORMAL 增量）、default weights | ✅ | P3：**GPU morph（plans/28）**：增量 storage + 逐 draw 权重（`morph_gpu_e2e`）；`caps=0`/`>8 target` 回退 CPU `update_mesh`；`MAQUE_MORPH_GPU=0`/`MAQUE_MORPH=0` 对照 |
 | 物料 | 核心 PBR（baseColor/MR/emissive/alpha/doubleSided） | ✅ | `gltf_runtime_e2e` |
 | 物料 | KHR_materials_unlit / emissive_strength | ✅ | 映射到 Basic / emissive_intensity |
 | 物料 | KHR_texture_transform（offset/scale/rotation） | 🟡 | base 组 + normal 组完整；扩展贴图槽共用基础 UV（近似） |
@@ -69,8 +69,11 @@
   `wp = model × (skin × pos)` 一致）。
 - 节点局部 TRS 每帧由动画通道覆盖后按**父先子**顺序累积世界矩阵；无动画时用 glTF 静态 TRS。
 - 动画状态按**实体**（不是模型）维护：同一模型多实例可各自播放不同时间/片段。
-- morph 每 primitive 保存 CPU 基础顶点 + target 增量；权重变化才 `update_mesh`（与既有 `.mesh.json` morph 同策略）。
-- 蒙皮/morph 的共享网格：首实体驱动，多实体不一致时告警（首版；后续可每实体独立上传）。
+- morph 每 primitive 保存 CPU 基础顶点 + target 增量。**GPU 路径（plans/28）**默认把增量一次性上传
+  （32B/目标/顶点），权重按 draw 传（动画覆盖 > 默认），不再逐帧 `update_mesh`；只有
+  `caps.morph_max_targets == 0` 或 target > 8 才回退 CPU。
+- 蒙皮/morph 的共享网格：**GPU morph 路径天然每实体独立**（权重是逐 draw 的）；CPU 回退路径仍是
+  首实体驱动，多实体不一致时告警。
 - 组件：`render.MeshRenderer` 追加 `clip`（string，空=首个）、`playing`、`loop`、`speed`、`time`、`duration`
   （`time`/`duration` 运行期回写，脚本可读写/跳转）。
 - 诊断：`MAQUE_ANIM=0`（不采样）、`MAQUE_SKIN=0`（identity palette）、`MAQUE_MORPH=0`（不应用 morph）。

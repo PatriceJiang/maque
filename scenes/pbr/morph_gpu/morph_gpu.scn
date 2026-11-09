@@ -1,0 +1,256 @@
+{
+  "title": "morph_gpu",
+  "width": 640,
+  "height": 360,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.35,
+              "z": 4.6
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.05,
+          "far": 50.0,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0,
+              "y": -0.7,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": 0,
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "morph_blob_a",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.35,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "name": "morph_blob_a_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MorphBlob.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "blob_mat",
+              "base_color": {
+                "r": 0.92,
+                "g": 0.55,
+                "b": 0.16,
+                "a": 1.0
+              },
+              "metallic": 0.15,
+              "roughness": 0.42,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
+        },
+        {
+          "name": "morph_blob_a_anim",
+          "components": [
+            {
+              "type": "scn.AnimationPlayer",
+              "clips": [
+                "assets/anim/blob_a.clip.json"
+              ],
+              "clip_index": 0,
+              "playing": true,
+              "loop": true,
+              "speed": 1.0,
+              "time": 0.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "morph_blob_b",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.35,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "name": "morph_blob_b_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MorphBlob.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "blob_mat",
+              "base_color": {
+                "r": 0.92,
+                "g": 0.55,
+                "b": 0.16,
+                "a": 1.0
+              },
+              "metallic": 0.15,
+              "roughness": 0.42,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
+        },
+        {
+          "name": "morph_blob_b_anim",
+          "components": [
+            {
+              "type": "scn.AnimationPlayer",
+              "clips": [
+                "assets/anim/blob_b.clip.json"
+              ],
+              "clip_index": 0,
+              "playing": true,
+              "loop": true,
+              "speed": 1.0,
+              "time": 0.0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -33,16 +33,18 @@ const JSMallocFunctions kQjsMalloc = { qjs_calloc, qjs_malloc, qjs_free, qjs_rea
 #endif
 
 struct HostFn {
-    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr, Bytes } kind = Num;
+    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr, Value, Bytes } kind = Num;
     bool is_str = false;                       /* Str：单字符串参数 */
     mq_script_num_fn    num = nullptr;
     mq_script_str_fn    str = nullptr;
     mq_script_ret_str_fn ret_str = nullptr;    /* 返回 JS string（宿主写入缓冲，不转移所有权） */
     mq_script_mixed_fn   mixed = nullptr;      /* 数值参数 + 尾部字符串 */
-    mq_script_multi_fn   multi = nullptr;      /* 通用：任意数值/字符串组合 */
+    mq_script_multi_fn   multi = nullptr;      /* 通用：任意数值/字符串组合 + 值类型参数 */
     mq_script_multi_ret_str_fn multi_ret_str = nullptr;
     mq_script_bytes_fn bytes = nullptr;        /* bytes → Uint8Array（VM 复制后释放宿主结果） */
-    const char* kinds = "";                    /* 逐参数 'n' / 's' / 'b' */
+    const char* kinds = "";                    /* 逐参数 'n' / 's' / 'b' / '2'|'3'|'4'（值类型分量数） */
+    int value_count = 0;                       /* Value：返回值分量数 */
+    const char* value_names = "";              /* Value：返回值字段名（逗号分隔） */
     void* user = nullptr;
 };
 
@@ -95,8 +97,89 @@ static JSValue js_math_random(JSContext* ctx, JSValueConst, int, JSValueConst*, 
     return JS_NewFloat64(ctx, (double)v / 4294967296.0);
 }
 
+/* 值类型实参：接受 {x,y,z} / [x,y,z] / {r,g,b,a} / 连续 3 个数字。 */
+static int read_value_arg(JSContext* ctx, JSValueConst v, int count, double* out) {
+    if (JS_IsObject(v)) {
+        static const char* const kNames[4] = { "x", "y", "z", "w" };
+        static const char* const kColors[4] = { "r", "g", "b", "a" };
+        bool any = false;
+        for (int c = 0; c < count; ++c) {
+            JSValue p = JS_GetPropertyStr(ctx, v, kNames[c]);
+            if (JS_IsUndefined(p)) { JS_FreeValue(ctx, p); p = JS_GetPropertyUint32(ctx, v, (uint32_t)c); }
+            if (JS_IsUndefined(p)) { JS_FreeValue(ctx, p); p = JS_GetPropertyStr(ctx, v, kColors[c]); }
+            double d = 0.0;
+            if (!JS_IsUndefined(p)) { JS_ToFloat64(ctx, &d, p); any = true; }
+            JS_FreeValue(ctx, p);
+            out[c] = d;
+        }
+        if (any) return 0;
+        return 1;
+    }
+    return 1;
+}
+
+/* kinds 编组核心：'s' 字符串、'2'/'3'/'4' 值类型（对象/数组，或连续数字）、其余数值。 */
+static int marshal_args(JSContext* ctx, const HostFn& h, int argc, JSValueConst* argv,
+                        double* nums, int* nnum, const char** strs, int* nstr) {
+    const size_t nkinds = std::strlen(h.kinds ? h.kinds : "");
+    int ai = 0;
+    for (size_t k = 0; k < nkinds; ++k) {
+        const char kind = h.kinds[k];
+        if (kind == 's') {
+            if (ai >= argc) return 1;
+            const char* cs = JS_ToCString(ctx, argv[ai++]);
+            strs[(*nstr)++] = cs ? cs : "";
+            continue;
+        }
+        if (kind >= '2' && kind <= '4') {
+            const int count = kind - '0';
+            if (ai >= argc) return 1;
+            double v[4] = { 0, 0, 0, 0 };
+            if (read_value_arg(ctx, argv[ai], count, v) == 0) {
+                ++ai;
+                for (int c = 0; c < count; ++c) nums[(*nnum)++] = v[c];
+            } else {
+                if (argc - ai < count) return 1;
+                for (int c = 0; c < count; ++c) {
+                    double d = 0.0;
+                    JS_ToFloat64(ctx, &d, argv[ai++]);
+                    nums[(*nnum)++] = d;
+                }
+            }
+            continue;
+        }
+        if (ai >= argc) return 1;
+        double d = 0.0;
+        JS_ToFloat64(ctx, &d, argv[ai++]);
+        nums[(*nnum)++] = d;
+    }
+    return 0;
+}
+
+/* 值类型返回值：ret[] + "x,y,z" → { x, y, z }。 */
+static JSValue value_result(JSContext* ctx, const HostFn& h, const double* ret) {
+    JSValue obj = JS_NewObject(ctx);
+    const char* p = h.value_names ? h.value_names : "";
+    int i = 0;
+    while (*p && i < h.value_count && i < 16) {
+        const char* comma = std::strchr(p, ',');
+        const size_t len = comma ? (size_t)(comma - p) : std::strlen(p);
+        if (len > 0 && len < 32) {
+            char name[32];
+            std::memcpy(name, p, len);
+            name[len] = '\0';
+            JS_SetPropertyStr(ctx, obj, name, JS_NewFloat64(ctx, ret[i]));
+        }
+        ++i;
+        if (!comma) break;
+        p = comma + 1;
+    }
+    return obj;
+}
+
 /* 统一 trampoline：用 magic 作为 HostFn 下标。 */
-/* 通用编组：按 kinds 拆分 JS 实参为数值/字符串数组后调用宿主（docs/21 §6.1）。 */
+/* 通用编组：按 kinds 拆分 JS 实参为数值/字符串数组后调用宿主（docs/21 §6.1）。
+ * '2'/'3'/'4' = 具名 struct 值（Vec2/Vec3/Vec4），对象/数组或连续数字两种写法。 */
 static JSValue multi_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
     auto* vm = S(static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx)));
     if (!vm) return JS_UNDEFINED;
@@ -104,26 +187,20 @@ static JSValue multi_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueC
     double nums[16] = { 0 };
     const char* strs[16] = { nullptr };
     int nnum = 0, nstr = 0;
-    for (int i = 0; i < argc && i < 16; ++i) {
-        const char kind = h.kinds[i] ? h.kinds[i] : 'n';
-        if (kind == 's') {
-            const char* cs = JS_ToCString(ctx, argv[i]);
-            strs[nstr++] = cs ? cs : "";
-        } else {
-            double d = 0;
-            JS_ToFloat64(ctx, &d, argv[i]);
-            nums[nnum++] = d;
-        }
+    if (marshal_args(ctx, h, argc, argv, nums, &nnum, strs, &nstr) != 0) {
+        for (int i = 0; i < nstr; ++i) if (strs[i]) JS_FreeCString(ctx, strs[i]);
+        return JS_ThrowTypeError(ctx, "not enough arguments");
     }
-    double ret = 0;
+    double ret[16] = { 0 };
     int rc = 0;
     char sbuf[1024] = { 0 };
     if (h.kind == HostFn::MultiRetStr) rc = h.multi_ret_str(h.user, nnum, nums, nstr, strs, sbuf, (int)sizeof sbuf);
-    else rc = h.multi(h.user, nnum, nums, nstr, strs, &ret);
+    else rc = h.multi(h.user, nnum, nums, nstr, strs, ret);
     for (int i = 0; i < nstr; ++i) if (strs[i]) JS_FreeCString(ctx, strs[i]);
     if (rc != 0) return JS_EXCEPTION;
     if (h.kind == HostFn::MultiRetStr) return JS_NewString(ctx, sbuf);
-    return JS_NewFloat64(ctx, ret);
+    if (h.kind == HostFn::Value) return value_result(ctx, h, ret);
+    return JS_NewFloat64(ctx, ret[0]);
 }
 
 static JSValue bytes_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
@@ -365,6 +442,17 @@ int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds
                                      mq_script_multi_ret_str_fn fn, void* user) {
     if (!vm) return 1;
     HostFn h; h.kind = HostFn::MultiRetStr; h.multi_ret_str = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
+    S(vm)->fns.push_back(h);
+    return register_common(vm, name, (int)S(vm)->fns.size() - 1, 1);
+}
+
+int register_value(mq_script_vm* vm, const char* name, const char* kinds, int32_t ret_count,
+                   const char* ret_names, mq_script_multi_fn fn, void* user) {
+    if (!vm || !name || !fn || ret_count <= 0 || ret_count > 16) return 1;
+    HostFn h; h.kind = HostFn::Value; h.multi = fn; h.user = user;
+    h.kinds = intern_kinds(vm, kinds);
+    h.value_names = intern_kinds(vm, ret_names);
+    h.value_count = ret_count;
     S(vm)->fns.push_back(h);
     return register_common(vm, name, (int)S(vm)->fns.size() - 1, 1);
 }

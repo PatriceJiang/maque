@@ -54,6 +54,7 @@ const ScriptOps kJsOps = {
     .register_mixed = &maque::script::js::register_mixed,
     .register_multi = &maque::script::js::register_multi,
     .register_multi_ret_str = &maque::script::js::register_multi_ret_str,
+    .register_value = &maque::script::js::register_value,
     .register_bytes = &maque::script::js::register_bytes,
 };
 
@@ -93,6 +94,7 @@ const ScriptOps kLuaOps = {
     .register_mixed = &maque::script::lua::register_mixed,
     .register_multi = &maque::script::lua::register_multi,
     .register_multi_ret_str = &maque::script::lua::register_multi_ret_str,
+    .register_value = &maque::script::lua::register_value,
     .register_bytes = &maque::script::lua::register_bytes,
 };
 
@@ -133,6 +135,7 @@ const ScriptOps kNativeOps = {
     .register_mixed = &maque::script::native::register_mixed,
     .register_multi = &maque::script::native::register_multi,
     .register_multi_ret_str = &maque::script::native::register_multi_ret_str,
+    .register_value = &maque::script::native::register_value,
     .register_bytes = &maque::script::native::register_bytes,
 };
 
@@ -391,6 +394,12 @@ int mq_script_register_multi_ret_str(mq_script_vm* vm, const char* name, const c
     MQ_TRACY_ZONE_N(script, "register");
     if (!vm || !vm->ops || !vm->ops->register_multi_ret_str) return 1;
     return vm->ops->register_multi_ret_str(vm, name, kinds, fn, user);
+}
+int mq_script_register_value(mq_script_vm* vm, const char* name, const char* kinds, int32_t ret_count,
+                             const char* ret_names, mq_script_multi_fn fn, void* user) {
+    MQ_TRACY_ZONE_N(script, "register");
+    if (!vm || !vm->ops || !vm->ops->register_value) return 1;
+    return vm->ops->register_value(vm, name, kinds, ret_count, ret_names, fn, user);
 }
 int mq_script_register_bytes(mq_script_vm* vm, const char* name, const char* kinds,
                              mq_script_bytes_fn fn, void* user) {

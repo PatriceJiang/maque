@@ -191,12 +191,28 @@ tools\win\build.cmd -Sanitize address -RunTests
   （按路径缓存，失败缓存 -1）；为空回退内建 cube。样例 `scenes/pbr/imported.scn`（含地面）
   与导入资产 `scenes/pbr/assets/cube.mesh.json`；e2e ④ 校验「importer 输出 = 已入库资产」逐字节一致（漂移）
   + 断言网格加载成功（`mesh=-1` 视为失败）。
+  **程序化图元（plans/27 M1-1）**：`render.MeshRenderer.geometry`（Cube/Sphere/Plane/Cylinder/Cone/
+  Torus/Capsule）+ `geometry_size`/`geometry_segments`；`mesh_path` 为空时生效，缺省 Cube(1.2) 仍走
+  内建 cube（旧场景零变化）；拾取用同一解析包围盒。样例 `scenes/pbr/primitives.scn`，
+  测试 `ctest -R 'primitives|geometry_primitives_e2e'`。
+  **场景大气（plans/27 M1-2/M1-3）**：`scn.Scene.fog_mode/fog_color/fog_near/fog_far/fog_density` +
+  `tone_mapping`（None/Linear/Reinhard/Cineon/ACES，数值对齐 three.js）；经 `frame3d.atmosphere`
+  尾部追加 → camera uniform `atmos0/atmos1` → pbr shader。样例 `scenes/pbr/atmosphere*.scn`，
+  测试 `ctest -R atmosphere_e2e`。
+  **3D 粒子（plans/27 M1-4）**：`render.ParticleEmitter3D`（CPU 确定性模拟 → 48B/粒子实例 →
+  gfx 实例化 billboard quad，每系统一次 draw；`blend/facing/sort/culling_mask`；`MAQUE_PARTICLES=0`
+  关闭渲染）；`render.ParticleField3D` + `particles3d_upload` 供脚本每帧上传外部粒子。
+  内置软边纹理 `builtin:/textures/particle_soft`。样例 `scenes/pbr/particles3d.scn`，
+  测试 `ctest -R particles3d_e2e`；GPU 解析模拟方案见 [plans/28](plans/28-gpu-morph-and-particles.md)。
+  **Boids 示例**：`scenes/boids/boids.scn`（JS 参考：空间网格 + `ParticleField3D`，`BOIDS_N` 默认 300）
+  与 `scenes/boids/boids-webgpu.scn`（全 shader：ShaderGraph 4 pass，pos/vel 反馈 + O(N²) 力 + splat，
+  N=256）；测试 `ctest -R boids_e2e`（两版可见性/确定性 + GPU 240 帧性能预算）。
   **环境光（M5d）**：`scn.Scene.env_color/env_intensity` 按场景配置影棚环境（默认值 = 引擎原硬编码，老场景零回归）；
   ToyCar 用暖灰环境 + 车漆 clearcoat 出镜面感。
   **清漆层（M5e）**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`（KHR_materials_clearcoat 对齐）——
   独立 F0=0.04 的窄高光（roughness 独立于底材），方向光逐灯叠加。
   **阴影（M5c）**：方向光 **1024² shadow map + 3×3 PCF**（`MAQUE_SHADOW=0` 可关闭用于对照）；
-  shadow map 仅作深度附件、采样用独立 view（camera uniform 当前 912B：+light_vp/shadow_params+view+env IBL+env4 cubemap 标志）。
+  shadow map 仅作深度附件、采样用独立 view（camera uniform 当前 944B：+light_vp/shadow_params+view+env IBL+env4 cubemap 标志+atmosphere）。
   样例 `scenes/pbr/shadows.scn`，e2e ⑨ 用开/关同场景像素差断言。
   **多光源（M5b）**：`render.Light.type` 支持 **Directional(0)/Point(1)/Spot(2)**，最多 8 盏同时生效（点光/聚光带范围衰减与锥角平滑衰减；相机 uniform 640B：8×{pos,dir,color,params}）；样例 `scenes/pbr/lights.scn`，e2e ⑧ 断言红点光/绿聚光的投影差异。
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
@@ -207,8 +223,15 @@ tools\win\build.cmd -Sanitize address -RunTests
   与 5 个贴图槽；多 primitive → 多 draw（每个 primitive 一份 `mq_renderer_pbr_material`）。
   **蒙皮/动画/morph 已支持**：节点层级逐帧世界矩阵、`skins`+JOINTS/WEIGHTS+IBM 调色板
   （`stride 72/80`）、动画 T/R/S + `weights` 通道（STEP/LINEAR/CUBICSPLINE，自动播放首个 clip）、
-  morph targets（默认权重 + 动画权重，CPU `update_mesh`）；`render.MeshRenderer` 追加
+  morph targets（默认权重 + 动画权重）；`render.MeshRenderer` 追加
   `clip/playing/loop/speed/time/duration` 字段控制播放（`time` 运行期回写，可脚本读写/跳转）。
+  **GPU morph（plans/28 §3）**：morph 增量在装配期打包成 **32B/目标/顶点**（target 主序）→
+  `mesh_gpu.morph` → group1 `binding 24` 只读 storage；每帧按 **draw 下标**填
+  `frame3d.morph_weights`（8 float/draw），顶点/阴影入口用 `base + Σw·Δ` 累加（先 morph 后蒙皮）。
+  默认 GPU；`caps.morph_max_targets==0`（旧插件/null）或 >8 target 回退 CPU `update_mesh`；
+  `MAQUE_MORPH_GPU=0` 强制 CPU 做 A/B（像素等价），`MAQUE_MORPH=0` 画基础网格。
+  节点 TRS 动画**仍留在 CPU**（plans/28 §3.10）。样例 `scenes/pbr/morph_gpu/`，
+  测试 `ctest -R 'morph_layout|morph_gpu_e2e'`。
   **材质 KHR 扩展已支持（P4）**：clearcoat/sheen/iridescence/specular/ior/anisotropy 因子 + 7 扩展贴图槽，
   transmission/volume/diffuse_transmission/dispersion 近似（与离线 importer 同语义）；
   `runtime: gltf material[...]` 诊断日志（shading/factors/tex 槽）。
@@ -251,8 +274,9 @@ tools\win\build.cmd -Sanitize address -RunTests
   `shininess`/`specular_intensity`/`ior`/`sheen`(+color/roughness)/`iridescence`(+ior/thickness)/
   `anisotropy`(+rotation；无 TANGENT 时按 glTF 规范用默认切线 +X)/`clearcoat_normal_scale`/`toon_steps`/`depth_packing` + 3 个贴图路径
   （`matcap_texture`/`gradient_texture`/`clearcoat_normal_texture`）+ KHR_texture_transform
-  （`uv_scale`/`uv_offset`、`normal_uv_scale`/`normal_uv_offset`）。材质 uniform **336B（84 floats）**，
-  camera uniform **912B（+view 矩阵 + analytic studio IBL 参数 + env4 cubemap 标志）**；贴图槽 8 张（+KHR 扩展槽 12 张）。
+  （`uv_scale`/`uv_offset`、`normal_uv_scale`/`normal_uv_offset`）。材质 uniform **384B（96 floats；
+  plans/28 尾部追加 morph0/1/2）**，
+  camera uniform **944B（+view 矩阵 + analytic studio IBL 参数 + env4 cubemap 标志 + atmosphere）**；贴图槽 8 张（+KHR 扩展槽 12 张）。
   **环境光照**：`scn.Scene.env_texture`（`.hdr` RGBE/EXR/PNG/JPEG → 装配期 CPU PMREM：GGX 粗糙度 mip 链 +
   余弦 irradiance + 天空 pass；`env_background=false` 只做 IBL 不画天空）或 `scn.Scene.env_cubemap`
   （6 面 `<基名>_px/_nx/_py/_ny/_pz/_nz.(hdr|exr|png|jpg)` → `kind=1` cube 纹理/Cube view + GGX cube mip 链 +

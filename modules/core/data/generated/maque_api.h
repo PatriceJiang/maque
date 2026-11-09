@@ -5,6 +5,8 @@
 
 #include "core/script/mq_script.h"
 
+#include "maque_types.h"
+
 #include "math.custom.h"
 
 namespace math {
@@ -106,6 +108,17 @@ namespace host {
   void node_set_position(void* ctx, float id, float x, float y);
   float node_position_x(void* ctx, float id);
   float node_position_y(void* ctx, float id);
+  void node_set_local_position(void* ctx, float id, float x, float y, float z);
+  void node_set_local_rotation(void* ctx, float id, float x, float y, float z);
+  void node_set_local_scale(void* ctx, float id, float x, float y, float z);
+  math::Vec3 node_local_position(void* ctx, float id);
+  math::Vec3 node_local_rotation(void* ctx, float id);
+  math::Vec3 node_local_scale(void* ctx, float id);
+  math::Vec3 node_world_position(void* ctx, float id);
+  math::Vec3 node_world_rotation(void* ctx, float id);
+  math::Vec3 node_local_to_world(void* ctx, float id, math::Vec3 p);
+  math::Vec3 node_world_to_local(void* ctx, float id, math::Vec3 p);
+  void node_look_at(void* ctx, float id, float x, float y, float z);
   void node_set_content_size(void* ctx, float id, float w, float h);
   void node_set_anchor(void* ctx, float id, float ax, float ay);
   float node_has_component(void* ctx, float id, const char* type);
@@ -350,4 +363,6 @@ namespace host {
   float imgui_hovered(void* ctx);
   float imgui_frame(void* ctx);
   float imgui_last_cmd_count(void* ctx);
+  mq_script_bytes_result particles3d_upload(void* ctx, float id, mq_script_bytes_view data);
+  float particles3d_count(void* ctx, float id);
 }

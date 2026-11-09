@@ -512,6 +512,7 @@ void Engine::step_frame(bool render_frame) {
         { MQ_TRACY_ZONE_N(anim, "anim.step"); anim_step(dt); }           // 动画采样写回（docs/15 §2）
         { shader_pass_step(dt); }                                        // 场景 shader pass 时间推进（docs/13）
         { MQ_TRACY_ZONE_N(anim, "systems.particles"); particles_step(dt); }      // 粒子推进（docs/15 §4）
+        { MQ_TRACY_ZONE_N(anim, "systems.particles3d"); particles3d_step(dt); }  // 3D 粒子（plans/27 3D 粒子）
         { MQ_TRACY_ZONE_N(nav, "nav.step"); nav_step(); }                // 导航代理推进（A* + 追踪）
         { MQ_TRACY_ZONE_N(physics, "physics.step"); physics_components_step(dt); }   // 组件驱动物理
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
@@ -541,7 +542,8 @@ void Engine::step_frame(bool render_frame) {
      * 哈希覆盖实体树/组件 blob/派生世界矩阵；动画/粒子/Spine/shader/ImGui/输入/截图一律视为动态。 */
     if (scene) {
         const bool visual_dynamic =
-            gltf_dynamic || !spine_rt.items.empty() || !systems.particles.empty() || has_shader_pass || has_shader_graph ||
+            gltf_dynamic || !spine_rt.items.empty() || !systems.particles.empty() ||
+            !systems.particles3d.empty() || has_shader_pass || has_shader_graph ||
             imgui_on || imgui_backend || !shot_path.empty() || !shot_seq.empty() ||
             !frames_dir.empty() || !camera_captures.empty() || frame_capture_requested ||
             std::getenv("MAQUE_CAPTURE_WGPU") != nullptr;
@@ -635,6 +637,10 @@ void Engine::step_frame(bool render_frame) {
         std::vector<mq_renderer_pbr_material> mats3d;
         std::vector<mq_renderer_draw3d> draws3d;
         std::vector<mq_renderer_skin> skins3d;
+        /* plans/28：GPU morph 权重（draw_count × 8）+ 粒子实例/系统切片。 */
+        std::vector<float> morph_weights3d;
+        std::vector<mq_renderer_particle> particles3d;
+        std::vector<mq_renderer_particle_system> particle_systems3d;
         scene3d_low_active = false;
         /* RenderFactor 只压 3D PBR：主 target/UI/ImGui 仍全分辨率。低分辨率 3D 先画到
          * 引擎自有 RenderTexture，再作为一层全屏纹理合成到主 target（见下方）。 */
@@ -655,16 +661,20 @@ void Engine::step_frame(bool render_frame) {
             canvas.offset_x *= fx; canvas.offset_y *= fy;
             canvas.viewport_w *= fx; canvas.viewport_h *= fy;
         }
-        extract_3d(low_w, low_h, views3d, lights3d, mats3d, draws3d, skins3d);
+        extract_3d(low_w, low_h, views3d, lights3d, mats3d, draws3d, skins3d,
+                   morph_weights3d, particles3d, particle_systems3d);
         if (low3d) canvas = saved_canvas;
         if (opt_3d_enabled) {
-            stat_3d_calls = (int)draws3d.size();
+            stat_3d_calls = (int)draws3d.size() + (int)particle_systems3d.size();
             for (const auto& dr : draws3d) {
                 auto it = mesh_stats.find(dr.mesh);
                 if (it == mesh_stats.end()) continue;
                 stat_verts += (int)it->second.vertex_count;
                 stat_tris += (int)(it->second.index_count / 3);
             }
+            /* 粒子批不再有网格：按存活实例计（4 顶点 / 2 三角形 per billboard，修 G5）。 */
+            stat_verts += (int)particles3d.size() * 4;
+            stat_tris += (int)particles3d.size() * 2;
         }
         stat_calls = stat_ui_calls + stat_3d_calls;
         std::vector<mq_renderer_shader_pass> passes3d;
@@ -686,6 +696,15 @@ void Engine::step_frame(bool render_frame) {
         fr.materials = mats3d.data(); fr.material_count = (uint32_t)mats3d.size();
         fr.draws = draws3d.data(); fr.draw_count = opt_3d_enabled ? (uint32_t)draws3d.size() : 0;
         fr.skins = skins3d.data(); fr.skin_count = (uint32_t)skins3d.size();
+        /* GPU morph（plans/28 §3.2）：权重按 draw 下标连续 8 float；count 必须等于 draw_count。
+         * MAQUE_MORPH=0 时 extract 不填权重（全 0）→ 基础网格。 */
+        fr.morph_weights = morph_weights3d.empty() ? nullptr : morph_weights3d.data();
+        fr.morph_weight_count = (uint32_t)(morph_weights3d.size() / 8u);
+        /* 3D 粒子批（plans/28 §4.4）：实例数组 + 系统切片。 */
+        fr.particles = particles3d.empty() ? nullptr : particles3d.data();
+        fr.particle_count = opt_3d_enabled ? (uint32_t)particles3d.size() : 0;
+        fr.particle_systems = particle_systems3d.empty() ? nullptr : particle_systems3d.data();
+        fr.particle_system_count = opt_3d_enabled ? (uint32_t)particle_systems3d.size() : 0;
         fr.views2d = views.data(); fr.view2d_count = (uint32_t)views.size();
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
@@ -788,6 +807,8 @@ void Engine::step_frame(bool render_frame) {
         fr.env.sky_mode = scene->desc.env_background ? 2 : 1;
     else
         fr.env.sky_mode = (env_tex_id >= 0 && scene->desc.env_background) ? 3 : 1;
+    /* plans/27 M1-2/M1-3：雾/色调映射（同一帧的 low3d 复制体一并继承）。 */
+    fill_atmosphere(fr);
         /* 低分辨率 3D 离屏 pass（RenderFactor<100%）。主 target 仍 TW×SHpx：
          *   ① 3D PBR/天空/3D shader 画进 scene3d_tex（low_w×low_h）
          *   ② 主 frame 去掉 3D，只保留全分辨率 2D/UI/ImGui，并把 scene3d_tex 作为

@@ -103,6 +103,7 @@ typedef struct mq_renderer_caps {
     int32_t direct_present;
     int32_t hdr;
     int32_t reserved;
+    int32_t morph_max_targets;
 } mq_renderer_caps;
 
 typedef struct mq_renderer_texture_desc {
@@ -118,6 +119,13 @@ typedef struct mq_renderer_texture_desc {
     uint64_t data_size;
 } mq_renderer_texture_desc;
 
+typedef struct mq_renderer_morph {
+    const float* deltas;
+    uint32_t target_count;
+    uint32_t vertex_count;
+    int32_t flags;
+} mq_renderer_morph;
+
 typedef struct mq_renderer_mesh_gpu {
     const void* vertices;
     uint64_t vertex_bytes;
@@ -127,6 +135,7 @@ typedef struct mq_renderer_mesh_gpu {
     uint32_t index_count;
     float bounds_min[3];
     float bounds_max[3];
+    mq_renderer_morph morph;
 } mq_renderer_mesh_gpu;
 
 typedef struct mq_renderer_view3d {
@@ -260,6 +269,17 @@ typedef struct mq_renderer_post {
     int32_t include_2d;
 } mq_renderer_post;
 
+typedef struct mq_renderer_atmosphere {
+    int32_t fog_mode;
+    float fog_color[4];
+    float fog_near;
+    float fog_far;
+    float fog_density;
+    int32_t tone_mapping;
+    int32_t pad0;
+    int32_t pad1;
+} mq_renderer_atmosphere;
+
 typedef struct mq_renderer_shader_pass {
     int32_t shader;
     float time;
@@ -305,6 +325,23 @@ typedef struct mq_renderer_shader_graph_sprite {
     float a;
 } mq_renderer_shader_graph_sprite;
 
+typedef struct mq_renderer_particle {
+    float pos_size[4];
+    float color[4];
+    float misc[4];
+} mq_renderer_particle;
+
+typedef struct mq_renderer_particle_system {
+    int32_t texture;
+    int32_t blend;
+    int32_t facing;
+    int32_t flags;
+    uint32_t first;
+    uint32_t count;
+    int32_t layer;
+    int32_t pad;
+} mq_renderer_particle_system;
+
 typedef struct mq_renderer_frame3d {
     int32_t width;
     int32_t height;
@@ -346,6 +383,13 @@ typedef struct mq_renderer_frame3d {
     uint32_t graph_sprite_count;
     const mq_renderer_mask* masks;
     uint32_t mask_count;
+    mq_renderer_atmosphere atmosphere;
+    const float* morph_weights;
+    uint32_t morph_weight_count;
+    const mq_renderer_particle* particles;
+    uint32_t particle_count;
+    const mq_renderer_particle_system* particle_systems;
+    uint32_t particle_system_count;
 } mq_renderer_frame3d;
 
 typedef struct mq_renderer_render_texture_desc {

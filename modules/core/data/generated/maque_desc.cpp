@@ -2809,6 +2809,12 @@ static const char* mq_acc_render_MeshRenderer_variant_gets(const void* p) { cons
 static void mq_acc_render_MeshRenderer_variant_sets(void* p, const char* v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.variant = v ? v : ""; }
 static const void* mq_acc_render_MeshRenderer_variant_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.variant; }
 static void* mq_acc_render_MeshRenderer_variant_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.variant; }
+static double mq_acc_render_MeshRenderer_geometry_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return static_cast<double>(static_cast<int64_t>(s.geometry)); }
+static void mq_acc_render_MeshRenderer_geometry_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.geometry = static_cast<decltype(s.geometry)>(v); }
+static const void* mq_acc_render_MeshRenderer_geometry_size_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.geometry_size; }
+static void* mq_acc_render_MeshRenderer_geometry_size_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.geometry_size; }
+static const void* mq_acc_render_MeshRenderer_geometry_segments_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.geometry_segments; }
+static void* mq_acc_render_MeshRenderer_geometry_segments_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.geometry_segments; }
 static const mq_field_accessor mq_acc_render_MeshRenderer[] = {
     { 0, 0, 0, 0, mq_acc_render_MeshRenderer_mesh_getp, mq_acc_render_MeshRenderer_mesh_getmp },
     { 0, 0, mq_acc_render_MeshRenderer_mesh_path_gets, mq_acc_render_MeshRenderer_mesh_path_sets, mq_acc_render_MeshRenderer_mesh_path_getp, mq_acc_render_MeshRenderer_mesh_path_getmp },
@@ -2827,6 +2833,9 @@ static const mq_field_accessor mq_acc_render_MeshRenderer[] = {
     { mq_acc_render_MeshRenderer_time_getf, mq_acc_render_MeshRenderer_time_setf, 0, 0, 0, 0 },
     { mq_acc_render_MeshRenderer_duration_getf, mq_acc_render_MeshRenderer_duration_setf, 0, 0, 0, 0 },
     { 0, 0, mq_acc_render_MeshRenderer_variant_gets, mq_acc_render_MeshRenderer_variant_sets, mq_acc_render_MeshRenderer_variant_getp, mq_acc_render_MeshRenderer_variant_getmp },
+    { mq_acc_render_MeshRenderer_geometry_getf, mq_acc_render_MeshRenderer_geometry_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_MeshRenderer_geometry_size_getp, mq_acc_render_MeshRenderer_geometry_size_getmp },
+    { 0, 0, 0, 0, mq_acc_render_MeshRenderer_geometry_segments_getp, mq_acc_render_MeshRenderer_geometry_segments_getmp },
 };
 static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "mesh", (uint32_t)offsetof(render::MeshRenderer, mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[0] },
@@ -2846,6 +2855,9 @@ static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "time", (uint32_t)offsetof(render::MeshRenderer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[14] },
     { "duration", (uint32_t)offsetof(render::MeshRenderer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[15] },
     { "variant", (uint32_t)offsetof(render::MeshRenderer, variant), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[16] },
+    { "geometry", (uint32_t)offsetof(render::MeshRenderer, geometry), MQ_TK_ENUM, 488514272u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[17] },
+    { "geometry_size", (uint32_t)offsetof(render::MeshRenderer, geometry_size), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[18] },
+    { "geometry_segments", (uint32_t)offsetof(render::MeshRenderer, geometry_segments), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[19] },
 };
 
 static double mq_acc_render_MotionStreak_mode_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
@@ -2925,6 +2937,112 @@ static const mq_field_desc mq_fields_render_MotionStreak[] = {
     { "samples", (uint32_t)offsetof(render::MotionStreak, samples), MQ_TK_ARRAY_DYN, 1813093813u, 0u, 1u, 1813093813u, mq_dyn_render_MotionStreak_samples_clear, mq_dyn_render_MotionStreak_samples_size, mq_dyn_render_MotionStreak_samples_resize, mq_dyn_render_MotionStreak_samples_elem, &mq_acc_render_MotionStreak[15] },
     { "geometry", (uint32_t)offsetof(render::MotionStreak, geometry), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 1u, 1876288095u, mq_dyn_render_MotionStreak_geometry_clear, mq_dyn_render_MotionStreak_geometry_size, mq_dyn_render_MotionStreak_geometry_resize, mq_dyn_render_MotionStreak_geometry_elem, &mq_acc_render_MotionStreak[16] },
     { "indices", (uint32_t)offsetof(render::MotionStreak, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[17] },
+};
+
+static double mq_acc_render_ParticleEmitter3D_emitting_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return s.emitting ? 1.0 : 0.0; }
+static void mq_acc_render_ParticleEmitter3D_emitting_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.emitting = v != 0.0; }
+static double mq_acc_render_ParticleEmitter3D_rate_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.rate); }
+static void mq_acc_render_ParticleEmitter3D_rate_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.rate = static_cast<decltype(s.rate)>(v); }
+static double mq_acc_render_ParticleEmitter3D_lifetime_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.lifetime); }
+static void mq_acc_render_ParticleEmitter3D_lifetime_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.lifetime = static_cast<decltype(s.lifetime)>(v); }
+static double mq_acc_render_ParticleEmitter3D_speed_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_render_ParticleEmitter3D_speed_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_render_ParticleEmitter3D_spread_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.spread); }
+static void mq_acc_render_ParticleEmitter3D_spread_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.spread = static_cast<decltype(s.spread)>(v); }
+static const void* mq_acc_render_ParticleEmitter3D_direction_getp(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return &s.direction; }
+static void* mq_acc_render_ParticleEmitter3D_direction_getmp(void* p) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); return &s.direction; }
+static const void* mq_acc_render_ParticleEmitter3D_gravity_getp(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return &s.gravity; }
+static void* mq_acc_render_ParticleEmitter3D_gravity_getmp(void* p) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); return &s.gravity; }
+static double mq_acc_render_ParticleEmitter3D_size_start_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.size_start); }
+static void mq_acc_render_ParticleEmitter3D_size_start_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.size_start = static_cast<decltype(s.size_start)>(v); }
+static double mq_acc_render_ParticleEmitter3D_size_end_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.size_end); }
+static void mq_acc_render_ParticleEmitter3D_size_end_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.size_end = static_cast<decltype(s.size_end)>(v); }
+static const void* mq_acc_render_ParticleEmitter3D_color_start_getp(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return &s.color_start; }
+static void* mq_acc_render_ParticleEmitter3D_color_start_getmp(void* p) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); return &s.color_start; }
+static const void* mq_acc_render_ParticleEmitter3D_color_end_getp(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return &s.color_end; }
+static void* mq_acc_render_ParticleEmitter3D_color_end_getmp(void* p) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); return &s.color_end; }
+static double mq_acc_render_ParticleEmitter3D_rotation_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.rotation); }
+static void mq_acc_render_ParticleEmitter3D_rotation_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.rotation = static_cast<decltype(s.rotation)>(v); }
+static double mq_acc_render_ParticleEmitter3D_rotation_speed_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.rotation_speed); }
+static void mq_acc_render_ParticleEmitter3D_rotation_speed_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.rotation_speed = static_cast<decltype(s.rotation_speed)>(v); }
+static const char* mq_acc_render_ParticleEmitter3D_texture_gets(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return s.texture.c_str(); }
+static void mq_acc_render_ParticleEmitter3D_texture_sets(void* p, const char* v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.texture = v ? v : ""; }
+static const void* mq_acc_render_ParticleEmitter3D_texture_getp(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return &s.texture; }
+static void* mq_acc_render_ParticleEmitter3D_texture_getmp(void* p) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); return &s.texture; }
+static double mq_acc_render_ParticleEmitter3D_max_count_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.max_count); }
+static void mq_acc_render_ParticleEmitter3D_max_count_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.max_count = static_cast<decltype(s.max_count)>(v); }
+static double mq_acc_render_ParticleEmitter3D_blend_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(static_cast<int64_t>(s.blend)); }
+static void mq_acc_render_ParticleEmitter3D_blend_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.blend = static_cast<decltype(s.blend)>(v); }
+static double mq_acc_render_ParticleEmitter3D_facing_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(static_cast<int64_t>(s.facing)); }
+static void mq_acc_render_ParticleEmitter3D_facing_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.facing = static_cast<decltype(s.facing)>(v); }
+static double mq_acc_render_ParticleEmitter3D_sort_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return s.sort ? 1.0 : 0.0; }
+static void mq_acc_render_ParticleEmitter3D_sort_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.sort = v != 0.0; }
+static double mq_acc_render_ParticleEmitter3D_culling_mask_getf(const void* p) { const auto& s = *static_cast<const render::ParticleEmitter3D*>(p); return static_cast<double>(s.culling_mask); }
+static void mq_acc_render_ParticleEmitter3D_culling_mask_setf(void* p, double v) { auto& s = *static_cast<render::ParticleEmitter3D*>(p); s.culling_mask = static_cast<decltype(s.culling_mask)>(v); }
+static const mq_field_accessor mq_acc_render_ParticleEmitter3D[] = {
+    { mq_acc_render_ParticleEmitter3D_emitting_getf, mq_acc_render_ParticleEmitter3D_emitting_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_rate_getf, mq_acc_render_ParticleEmitter3D_rate_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_lifetime_getf, mq_acc_render_ParticleEmitter3D_lifetime_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_speed_getf, mq_acc_render_ParticleEmitter3D_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_spread_getf, mq_acc_render_ParticleEmitter3D_spread_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_ParticleEmitter3D_direction_getp, mq_acc_render_ParticleEmitter3D_direction_getmp },
+    { 0, 0, 0, 0, mq_acc_render_ParticleEmitter3D_gravity_getp, mq_acc_render_ParticleEmitter3D_gravity_getmp },
+    { mq_acc_render_ParticleEmitter3D_size_start_getf, mq_acc_render_ParticleEmitter3D_size_start_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_size_end_getf, mq_acc_render_ParticleEmitter3D_size_end_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_ParticleEmitter3D_color_start_getp, mq_acc_render_ParticleEmitter3D_color_start_getmp },
+    { 0, 0, 0, 0, mq_acc_render_ParticleEmitter3D_color_end_getp, mq_acc_render_ParticleEmitter3D_color_end_getmp },
+    { mq_acc_render_ParticleEmitter3D_rotation_getf, mq_acc_render_ParticleEmitter3D_rotation_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_rotation_speed_getf, mq_acc_render_ParticleEmitter3D_rotation_speed_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_render_ParticleEmitter3D_texture_gets, mq_acc_render_ParticleEmitter3D_texture_sets, mq_acc_render_ParticleEmitter3D_texture_getp, mq_acc_render_ParticleEmitter3D_texture_getmp },
+    { mq_acc_render_ParticleEmitter3D_max_count_getf, mq_acc_render_ParticleEmitter3D_max_count_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_blend_getf, mq_acc_render_ParticleEmitter3D_blend_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_facing_getf, mq_acc_render_ParticleEmitter3D_facing_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_sort_getf, mq_acc_render_ParticleEmitter3D_sort_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleEmitter3D_culling_mask_getf, mq_acc_render_ParticleEmitter3D_culling_mask_setf, 0, 0, 0, 0 },
+};
+static const mq_field_desc mq_fields_render_ParticleEmitter3D[] = {
+    { "emitting", (uint32_t)offsetof(render::ParticleEmitter3D, emitting), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[0] },
+    { "rate", (uint32_t)offsetof(render::ParticleEmitter3D, rate), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[1] },
+    { "lifetime", (uint32_t)offsetof(render::ParticleEmitter3D, lifetime), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[2] },
+    { "speed", (uint32_t)offsetof(render::ParticleEmitter3D, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[3] },
+    { "spread", (uint32_t)offsetof(render::ParticleEmitter3D, spread), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[4] },
+    { "direction", (uint32_t)offsetof(render::ParticleEmitter3D, direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[5] },
+    { "gravity", (uint32_t)offsetof(render::ParticleEmitter3D, gravity), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[6] },
+    { "size_start", (uint32_t)offsetof(render::ParticleEmitter3D, size_start), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[7] },
+    { "size_end", (uint32_t)offsetof(render::ParticleEmitter3D, size_end), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[8] },
+    { "color_start", (uint32_t)offsetof(render::ParticleEmitter3D, color_start), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[9] },
+    { "color_end", (uint32_t)offsetof(render::ParticleEmitter3D, color_end), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[10] },
+    { "rotation", (uint32_t)offsetof(render::ParticleEmitter3D, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[11] },
+    { "rotation_speed", (uint32_t)offsetof(render::ParticleEmitter3D, rotation_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[12] },
+    { "texture", (uint32_t)offsetof(render::ParticleEmitter3D, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[13] },
+    { "max_count", (uint32_t)offsetof(render::ParticleEmitter3D, max_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[14] },
+    { "blend", (uint32_t)offsetof(render::ParticleEmitter3D, blend), MQ_TK_ENUM, 1437811370u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[15] },
+    { "facing", (uint32_t)offsetof(render::ParticleEmitter3D, facing), MQ_TK_ENUM, 1267734405u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[16] },
+    { "sort", (uint32_t)offsetof(render::ParticleEmitter3D, sort), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[17] },
+    { "culling_mask", (uint32_t)offsetof(render::ParticleEmitter3D, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleEmitter3D[18] },
+};
+
+static double mq_acc_render_ParticleField3D_enabled_getf(const void* p) { const auto& s = *static_cast<const render::ParticleField3D*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_render_ParticleField3D_enabled_setf(void* p, double v) { auto& s = *static_cast<render::ParticleField3D*>(p); s.enabled = v != 0.0; }
+static double mq_acc_render_ParticleField3D_max_count_getf(const void* p) { const auto& s = *static_cast<const render::ParticleField3D*>(p); return static_cast<double>(s.max_count); }
+static void mq_acc_render_ParticleField3D_max_count_setf(void* p, double v) { auto& s = *static_cast<render::ParticleField3D*>(p); s.max_count = static_cast<decltype(s.max_count)>(v); }
+static const char* mq_acc_render_ParticleField3D_texture_gets(const void* p) { const auto& s = *static_cast<const render::ParticleField3D*>(p); return s.texture.c_str(); }
+static void mq_acc_render_ParticleField3D_texture_sets(void* p, const char* v) { auto& s = *static_cast<render::ParticleField3D*>(p); s.texture = v ? v : ""; }
+static const void* mq_acc_render_ParticleField3D_texture_getp(const void* p) { const auto& s = *static_cast<const render::ParticleField3D*>(p); return &s.texture; }
+static void* mq_acc_render_ParticleField3D_texture_getmp(void* p) { auto& s = *static_cast<render::ParticleField3D*>(p); return &s.texture; }
+static double mq_acc_render_ParticleField3D_count_getf(const void* p) { const auto& s = *static_cast<const render::ParticleField3D*>(p); return static_cast<double>(s.count); }
+static void mq_acc_render_ParticleField3D_count_setf(void* p, double v) { auto& s = *static_cast<render::ParticleField3D*>(p); s.count = static_cast<decltype(s.count)>(v); }
+static const mq_field_accessor mq_acc_render_ParticleField3D[] = {
+    { mq_acc_render_ParticleField3D_enabled_getf, mq_acc_render_ParticleField3D_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ParticleField3D_max_count_getf, mq_acc_render_ParticleField3D_max_count_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_render_ParticleField3D_texture_gets, mq_acc_render_ParticleField3D_texture_sets, mq_acc_render_ParticleField3D_texture_getp, mq_acc_render_ParticleField3D_texture_getmp },
+    { mq_acc_render_ParticleField3D_count_getf, mq_acc_render_ParticleField3D_count_setf, 0, 0, 0, 0 },
+};
+static const mq_field_desc mq_fields_render_ParticleField3D[] = {
+    { "enabled", (uint32_t)offsetof(render::ParticleField3D, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleField3D[0] },
+    { "max_count", (uint32_t)offsetof(render::ParticleField3D, max_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleField3D[1] },
+    { "texture", (uint32_t)offsetof(render::ParticleField3D, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleField3D[2] },
+    { "count", (uint32_t)offsetof(render::ParticleField3D, count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_render_ParticleField3D[3] },
 };
 
 static double mq_acc_render_ReflectionProbe_source_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(static_cast<int64_t>(s.source)); }
@@ -4130,6 +4248,18 @@ static double mq_acc_scn_Scene_gravity_y_getf(const void* p) { const auto& s = *
 static void mq_acc_scn_Scene_gravity_y_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.gravity_y = static_cast<decltype(s.gravity_y)>(v); }
 static double mq_acc_scn_Scene_restitution_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.restitution); }
 static void mq_acc_scn_Scene_restitution_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.restitution = static_cast<decltype(s.restitution)>(v); }
+static double mq_acc_scn_Scene_fog_mode_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(static_cast<int64_t>(s.fog_mode)); }
+static void mq_acc_scn_Scene_fog_mode_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.fog_mode = static_cast<decltype(s.fog_mode)>(v); }
+static const void* mq_acc_scn_Scene_fog_color_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.fog_color; }
+static void* mq_acc_scn_Scene_fog_color_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.fog_color; }
+static double mq_acc_scn_Scene_fog_near_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.fog_near); }
+static void mq_acc_scn_Scene_fog_near_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.fog_near = static_cast<decltype(s.fog_near)>(v); }
+static double mq_acc_scn_Scene_fog_far_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.fog_far); }
+static void mq_acc_scn_Scene_fog_far_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.fog_far = static_cast<decltype(s.fog_far)>(v); }
+static double mq_acc_scn_Scene_fog_density_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.fog_density); }
+static void mq_acc_scn_Scene_fog_density_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.fog_density = static_cast<decltype(s.fog_density)>(v); }
+static double mq_acc_scn_Scene_tone_mapping_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(static_cast<int64_t>(s.tone_mapping)); }
+static void mq_acc_scn_Scene_tone_mapping_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.tone_mapping = static_cast<decltype(s.tone_mapping)>(v); }
 static const mq_field_accessor mq_acc_scn_Scene[] = {
     { mq_acc_scn_Scene_version_getf, mq_acc_scn_Scene_version_setf, 0, 0, 0, 0 },
     { 0, 0, mq_acc_scn_Scene_title_gets, mq_acc_scn_Scene_title_sets, mq_acc_scn_Scene_title_getp, mq_acc_scn_Scene_title_getmp },
@@ -4155,6 +4285,12 @@ static const mq_field_accessor mq_acc_scn_Scene[] = {
     { mq_acc_scn_Scene_msaa_samples_getf, mq_acc_scn_Scene_msaa_samples_setf, 0, 0, 0, 0 },
     { mq_acc_scn_Scene_gravity_y_getf, mq_acc_scn_Scene_gravity_y_setf, 0, 0, 0, 0 },
     { mq_acc_scn_Scene_restitution_getf, mq_acc_scn_Scene_restitution_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_fog_mode_getf, mq_acc_scn_Scene_fog_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_scn_Scene_fog_color_getp, mq_acc_scn_Scene_fog_color_getmp },
+    { mq_acc_scn_Scene_fog_near_getf, mq_acc_scn_Scene_fog_near_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_fog_far_getf, mq_acc_scn_Scene_fog_far_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_fog_density_getf, mq_acc_scn_Scene_fog_density_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_tone_mapping_getf, mq_acc_scn_Scene_tone_mapping_setf, 0, 0, 0, 0 },
 };
 static void mq_dyn_scn_Scene_scripts_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_scn_Scene_scripts_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
@@ -4185,6 +4321,12 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "msaa_samples", (uint32_t)offsetof(scn::Scene, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[21] },
     { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[22] },
     { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[23] },
+    { "fog_mode", (uint32_t)offsetof(scn::Scene, fog_mode), MQ_TK_ENUM, 32639722u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[24] },
+    { "fog_color", (uint32_t)offsetof(scn::Scene, fog_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[25] },
+    { "fog_near", (uint32_t)offsetof(scn::Scene, fog_near), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[26] },
+    { "fog_far", (uint32_t)offsetof(scn::Scene, fog_far), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[27] },
+    { "fog_density", (uint32_t)offsetof(scn::Scene, fog_density), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[28] },
+    { "tone_mapping", (uint32_t)offsetof(scn::Scene, tone_mapping), MQ_TK_ENUM, 1117886059u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[29] },
 };
 
 static const char* mq_acc_scn_SceneInstance_source_gets(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return s.source.c_str(); }
@@ -6062,6 +6204,27 @@ static const mq_enum_value mq_values_render_LineJoin[] = {
     { "Round", (int64_t)2 },
 };
 
+static const mq_enum_value mq_values_render_MeshGeometry[] = {
+    { "Cube", (int64_t)0 },
+    { "Sphere", (int64_t)1 },
+    { "Plane", (int64_t)2 },
+    { "Cylinder", (int64_t)3 },
+    { "Cone", (int64_t)4 },
+    { "Torus", (int64_t)5 },
+    { "Capsule", (int64_t)6 },
+};
+
+static const mq_enum_value mq_values_render_ParticleBlend[] = {
+    { "Alpha", (int64_t)0 },
+    { "Additive", (int64_t)1 },
+    { "Multiply", (int64_t)2 },
+};
+
+static const mq_enum_value mq_values_render_ParticleFacing[] = {
+    { "ViewPlane", (int64_t)0 },
+    { "YAxisLocked", (int64_t)1 },
+};
+
 static const mq_enum_value mq_values_render_PivotAnchor[] = {
     { "TopLeft", (int64_t)0 },
     { "Center", (int64_t)1 },
@@ -6144,6 +6307,20 @@ static const mq_enum_value mq_values_render_StreakMode[] = {
 static const mq_enum_value mq_values_render_TerrainLodMode[] = {
     { "Auto", (int64_t)0 },
     { "Fixed", (int64_t)1 },
+};
+
+static const mq_enum_value mq_values_scn_FogMode[] = {
+    { "None", (int64_t)0 },
+    { "Linear", (int64_t)1 },
+    { "Exp2", (int64_t)2 },
+};
+
+static const mq_enum_value mq_values_scn_ToneMapping[] = {
+    { "None", (int64_t)0 },
+    { "Linear", (int64_t)1 },
+    { "Reinhard", (int64_t)2 },
+    { "Cineon", (int64_t)3 },
+    { "ACESFilmic", (int64_t)4 },
 };
 
 static const mq_enum_value mq_values_script_PropertyVariantType[] = {
@@ -6589,8 +6766,13 @@ static void mq_defaults_render_Light(void* p) { new (p) render::Light{}; }
 static void mq_defaults_render_LightType(void* p) { new (p) render::LightType{}; }
 static void mq_defaults_render_LineCap(void* p) { new (p) render::LineCap{}; }
 static void mq_defaults_render_LineJoin(void* p) { new (p) render::LineJoin{}; }
+static void mq_defaults_render_MeshGeometry(void* p) { new (p) render::MeshGeometry{}; }
 static void mq_defaults_render_MeshRenderer(void* p) { new (p) render::MeshRenderer{}; }
 static void mq_defaults_render_MotionStreak(void* p) { new (p) render::MotionStreak{}; }
+static void mq_defaults_render_ParticleBlend(void* p) { new (p) render::ParticleBlend{}; }
+static void mq_defaults_render_ParticleEmitter3D(void* p) { new (p) render::ParticleEmitter3D{}; }
+static void mq_defaults_render_ParticleFacing(void* p) { new (p) render::ParticleFacing{}; }
+static void mq_defaults_render_ParticleField3D(void* p) { new (p) render::ParticleField3D{}; }
 static void mq_defaults_render_PivotAnchor(void* p) { new (p) render::PivotAnchor{}; }
 static void mq_defaults_render_ProbeShape(void* p) { new (p) render::ProbeShape{}; }
 static void mq_defaults_render_ProbeSource(void* p) { new (p) render::ProbeSource{}; }
@@ -6631,6 +6813,7 @@ static void mq_defaults_scene_Transform3D(void* p) { new (p) scene::Transform3D{
 static void mq_defaults_scn_AnimationPlayer(void* p) { new (p) scn::AnimationPlayer{}; }
 static void mq_defaults_scn_Button(void* p) { new (p) scn::Button{}; }
 static void mq_defaults_scn_Camera(void* p) { new (p) scn::Camera{}; }
+static void mq_defaults_scn_FogMode(void* p) { new (p) scn::FogMode{}; }
 static void mq_defaults_scn_Label(void* p) { new (p) scn::Label{}; }
 static void mq_defaults_scn_NavAgent(void* p) { new (p) scn::NavAgent{}; }
 static void mq_defaults_scn_ParticleEmitter(void* p) { new (p) scn::ParticleEmitter{}; }
@@ -6639,6 +6822,7 @@ static void mq_defaults_scn_Scene(void* p) { new (p) scn::Scene{}; }
 static void mq_defaults_scn_SceneInstance(void* p) { new (p) scn::SceneInstance{}; }
 static void mq_defaults_scn_Sprite(void* p) { new (p) scn::Sprite{}; }
 static void mq_defaults_scn_SpriteMaterial(void* p) { new (p) scn::SpriteMaterial{}; }
+static void mq_defaults_scn_ToneMapping(void* p) { new (p) scn::ToneMapping{}; }
 static void mq_defaults_scn_Transform2D(void* p) { new (p) scn::Transform2D{}; }
 static void mq_defaults_script_PropertyVariant(void* p) { new (p) script::PropertyVariant{}; }
 static void mq_defaults_script_PropertyVariantType(void* p) { new (p) script::PropertyVariantType{}; }
@@ -8653,12 +8837,26 @@ extern const mq_type_desc mq_type_render_LineJoin = {
     mq_defaults_render_LineJoin,
 };
 
+extern const mq_type_desc mq_type_render_MeshGeometry = {
+    "render.MeshGeometry",
+    488514272u,
+    (uint32_t)sizeof(render::MeshGeometry),
+    (uint32_t)alignof(render::MeshGeometry),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_render_MeshGeometry,
+    7u,
+    mq_defaults_render_MeshGeometry,
+};
+
 extern const mq_type_desc mq_type_render_MeshRenderer = {
     "render.MeshRenderer",
     956582135u,
     (uint32_t)sizeof(render::MeshRenderer),
     (uint32_t)alignof(render::MeshRenderer),
-    17u,
+    20u,
     mq_fields_render_MeshRenderer,
     4u,
     0u,
@@ -8679,6 +8877,62 @@ extern const mq_type_desc mq_type_render_MotionStreak = {
     0,
     0u,
     mq_defaults_render_MotionStreak,
+};
+
+extern const mq_type_desc mq_type_render_ParticleBlend = {
+    "render.ParticleBlend",
+    1437811370u,
+    (uint32_t)sizeof(render::ParticleBlend),
+    (uint32_t)alignof(render::ParticleBlend),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_render_ParticleBlend,
+    3u,
+    mq_defaults_render_ParticleBlend,
+};
+
+extern const mq_type_desc mq_type_render_ParticleEmitter3D = {
+    "render.ParticleEmitter3D",
+    1442787732u,
+    (uint32_t)sizeof(render::ParticleEmitter3D),
+    (uint32_t)alignof(render::ParticleEmitter3D),
+    19u,
+    mq_fields_render_ParticleEmitter3D,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_render_ParticleEmitter3D,
+};
+
+extern const mq_type_desc mq_type_render_ParticleFacing = {
+    "render.ParticleFacing",
+    1267734405u,
+    (uint32_t)sizeof(render::ParticleFacing),
+    (uint32_t)alignof(render::ParticleFacing),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_render_ParticleFacing,
+    2u,
+    mq_defaults_render_ParticleFacing,
+};
+
+extern const mq_type_desc mq_type_render_ParticleField3D = {
+    "render.ParticleField3D",
+    3432332610u,
+    (uint32_t)sizeof(render::ParticleField3D),
+    (uint32_t)alignof(render::ParticleField3D),
+    4u,
+    mq_fields_render_ParticleField3D,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_render_ParticleField3D,
 };
 
 extern const mq_type_desc mq_type_render_PivotAnchor = {
@@ -9241,6 +9495,20 @@ extern const mq_type_desc mq_type_scn_Camera = {
     mq_defaults_scn_Camera,
 };
 
+extern const mq_type_desc mq_type_scn_FogMode = {
+    "scn.FogMode",
+    32639722u,
+    (uint32_t)sizeof(scn::FogMode),
+    (uint32_t)alignof(scn::FogMode),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_scn_FogMode,
+    3u,
+    mq_defaults_scn_FogMode,
+};
+
 extern const mq_type_desc mq_type_scn_Label = {
     "scn.Label",
     3449142243u,
@@ -9302,7 +9570,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    24u,
+    30u,
     mq_fields_scn_Scene,
     4u,
     0u,
@@ -9351,6 +9619,20 @@ extern const mq_type_desc mq_type_scn_SpriteMaterial = {
     0,
     0u,
     mq_defaults_scn_SpriteMaterial,
+};
+
+extern const mq_type_desc mq_type_scn_ToneMapping = {
+    "scn.ToneMapping",
+    1117886059u,
+    (uint32_t)sizeof(scn::ToneMapping),
+    (uint32_t)alignof(scn::ToneMapping),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_scn_ToneMapping,
+    5u,
+    mq_defaults_scn_ToneMapping,
 };
 
 extern const mq_type_desc mq_type_scn_Transform2D = {
@@ -12311,6 +12593,15 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
         case 3272957318u:
             if (std::strcmp(name, "variant") == 0) return &type->fields[16];
             break;
+        case 711820689u:
+            if (std::strcmp(name, "geometry") == 0) return &type->fields[17];
+            break;
+        case 3297422131u:
+            if (std::strcmp(name, "geometry_size") == 0) return &type->fields[18];
+            break;
+        case 121275080u:
+            if (std::strcmp(name, "geometry_segments") == 0) return &type->fields[19];
+            break;
         }
         break;
     case 1809231709u:
@@ -12368,6 +12659,83 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
             break;
         case 4155575922u:
             if (std::strcmp(name, "indices") == 0) return &type->fields[17];
+            break;
+        }
+        break;
+    case 1442787732u:
+        switch (h) {
+        case 509244006u:
+            if (std::strcmp(name, "emitting") == 0) return &type->fields[0];
+            break;
+        case 2927860839u:
+            if (std::strcmp(name, "rate") == 0) return &type->fields[1];
+            break;
+        case 1376955374u:
+            if (std::strcmp(name, "lifetime") == 0) return &type->fields[2];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[3];
+            break;
+        case 1229586638u:
+            if (std::strcmp(name, "spread") == 0) return &type->fields[4];
+            break;
+        case 3748513642u:
+            if (std::strcmp(name, "direction") == 0) return &type->fields[5];
+            break;
+        case 3523870533u:
+            if (std::strcmp(name, "gravity") == 0) return &type->fields[6];
+            break;
+        case 3971630171u:
+            if (std::strcmp(name, "size_start") == 0) return &type->fields[7];
+            break;
+        case 3370385950u:
+            if (std::strcmp(name, "size_end") == 0) return &type->fields[8];
+            break;
+        case 3012616735u:
+            if (std::strcmp(name, "color_start") == 0) return &type->fields[9];
+            break;
+        case 1294715370u:
+            if (std::strcmp(name, "color_end") == 0) return &type->fields[10];
+            break;
+        case 564937055u:
+            if (std::strcmp(name, "rotation") == 0) return &type->fields[11];
+            break;
+        case 1498426571u:
+            if (std::strcmp(name, "rotation_speed") == 0) return &type->fields[12];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[13];
+            break;
+        case 1153542329u:
+            if (std::strcmp(name, "max_count") == 0) return &type->fields[14];
+            break;
+        case 196886744u:
+            if (std::strcmp(name, "blend") == 0) return &type->fields[15];
+            break;
+        case 2261802447u:
+            if (std::strcmp(name, "facing") == 0) return &type->fields[16];
+            break;
+        case 69978321u:
+            if (std::strcmp(name, "sort") == 0) return &type->fields[17];
+            break;
+        case 2671812252u:
+            if (std::strcmp(name, "culling_mask") == 0) return &type->fields[18];
+            break;
+        }
+        break;
+    case 3432332610u:
+        switch (h) {
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[0];
+            break;
+        case 1153542329u:
+            if (std::strcmp(name, "max_count") == 0) return &type->fields[1];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[2];
+            break;
+        case 967958004u:
+            if (std::strcmp(name, "count") == 0) return &type->fields[3];
             break;
         }
         break;
@@ -13291,6 +13659,24 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
             break;
         case 4120530831u:
             if (std::strcmp(name, "restitution") == 0) return &type->fields[23];
+            break;
+        case 658855219u:
+            if (std::strcmp(name, "fog_mode") == 0) return &type->fields[24];
+            break;
+        case 3927081271u:
+            if (std::strcmp(name, "fog_color") == 0) return &type->fields[25];
+            break;
+        case 1853311634u:
+            if (std::strcmp(name, "fog_near") == 0) return &type->fields[26];
+            break;
+        case 3244354497u:
+            if (std::strcmp(name, "fog_far") == 0) return &type->fields[27];
+            break;
+        case 1827260800u:
+            if (std::strcmp(name, "fog_density") == 0) return &type->fields[28];
+            break;
+        case 876141564u:
+            if (std::strcmp(name, "tone_mapping") == 0) return &type->fields[29];
             break;
         }
         break;
@@ -14505,8 +14891,13 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_render_LightType,
     &mq_type_render_LineCap,
     &mq_type_render_LineJoin,
+    &mq_type_render_MeshGeometry,
     &mq_type_render_MeshRenderer,
     &mq_type_render_MotionStreak,
+    &mq_type_render_ParticleBlend,
+    &mq_type_render_ParticleEmitter3D,
+    &mq_type_render_ParticleFacing,
+    &mq_type_render_ParticleField3D,
     &mq_type_render_PivotAnchor,
     &mq_type_render_ProbeShape,
     &mq_type_render_ProbeSource,
@@ -14547,6 +14938,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_scn_AnimationPlayer,
     &mq_type_scn_Button,
     &mq_type_scn_Camera,
+    &mq_type_scn_FogMode,
     &mq_type_scn_Label,
     &mq_type_scn_NavAgent,
     &mq_type_scn_ParticleEmitter,
@@ -14555,6 +14947,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_scn_SceneInstance,
     &mq_type_scn_Sprite,
     &mq_type_scn_SpriteMaterial,
+    &mq_type_scn_ToneMapping,
     &mq_type_scn_Transform2D,
     &mq_type_script_PropertyVariant,
     &mq_type_script_PropertyVariantType,
@@ -14624,7 +15017,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 256u;
+const uint32_t mq_schema_type_count = 263u;
 
 #ifdef __cplusplus
 } // extern "C"

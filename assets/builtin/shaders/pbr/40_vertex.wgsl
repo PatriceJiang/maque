@@ -17,10 +17,72 @@ fn skin_matrix(joints: vec4u, weights: vec4f) -> mat4x4f {
        + weights.z * skin_palette[joints.z] + weights.w * skin_palette[joints.w];
 }
 
+/* ---- GPU morph targets（plans/28 §3.4）----
+ * 权重来自逐 draw 的 Draw 尾部（morph0/1/2），增量来自 group1 binding24（storage）。
+ * 顺序遵循 glTF：**先在 mesh 空间累加 morph，再蒙皮**（skin * (base + ΣΔ)），最后乘 model。
+ * 非 morph draw（morph0.x == 0）只付一次 uniform 比较 + 一个分支，不新增顶点入口/管线。 */
+fn morph_weight(i: u32) -> f32 {
+  // 用 if 链而不是 vec 动态下标：部分后端会把动态下标落到 local memory。
+  if (i == 0u) { return dr.morph0.y; }
+  if (i == 1u) { return dr.morph0.z; }
+  if (i == 2u) { return dr.morph0.w; }
+  if (i == 3u) { return dr.morph1.x; }
+  if (i == 4u) { return dr.morph1.y; }
+  if (i == 5u) { return dr.morph1.z; }
+  if (i == 6u) { return dr.morph1.w; }
+  return dr.morph2.x;                                  // i == 7
+}
+
+fn morph_count() -> u32 { return u32(dr.morph0.x + 0.5); }
+fn morph_vertex_count() -> u32 { return u32(dr.morph2.y + 0.5); }
+fn morph_has_normals() -> bool { return dr.morph2.z > 0.5; }
+
+// 阴影只要位置（跳过 normal 累加）。
+fn morph_position(vi: u32, p: vec3f) -> vec3f {
+  let cnt = morph_count();
+  if (cnt == 0u) { return p; }
+  let nv = morph_vertex_count();
+  var res = p;
+  for (var t = 0u; t < 8u; t = t + 1u) {
+    if (t >= cnt) { break; }
+    let w = morph_weight(t);
+    if (w == 0.0) { continue; }
+    res = res + morph_deltas[t * nv + vi].pos.xyz * w;
+  }
+  return res;
+}
+
+struct MorphRes {
+  pos: vec3f,
+  nrm: vec3f,
+};
+
+// 位置 + 法线。法线累加后**先归一化**（与 CPU 路径一致），再交给蒙皮/模型法线矩阵。
+fn morph_apply(vi: u32, p: vec3f, n: vec3f) -> MorphRes {
+  var r: MorphRes;
+  r.pos = p;
+  r.nrm = n;
+  let cnt = morph_count();
+  if (cnt == 0u) { return r; }
+  let nv = morph_vertex_count();
+  let want_n = morph_has_normals();
+  var touched = false;
+  for (var t = 0u; t < 8u; t = t + 1u) {
+    if (t >= cnt) { break; }
+    let w = morph_weight(t);
+    if (w == 0.0) { continue; }
+    let d = morph_deltas[t * nv + vi];
+    r.pos = r.pos + d.pos.xyz * w;
+    if (want_n) { r.nrm = r.nrm + d.nrm.xyz * w; touched = true; }
+  }
+  if (touched) { r.nrm = normalize(r.nrm); }
+  return r;
+}
+
 // 布局 0（旧 48B：pos3|normal3|tangent4(未用)|uv2）
-@vertex fn vs_shadow(@location(0) pos: vec3f, @location(2) uv: vec2f) -> ShadowVOut {
+@vertex fn vs_shadow(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(2) uv: vec2f) -> ShadowVOut {
   var o: ShadowVOut;
-  o.p = cam.light_vp * dr.model * vec4f(pos, 1.0);
+  o.p = cam.light_vp * dr.model * vec4f(morph_position(vi, pos), 1.0);
   o.uv = uv;
   o.uv1 = vec2f(0.0);
   o.color = vec4f(1.0);
@@ -28,10 +90,10 @@ fn skin_matrix(joints: vec4u, weights: vec4f) -> mat4x4f {
 }
 
 // 布局 1（56B）：阴影里需要 color/uv1 才能正确 alpha-mask（顶点色 alpha / TEXCOORD_1 贴图）
-@vertex fn vs_shadow1(@location(0) pos: vec3f, @location(1) color: vec4f,
+@vertex fn vs_shadow1(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(1) color: vec4f,
                       @location(2) uv: vec2f, @location(3) uv1: vec2f) -> ShadowVOut {
   var o: ShadowVOut;
-  o.p = cam.light_vp * dr.model * vec4f(pos, 1.0);
+  o.p = cam.light_vp * dr.model * vec4f(morph_position(vi, pos), 1.0);
   o.uv = uv;
   o.uv1 = uv1;
   o.color = color;
@@ -39,11 +101,11 @@ fn skin_matrix(joints: vec4u, weights: vec4f) -> mat4x4f {
 }
 
 // 布局 2 阴影（72B）：pos@0 + uv@40 + joints u16x4@48 / weights f32x4@56
-@vertex fn vs_shadow_skin(@location(0) pos: vec3f, @location(2) uv: vec2f,
+@vertex fn vs_shadow_skin(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(2) uv: vec2f,
                           @location(5) joints: vec4u, @location(6) weights: vec4f) -> ShadowVOut {
   var o: ShadowVOut;
   let skin = skin_matrix(joints, weights);
-  o.p = cam.light_vp * dr.model * (skin * vec4f(pos, 1.0));
+  o.p = cam.light_vp * dr.model * (skin * vec4f(morph_position(vi, pos), 1.0));
   o.uv = uv;
   o.uv1 = vec2f(0.0);
   o.color = vec4f(1.0);
@@ -51,12 +113,13 @@ fn skin_matrix(joints: vec4u, weights: vec4f) -> mat4x4f {
 }
 
 // 布局 3 阴影（80B）：+color@24/uv1@48 + joints u16x4@56 / weights f32x4@64
-@vertex fn vs_shadow1_skin(@location(0) pos: vec3f, @location(1) color: vec4f,
+@vertex fn vs_shadow1_skin(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f,
+                           @location(1) color: vec4f,
                            @location(2) uv: vec2f, @location(3) uv1: vec2f,
                            @location(5) joints: vec4u, @location(6) weights: vec4f) -> ShadowVOut {
   var o: ShadowVOut;
   let skin = skin_matrix(joints, weights);
-  o.p = cam.light_vp * dr.model * (skin * vec4f(pos, 1.0));
+  o.p = cam.light_vp * dr.model * (skin * vec4f(morph_position(vi, pos), 1.0));
   o.uv = uv;
   o.uv1 = uv1;
   o.color = color;
@@ -115,8 +178,10 @@ fn vs_common_skin(pos: vec3f, nrm: vec3f, skin: mat4x4f) -> VSCommon {
 }
 
 // 布局 0
-@vertex fn vs(@location(0) pos: vec3f, @location(1) nrm: vec3f, @location(2) uv: vec2f) -> VOut {
-  let c = vs_common(pos, nrm);
+@vertex fn vs(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(1) nrm: vec3f,
+              @location(2) uv: vec2f) -> VOut {
+  let m = morph_apply(vi, pos, nrm);
+  let c = vs_common(m.pos, m.nrm);
   var o: VOut;
   o.p = c.clip;
   o.n = c.nrm;
@@ -128,9 +193,10 @@ fn vs_common_skin(pos: vec3f, nrm: vec3f, skin: mat4x4f) -> VSCommon {
 }
 
 // 布局 1（glTF COLOR_0 / TEXCOORD_1）
-@vertex fn vs1(@location(0) pos: vec3f, @location(1) nrm: vec3f, @location(2) uv: vec2f,
-               @location(3) color: vec4f, @location(4) uv1: vec2f) -> VOut {
-  let c = vs_common(pos, nrm);
+@vertex fn vs1(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(1) nrm: vec3f,
+               @location(2) uv: vec2f, @location(3) color: vec4f, @location(4) uv1: vec2f) -> VOut {
+  let m = morph_apply(vi, pos, nrm);
+  let c = vs_common(m.pos, m.nrm);
   var o: VOut;
   o.p = c.clip;
   o.n = c.nrm;
@@ -142,9 +208,11 @@ fn vs_common_skin(pos: vec3f, nrm: vec3f, skin: mat4x4f) -> VSCommon {
 }
 
 // 布局 2（72B = 48B + joints/weights）：蒙皮
-@vertex fn vs_skin(@location(0) pos: vec3f, @location(1) nrm: vec3f, @location(2) uv: vec2f,
+@vertex fn vs_skin(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(1) nrm: vec3f,
+                   @location(2) uv: vec2f,
                    @location(5) joints: vec4u, @location(6) weights: vec4f) -> VOut {
-  let c = vs_common_skin(pos, nrm, skin_matrix(joints, weights));
+  let m = morph_apply(vi, pos, nrm);
+  let c = vs_common_skin(m.pos, m.nrm, skin_matrix(joints, weights));
   var o: VOut;
   o.p = c.clip;
   o.n = c.nrm;
@@ -156,10 +224,12 @@ fn vs_common_skin(pos: vec3f, nrm: vec3f, skin: mat4x4f) -> VSCommon {
 }
 
 // 布局 3（80B = 56B + joints/weights）：蒙皮 + COLOR_0/TEXCOORD_1
-@vertex fn vs1_skin(@location(0) pos: vec3f, @location(1) nrm: vec3f, @location(2) uv: vec2f,
+@vertex fn vs1_skin(@builtin(vertex_index) vi: u32, @location(0) pos: vec3f, @location(1) nrm: vec3f,
+                    @location(2) uv: vec2f,
                     @location(3) color: vec4f, @location(4) uv1: vec2f,
                     @location(5) joints: vec4u, @location(6) weights: vec4f) -> VOut {
-  let c = vs_common_skin(pos, nrm, skin_matrix(joints, weights));
+  let m = morph_apply(vi, pos, nrm);
+  let c = vs_common_skin(m.pos, m.nrm, skin_matrix(joints, weights));
   var o: VOut;
   o.p = c.clip;
   o.n = c.nrm;

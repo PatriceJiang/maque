@@ -1,0 +1,32 @@
+{
+  "title": "boids",
+  "script": "boids.js",
+  "width": 960,
+  "height": 540,
+  "views": 1,
+  "env_color": { "r": 0.05, "g": 0.06, "b": 0.09, "a": 1.0 },
+  "env_intensity": 0.6,
+  "env_sky_color": { "r": 0.08, "g": 0.10, "b": 0.16, "a": 1.0 },
+  "env_ground_color": { "r": 0.02, "g": 0.02, "b": 0.03, "a": 1.0 },
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 22.0 } } },
+        { "type": "render.Camera3D", "fov_y": 50.0, "near": 0.1, "far": 120.0,
+          "clear_color": { "r": 0.02, "g": 0.025, "b": 0.04, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "flock",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.ParticleField3D",
+          "max_count": 4096,
+          "texture": "builtin:/textures/particle_soft" }
+      ]
+    }
+  ]
+}

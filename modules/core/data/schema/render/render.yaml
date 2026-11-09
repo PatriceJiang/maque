@@ -267,6 +267,59 @@
         - { name: texture, type: string, default: "", attrs: { transient: true, readonly: true } }
         - { name: ready, type: bool, default: false, attrs: { transient: true, readonly: true } }
         - { name: last_frame, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
+    # 程序化内建几何（three.js geometry 族迁移，plans/27 M1-1）：mesh_path 为空时按 kind 生成。
+    # 缺省 Cube + size 1.2 与旧内建 cube（±0.6）一致 → 旧场景逐字节不变。
+    - enum: MeshGeometry
+      values:
+        - { name: Cube,     value: 0 }   # three.js BoxGeometry（引擎既有术语 cube）
+        - { name: Sphere,   value: 1 }
+        - { name: Plane,    value: 2 }
+        - { name: Cylinder, value: 3 }
+        - { name: Cone,     value: 4 }
+        - { name: Torus,    value: 5 }
+        - { name: Capsule,  value: 6 }
+    # 3D 粒子发射器（plans/27 3D 粒子 / plans/28）：CPU 确定性模拟（引擎 RNG、固定步长），
+    # GPU **实例化** billboard 批渲染（每粒子 48B 实例数据；不再建动态网格）。
+    - enum: ParticleBlend
+      values:
+        - { name: Alpha,    value: 0 }   # SrcAlpha / OneMinusSrcAlpha（默认，旧行为）
+        - { name: Additive, value: 1 }   # SrcAlpha / One（可交换 → 不需排序）
+        - { name: Multiply, value: 2 }   # 暂按 Alpha 处理并告警一次
+    - enum: ParticleFacing
+      values:
+        - { name: ViewPlane,   value: 0 }   # 面向视平面（默认，旧行为）
+        - { name: YAxisLocked, value: 1 }   # 绕 Y 轴锁定（火焰/柱子）
+    - struct: ParticleEmitter3D
+      fields:
+        - { name: emitting, type: bool, default: true }
+        - { name: rate, type: float, default: 30.0F, attrs: { unit: "1/s" } }
+        - { name: lifetime, type: float, default: 1.5F, attrs: { unit: s } }
+        - { name: speed, type: float, default: 1.2F, attrs: { unit: "m/s" } }
+        - { name: spread, type: float, default: 0.6F, attrs: { range: [0, 1] } }
+        - { name: direction, type: math.Vec3, default: "{0.0F, 1.0F, 0.0F}" }
+        - { name: gravity, type: math.Vec3, default: "{0.0F, -1.5F, 0.0F}" }
+        - { name: size_start, type: float, default: 0.25F, attrs: { unit: m } }
+        - { name: size_end, type: float, default: 0.05F, attrs: { unit: m } }
+        - { name: color_start, type: math.Color, default: "{1.0F, 0.85F, 0.5F, 1.0F}" }
+        - { name: color_end, type: math.Color, default: "{1.0F, 0.2F, 0.05F, 0.0F}" }
+        - { name: rotation, type: float, default: 0.0F, attrs: { unit: radian } }
+        - { name: rotation_speed, type: float, default: 0.0F, attrs: { unit: "rad/s" } }
+        - { name: texture, type: string, default: "" }
+        - { name: max_count, type: uint32_t, default: 256, attrs: { range: [1, 4096] } }
+        # ---- plans/28 M1（尾部追加；默认值 = 旧行为）----
+        - { name: blend,        type: ParticleBlend, default: "ParticleBlend::Alpha" }
+        - { name: facing,       type: ParticleFacing, default: "ParticleFacing::ViewPlane" }
+        # true = alpha 混合时按相机距离远→近排序（只重排上传的实例顺序，不动模拟数组）。
+        - { name: sort,         type: bool, default: true }
+        - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+    # 外部驱动的 3D 粒子场（plans/28：Boids / 自定义粒子由脚本每帧 upload）。
+    # 数据布局：每粒子 12×float32 = 48B：pos3,size1,color4,rotation1,pad3。
+    - struct: ParticleField3D
+      fields:
+        - { name: enabled, type: bool, default: true }
+        - { name: max_count, type: uint32_t, default: 2048, attrs: { range: [1, 8192] } }
+        - { name: texture, type: string, default: "" }
+        - { name: count, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
     - struct: MeshRenderer
       fields:
         - { name: mesh, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }
@@ -294,6 +347,13 @@
         - { name: duration, type: float, default: 0.0F }
         # plans/24 P6：KHR_materials_variants 选择（空 = 默认材质；否则按变体名替换 primitive 材质）。
         - { name: variant, type: string, default: "" }
+        # ---- 程序化几何（plans/27 M1-1；尾部追加，默认 = 旧内建 cube）----
+        # geometry_size 分量按 kind 解释：Cube=宽/高/深；Sphere=x 半径；Plane=宽/高；
+        # Cylinder/Cone=x 半径、y 高；Torus=x 主半径、y 管半径；Capsule=x 半径、y 圆柱段高。
+        # geometry_segments：x=径向/宽分段，y=高度/管向分段，z=深度分段（Cube 当前固定 1×1/面）。
+        - { name: geometry, type: MeshGeometry, default: "MeshGeometry::Cube" }
+        - { name: geometry_size, type: math.Vec3, default: "{1.2F, 1.2F, 1.2F}", attrs: { unit: m } }
+        - { name: geometry_segments, type: math.Vec3, default: "{32.0F, 16.0F, 8.0F}" }
     # 场景资源全屏 shader pass（docs/13）：shader 是**场景目录相对**的 .wgsl 路径，
     # 只要 @fragment fs_main + 32B uniform（group0 binding0）。引擎供全屏三角形 VS。
     # 绘制顺序：先于 3D/2D（背景层）；没有 3D 组件的纯 shader 场景同样可用。

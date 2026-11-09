@@ -29,7 +29,17 @@ namespace maque::gfx {
 /* ---- 3D/PBR 记录布局守卫（plans/18-pbr-3d.md §2.2）----
  * 这些记录**不含指针**，尺寸与平台/字长无关 → 可直接 static_assert；
  * C 定义与 WGSL uniform 布局逐字段对齐（M2/M3 的 PBR shader 按此打包）。 */
-static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
+static_assert(sizeof(mq_renderer_caps) == 36, "mq_renderer_caps 布局漂移（8×int32 + morph_max_targets）");
+/* 3D 粒子批（plans/28 §4.4）：两个记录都**不含指针**，可直接按字节断言 ——
+ * particle 的 48B 必须与 WGSL 实例缓冲 stride 逐字节一致（gfx 直接 memcpy 上传）。 */
+static_assert(sizeof(mq_renderer_particle) == 48, "mq_renderer_particle 必须为 48B（GPU 实例 stride）");
+static_assert(sizeof(mq_renderer_particle_system) == 32, "mq_renderer_particle_system 必须为 32B");
+static_assert(offsetof(mq_renderer_particle, color) == 16, "particle.color 必须在 offset 16");
+static_assert(offsetof(mq_renderer_particle, misc) == 32, "particle.misc 必须在 offset 32");
+static_assert(offsetof(mq_renderer_particle_system, first) == 16, "particle_system.first 必须在 offset 16");
+/* morph 记录含指针 → 只能断言其前缀偏移（C 头需要完整类型，记录声明在 mesh_gpu 之前）。 */
+static_assert(offsetof(mq_renderer_morph, target_count) == sizeof(void*), "morph.target_count 必须在 deltas 之后");
+static_assert(offsetof(mq_renderer_mesh_gpu, morph) > 0, "mesh_gpu.morph 必须在尾部");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
 static_assert(sizeof(mq_renderer_pbr_material) == 352, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask + textures3[7] + textures4[2] + transmission 三字段 + diffuse_transmission factor/color + textures6[2] + volume attenuation/multiscatter + textures7[1]）");
@@ -84,7 +94,14 @@ struct MeshGpu {
     int32_t vertex_layout = 0;
     uint32_t vertex_stride = 48;                          /* 48/56/72/80（管线内烘焙，绘制时不传） */
     uint64_t vertex_bytes = 0;                            /* update_mesh（CPU morph）按此校验大小 */
-    uint64_t gpu_bytes = 0;                               /* vbo + ibo + wire_ibo */
+    uint64_t gpu_bytes = 0;                               /* vbo + ibo + wire_ibo + morph */
+    /* GPU morph target 增量（plans/28 §3）：storage buffer，装配期一次上传、之后只读。
+     * 0 target / 创建失败时 morph 为空 → shader 走基础网格（与旧行为逐字节一致）。 */
+    WGPUBuffer morph = nullptr;
+    uint32_t morph_targets = 0;
+    uint32_t morph_vertices = 0;
+    bool morph_normals = false;
+    uint64_t morph_bytes = 0;
     float bounds_min[3] = { 0, 0, 0 };
     float bounds_max[3] = { 0, 0, 0 };
 };
@@ -209,7 +226,7 @@ struct Device {
     std::vector<DepthAttachment> depthCache;
     std::vector<MsaaAttachment> msaaCache;
     uint64_t attachmentTick = 0;
-    /* 每帧复用的 uniform 载体：相机块（912B）与 view-clear 色（16B）。
+    /* 每帧复用的 uniform 载体：相机块（944B：+atmosphere 雾/tonemap）与 view-clear 色（16B）。
      * 直呈路径没有 readback 的 poll，逐帧 create/release 的 wgpu 对象会堆在延迟销毁队列；
      * 复用同一个 buffer（queue.writeBuffer 按提交顺序生效，前帧命令先执行）即可消除这份 churn。 */
     WGPUBuffer camBuf = nullptr;
@@ -303,6 +320,33 @@ struct Device {
     /* group1 binding23 缺省调色板：64B 单位 mat4。非蒙皮 draw（及调色板非法时）绑它 ——
      * shader 的 skin 入口不读它，但 bind group 必须始终有合法的只读 storage 绑定。 */
     WGPUBuffer dummySkinBuf = nullptr;
+    /* group1 binding24 缺省 morph 增量：32B 全 0（一个 MorphDelta）。非 morph draw 绑它 ——
+     * shader 由 dr.morph0.x == 0 提前返回，但 bind group 必须始终有合法的只读 storage 绑定。 */
+    WGPUBuffer dummyMorphBuf = nullptr;
+    /* ---- 3D 粒子批渲染（plans/28 §4.5）----
+     * 专用 shader（assets/builtin/shaders/particles/）+ 实例化 billboard 管线：
+     * 每粒子 48B 实例数据（3×float32x4），顶点由 @builtin(vertex_index) 生成 4 角。
+     * group0 = 176B per-view globals（vp/view/eye/atmosphere），group1 = 纹理 + sampler。 */
+    WGPUShaderModule partShader = nullptr;
+    WGPUBindGroupLayout partGlobalsBgl = nullptr;
+    WGPUBindGroupLayout partTexBgl = nullptr;
+    WGPUPipelineLayout partPl = nullptr;
+    /* [格式槽 0..1][msaa 0/1][blend 0=alpha/1=additive][facing 0=view-plane/1=Y-locked] */
+    WGPURenderPipeline partPipeline[2][2][2][2] = {};
+    WGPUBuffer partInstBuf = nullptr;                     /* grow-only 实例缓冲（48B × N） */
+    uint64_t partInstCap = 0;                             /* 字节容量 */
+    struct PartGlobals {
+        WGPUBuffer buf = nullptr;                         /* 176B per-view（vp/view/eye/atmos） */
+        WGPUBindGroup bg = nullptr;
+    };
+    std::vector<PartGlobals> partViewBufs;                /* 每视图一份（多视图不能共用） */
+    struct PartBg {
+        int32_t tex = -1;
+        WGPUTextureView view = nullptr;
+        WGPUSampler sampler = nullptr;
+        WGPUBindGroup bg = nullptr;
+    };
+    std::vector<PartBg> partBgs;                          /* 纹理句柄 → bind group（id 不复用，安全） */
     /* ---- 3D GPU 资源（plans/18-pbr-3d.md §4.3）---- */
     std::vector<MeshGpu*> meshes;
     /* ---- 场景资源全屏 shader pass（docs/13）---- */
@@ -680,6 +724,12 @@ static void release_material_pipelines(Device* dv) {
                 if (dv->p3dWirePipeline[fi][mi][lay]) wgpuRenderPipelineRelease(dv->p3dWirePipeline[fi][mi][lay]);
                 dv->p3dWirePipeline[fi][mi][lay] = nullptr;
             }
+            for (int b = 0; b < 2; ++b)
+                for (int f = 0; f < 2; ++f)
+                    if (dv->partPipeline[fi][mi][b][f]) {
+                        wgpuRenderPipelineRelease(dv->partPipeline[fi][mi][b][f]);
+                        dv->partPipeline[fi][mi][b][f] = nullptr;
+                    }
         }
 }
 
@@ -700,6 +750,14 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
         if (!warned_skin_dummy) {
             warned_skin_dummy = true;
             std::print(stderr, "gfx: 64B 蒙皮调色板占位 buffer 创建失败 → 3D 跳过本帧（group1 binding23 无合法绑定）\n");
+        }
+        return;
+    }
+    if (!dv->dummyMorphBuf) {
+        static bool warned_morph_dummy = false;
+        if (!warned_morph_dummy) {
+            warned_morph_dummy = true;
+            std::print(stderr, "gfx: 32B morph 增量占位 buffer 创建失败 → 3D 跳过本帧（group1 binding24 无合法绑定）\n");
         }
         return;
     }
@@ -737,7 +795,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
         {
             WGPUBindGroupLayoutEntry e[9] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 912;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 944;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Depth;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
@@ -803,16 +861,18 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
             dv->shadowSampler = wgpuDeviceCreateSampler(dv->device, &smp);
         }
         {
-            /* group1：材质 uniform（336B = 84 floats）+ **17 张 sampled 贴图** + 1 sampler + 1 调色板 storage（plans/19/20/21/22）。
+            /* group1：材质 uniform（384B = 96 floats）+ **17 张 sampled 贴图** + 1 sampler +
+             * 2 个只读 storage（蒙皮调色板 / morph 增量；plans/19/20/21/22/28）。
              * 绑定布局：0=uniform，1=albedo，2=sampler，3=mr，4=ao，5=normal，6=emissive，7=matcap，8=gradient，
              * 9=clearcoat_normal（旧 8 槽），10..16 = KHR 扩展 7 槽（textures3），17/18 = specular 2 槽（textures4），
-             * 19..22 = transmission/volume 4 槽，23 = 蒙皮调色板（只读 storage，Vertex 阶段）。
+             * 19..22 = transmission/volume 4 槽，23 = 蒙皮调色板（只读 storage，Vertex 阶段），
+             * 24 = morph target 增量（只读 storage，Vertex 阶段；32B/元素）。
              * 采样纹理总数：group1 17 + group0 shadow/env/irradiance 3 = 20。
              * WebGPU 默认 maxSampledTexturesPerShaderStage=16，gfx 创建 device 时向适配器请求其上限
              * （桌面 GPU 通常 ≥128）；低于 20 的后端会在 bind group 校验时报错。 */
-            WGPUBindGroupLayoutEntry e[24] = {};
+            WGPUBindGroupLayoutEntry e[25] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 336;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 384;
             for (int ti = 1; ti <= 22; ++ti) {
                 if (ti == 2) continue;                       /* binding2 = sampler */
                 e[ti].binding = (uint32_t)ti;
@@ -827,7 +887,12 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
             e[23].binding = 23; e[23].visibility = WGPUShaderStage_Vertex;
             e[23].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
             e[23].buffer.minBindingSize = 64;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 24; bd.entries = e;
+            /* binding24：morph 增量（MorphDelta = 32B/元素）。Vertex 阶段只读；
+             * 非 morph draw 绑设备级 32B 全 0 占位（shader 由 dr.morph0.x==0 提前返回）。 */
+            e[24].binding = 24; e[24].visibility = WGPUShaderStage_Vertex;
+            e[24].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
+            e[24].buffer.minBindingSize = 32;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 25; bd.entries = e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
@@ -869,6 +934,106 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
             if (!warned_sky) {
                 warned_sky = true;
                 std::print(stderr, "gfx: 天空背景管线创建失败（shader entry vs_sky/fs_sky 缺失）→ 不画 env 天空\n");
+            }
+        }
+    }
+    /* ---- 3D 粒子批渲染（plans/28 §4.5）：专用 shader + 实例化 billboard 管线 ----
+     * 资源只建一次；管线按 [格式槽][msaa][blend][facing] 懒建（≤16 个）。shader 被
+     * MAQUE_SHADER_PARTICLES=OFF 剔除时打印一行原因并跳过粒子批次（其余 3D 照常）。 */
+    if (!dv->partShader) {
+        const char* wgsl = mq_builtin_shader_text("particles");
+        if (!wgsl) {
+            static bool warned_part = false;
+            if (!warned_part) {
+                warned_part = true;
+                std::print(stderr, "gfx: 内建 shader 'particles' 不可用 → 3D 粒子不渲染"
+                                   "（MAQUE_SHADER_PARTICLES=ON 可编回）\n");
+            }
+        } else {
+            dv->partShader = make_shader(dv->device, wgsl);
+        }
+        if (dv->partShader) {
+            /* group0 binding0：176B per-view globals（vp/view/eye/atmosphere）；
+             * shader 的 fog 在 fragment 里读 eye/atmosphere，两阶段都要可见。 */
+            WGPUBindGroupLayoutEntry ge = WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT;
+            ge.binding = 0; ge.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+            ge.buffer.type = WGPUBufferBindingType_Uniform; ge.buffer.minBindingSize = 176;
+            WGPUBindGroupLayoutDescriptor gbd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+            gbd.entryCount = 1; gbd.entries = &ge;
+            dv->partGlobalsBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &gbd);
+            /* group1：粒子纹理 + sampler（Fragment）。 */
+            WGPUBindGroupLayoutEntry te[2] = {};
+            te[0].binding = 0; te[0].visibility = WGPUShaderStage_Fragment;
+            te[0].texture.sampleType = WGPUTextureSampleType_Float;
+            te[0].texture.viewDimension = WGPUTextureViewDimension_2D;
+            te[1].binding = 1; te[1].visibility = WGPUShaderStage_Fragment;
+            te[1].sampler.type = WGPUSamplerBindingType_Filtering;
+            WGPUBindGroupLayoutDescriptor tbd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+            tbd.entryCount = 2; tbd.entries = te;
+            dv->partTexBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &tbd);
+            if (dv->partGlobalsBgl && dv->partTexBgl) {
+                WGPUBindGroupLayout bl[2] = { dv->partGlobalsBgl, dv->partTexBgl };
+                WGPUPipelineLayoutDescriptor pld = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+                pld.bindGroupLayoutCount = 2; pld.bindGroupLayouts = bl;
+                dv->partPl = wgpuDeviceCreatePipelineLayout(dv->device, &pld);
+            }
+        }
+    }
+    if (dv->partShader && dv->partPl) {
+        /* 实例布局（48B，stepMode=Instance）：pos_size / color / misc 各 float32x4。
+         * 无顶点缓冲：4 个角由 @builtin(vertex_index) 生成（TriangleStrip）。 */
+        WGPUVertexAttribute pattrs[3] = {};
+        pattrs[0].format = WGPUVertexFormat_Float32x4; pattrs[0].offset = 0;  pattrs[0].shaderLocation = 0;
+        pattrs[1].format = WGPUVertexFormat_Float32x4; pattrs[1].offset = 16; pattrs[1].shaderLocation = 1;
+        pattrs[2].format = WGPUVertexFormat_Float32x4; pattrs[2].offset = 32; pattrs[2].shaderLocation = 2;
+        WGPUVertexBufferLayout pvbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+        pvbl.stepMode = WGPUVertexStepMode_Instance;
+        pvbl.arrayStride = 48;
+        pvbl.attributeCount = 3; pvbl.attributes = pattrs;
+        for (int blend = 0; blend < 2; ++blend) {
+            for (int facing = 0; facing < 2; ++facing) {
+                if (dv->partPipeline[fi][msaa_idx][blend][facing]) continue;
+                WGPUBlendState pb = WGPU_BLEND_STATE_INIT;
+                if (blend == 1) {                         /* additive：src × srcAlpha + dst × 1 */
+                    pb.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+                    pb.color.dstFactor = WGPUBlendFactor_One;
+                } else {                                  /* alpha（multiply 暂按 alpha） */
+                    pb.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+                    pb.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+                }
+                pb.color.operation = WGPUBlendOperation_Add;
+                pb.alpha.srcFactor = WGPUBlendFactor_One;
+                pb.alpha.dstFactor = blend == 1 ? WGPUBlendFactor_One : WGPUBlendFactor_OneMinusSrcAlpha;
+                pb.alpha.operation = WGPUBlendOperation_Add;
+                WGPUColorTargetState pt = WGPU_COLOR_TARGET_STATE_INIT;
+                pt.format = format; pt.writeMask = WGPUColorWriteMask_All; pt.blend = &pb;
+                WGPUFragmentState pfrag = WGPU_FRAGMENT_STATE_INIT;
+                pfrag.module = dv->partShader; pfrag.entryPoint = SV("fs_particle");
+                pfrag.targetCount = 1; pfrag.targets = &pt;
+                WGPUVertexState pvert = WGPU_VERTEX_STATE_INIT;
+                pvert.module = dv->partShader;
+                pvert.entryPoint = SV(facing == 1 ? "vs_particle_y" : "vs_particle");
+                pvert.bufferCount = 1; pvert.buffers = &pvbl;
+                WGPURenderPipelineDescriptor prp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+                prp.layout = dv->partPl; prp.vertex = pvert; prp.fragment = &pfrag;
+                prp.primitive.topology = WGPUPrimitiveTopology_TriangleStrip;
+                prp.primitive.frontFace = WGPUFrontFace_CCW;
+                prp.primitive.cullMode = WGPUCullMode_None;      /* billboard 双面可见 */
+                WGPUDepthStencilState pds = WGPU_DEPTH_STENCIL_STATE_INIT;
+                pds.format = WGPUTextureFormat_Depth32Float;
+                pds.depthWriteEnabled = WGPUOptionalBool_False;  /* 透明粒子不写深度 */
+                pds.depthCompare = WGPUCompareFunction_LessEqual;/* 允许与地面共面 */
+                prp.depthStencil = &pds;
+                prp.multisample.count = msaa4 ? 4u : 1u;
+                dv->partPipeline[fi][msaa_idx][blend][facing] =
+                    wgpuDeviceCreateRenderPipeline(dv->device, &prp);
+                if (!dv->partPipeline[fi][msaa_idx][blend][facing]) {
+                    static bool warned_part_pipe = false;
+                    if (!warned_part_pipe) {
+                        warned_part_pipe = true;
+                        std::print(stderr, "gfx: 粒子管线创建失败（shader entry vs_particle/fs_particle 缺失）→ 粒子批次跳过\n");
+                    }
+                }
             }
         }
     }
@@ -1158,6 +1323,18 @@ static void create_dummy_skin_buffer(Device* dv) {
     wgpuQueueWriteBuffer(dv->queue, dv->dummySkinBuf, 0, identity, sizeof identity);
 }
 
+/* group1 binding24 缺省 morph 增量：设备级 32B 全 0（一个 MorphDelta）。
+ * 非 morph draw 绑它；shader 由 dr.morph0.x == 0 提前返回，但 bind group 必须有合法 storage 绑定。 */
+static void create_dummy_morph_buffer(Device* dv) {
+    WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+    bd.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst;
+    bd.size = 32;
+    dv->dummyMorphBuf = wgpuDeviceCreateBuffer(dv->device, &bd);
+    if (!dv->dummyMorphBuf) return;
+    const float zero[8] = {};
+    wgpuQueueWriteBuffer(dv->queue, dv->dummyMorphBuf, 0, zero, sizeof zero);
+}
+
 static Device* create_device(std::string* out_backend) {
     Device* dv = new Device();
     WGPUInstanceDescriptor idesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
@@ -1286,6 +1463,7 @@ static Device* create_device(std::string* out_backend) {
     /* 初始 2D 管线 = **离屏 RGBA8** 目标；窗口直接呈现在 attach_window 时按 swapchain 格式重建。 */
     create_white_texture(dv);
     create_dummy_skin_buffer(dv);
+    create_dummy_morph_buffer(dv);
     create_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
     return dv;
 }
@@ -1297,6 +1475,7 @@ static void destroy_device(Device* dv) {
         if (m->vbo) wgpuBufferRelease(m->vbo);
         if (m->ibo) wgpuBufferRelease(m->ibo);
         if (m->wire_ibo) wgpuBufferRelease(m->wire_ibo);
+        if (m->morph) wgpuBufferRelease(m->morph);
         delete m;
     }
     for (auto* sp : dv->shaderPasses) release_shader_pass(sp);
@@ -1341,6 +1520,26 @@ static void destroy_device(Device* dv) {
     if (dv->neutralNormalView) wgpuTextureViewRelease(dv->neutralNormalView);
     if (dv->neutralNormalTex) wgpuTextureRelease(dv->neutralNormalTex);
     if (dv->dummySkinBuf) wgpuBufferRelease(dv->dummySkinBuf);
+    if (dv->dummyMorphBuf) wgpuBufferRelease(dv->dummyMorphBuf);
+    /* 3D 粒子批资源。 */
+    for (auto& e : dv->partBgs)
+        if (e.bg) wgpuBindGroupRelease(e.bg);
+    dv->partBgs.clear();
+    if (dv->partInstBuf) wgpuBufferRelease(dv->partInstBuf);
+    for (auto& g : dv->partViewBufs) {
+        if (g.bg) wgpuBindGroupRelease(g.bg);
+        if (g.buf) wgpuBufferRelease(g.buf);
+    }
+    dv->partViewBufs.clear();
+    for (int fi = 0; fi < 2; ++fi)
+        for (int mi = 0; mi < 2; ++mi)
+            for (int b = 0; b < 2; ++b)
+                for (int f = 0; f < 2; ++f)
+                    if (dv->partPipeline[fi][mi][b][f]) wgpuRenderPipelineRelease(dv->partPipeline[fi][mi][b][f]);
+    if (dv->partPl) wgpuPipelineLayoutRelease(dv->partPl);
+    if (dv->partTexBgl) wgpuBindGroupLayoutRelease(dv->partTexBgl);
+    if (dv->partGlobalsBgl) wgpuBindGroupLayoutRelease(dv->partGlobalsBgl);
+    if (dv->partShader) wgpuShaderModuleRelease(dv->partShader);
     for (auto& s : dv->shadowDrawSlots) Device::releaseSlot(s);
     dv->shadowDrawSlots.clear();
     for (auto& s : dv->mainDrawSlots) Device::releaseSlot(s);
@@ -1690,6 +1889,9 @@ static int32_t r_caps(void* self, mq_renderer_caps* out) {
     out->depth_format = 0;     /* Depth32Float（M2） */
     out->direct_present = dv->surface ? 1 : 0;
     out->hdr = 0;              /* M3 用 RGBA16F 之前按设备特性探测 */
+    /* GPU morph target 能力（plans/28 §3）：顶点着色器最多累加 8 个 target，与离线 importer
+     * 的 MORPH_TARGET_LIMIT 一致；runtime 据此决定走 GPU 还是 CPU update_mesh 回退。 */
+    out->morph_max_targets = 8;
     /* 诊断（MAQUE_RENDER3D_INFO=1）：每 stage 采样纹理/采样器上限是 PBR 贴图槽数量的硬约束
      *（group0 env 3 张 + group1 材质 15 张 = 18；加 specular 两槽 → 20）。 */
     if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
@@ -1996,6 +2198,44 @@ static int32_t r_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32
     m->vertex_bytes = data->vertex_bytes;
     m->gpu_bytes = data->vertex_bytes
                  + (uint64_t)(m->index_count + m->wire_index_count) * sizeof(uint32_t);
+    /* GPU morph 增量（plans/28 §3.2）：target_count × vertex_count × 8 float（32B/目标/顶点）。
+     * 校验失败（target 数越界 / 顶点数不符 / 无数据）→ 不建 buffer（morph_targets=0，画基础网格）
+     * 并告警一次；CPU 回退路径与旧插件语义不变。 */
+    if (data->morph.target_count > 0) {
+        const uint32_t mt = data->morph.target_count;
+        const bool ok = mt <= 8 && data->morph.deltas &&
+                        data->morph.vertex_count > 0 &&
+                        (uint64_t)data->morph.vertex_count * want_stride == data->vertex_bytes;
+        if (!ok) {
+            static bool warned_morph = false;
+            if (!warned_morph) {
+                warned_morph = true;
+                std::print(stderr, "gfx: morph 增量校验失败（targets={} vertices={} stride={} bytes={}）→ 画基础网格\n",
+                           (int)mt, (int)data->morph.vertex_count, (int)want_stride,
+                           (long long)data->vertex_bytes);
+            }
+        } else {
+            const uint64_t bytes = (uint64_t)mt * data->morph.vertex_count * 8u * sizeof(float);
+            WGPUBufferDescriptor mbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+            mbd.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst;
+            mbd.size = bytes;
+            m->morph = wgpuDeviceCreateBuffer(dv->device, &mbd);
+            if (m->morph) {
+                wgpuQueueWriteBuffer(dv->queue, m->morph, 0, data->morph.deltas, (size_t)bytes);
+                m->morph_targets = mt;
+                m->morph_vertices = data->morph.vertex_count;
+                m->morph_normals = (data->morph.flags & 1) != 0;
+                m->morph_bytes = bytes;
+                m->gpu_bytes += bytes;
+            } else {
+                static bool warned_morph_buf = false;
+                if (!warned_morph_buf) {
+                    warned_morph_buf = true;
+                    std::print(stderr, "gfx: morph 增量 storage buffer 创建失败 → 画基础网格\n");
+                }
+            }
+        }
+    }
     std::memcpy(m->bounds_min, data->bounds_min, sizeof m->bounds_min);
     std::memcpy(m->bounds_max, data->bounds_max, sizeof m->bounds_max);
     dv->buffer_bytes += m->gpu_bytes;
@@ -2012,6 +2252,7 @@ static void r_destroy_mesh(void* self, int32_t id) {
         if (m->vbo) wgpuBufferRelease(m->vbo);
         if (m->ibo) wgpuBufferRelease(m->ibo);
         if (m->wire_ibo) wgpuBufferRelease(m->wire_ibo);
+        if (m->morph) wgpuBufferRelease(m->morph);
         delete m;
     }
     dv->meshes[(size_t)id] = nullptr;   /* 槽位保留（id 稳定） */
@@ -3495,13 +3736,26 @@ static float mat3_det(const float m[16]) {
            m[4] * (m[1] * m[10] - m[2] * m[9]) +
            m[8] * (m[1] * m[6] - m[2] * m[5]);
 }
-/* 材质 uniform 打包（plans/19/24）：84 floats / 336B，与 pbr shader 的 Draw 结构逐项对应
- * （第 22 轮在尾部追加 trans vec4 = diffuse transmission factor/color）。
+/* 材质 uniform 打包（plans/19/24/28）：96 floats / 384B，与 pbr shader 的 Draw 结构逐项对应
+ * （第 22 轮追加 trans vec4 = diffuse transmission factor/color；plans/28 追加 morph0/1/2 三个 vec4）。
  * 阴影 pass 与主 pass 共用同一函数，避免两处字段漂移。 */
-static constexpr int kMatUniformFloats = 84;
-static void pack_draw_uniform(float* du, const float model[16], const mq_renderer_pbr_material* mat) {
+static constexpr int kMatUniformFloats = 96;
+static void pack_draw_uniform(float* du, const float model[16], const mq_renderer_pbr_material* mat,
+                              const float* morph_weights, uint32_t morph_count,
+                              uint32_t morph_vertices, bool morph_normals) {
     std::memset(du, 0, sizeof(float) * (size_t)kMatUniformFloats);
     std::memcpy(du, model, sizeof(float) * 16);                    /* 0..15：模型矩阵 */
+    /* morph（plans/28 §3.4；Draw 尾部 3 个 vec4，与材质无关 = 每 draw 的实例数据）：
+     *   morph0 = (target_count, w0, w1, w2)
+     *   morph1 = (w3, w4, w5, w6)
+     *   morph2 = (w7, vertex_count, has_normals, 0)
+     * 非 morph draw：count=0 → 顶点着色器一次比较后走基础网格（与旧画面逐字节一致）。 */
+    du[84] = (float)morph_count;
+    for (int i = 0; i < 7; ++i)
+        du[85 + i] = (morph_weights && (uint32_t)i < morph_count) ? morph_weights[i] : 0.0F;
+    du[92] = (morph_weights && morph_count > 7) ? morph_weights[7] : 0.0F;
+    du[93] = (float)morph_vertices;
+    du[94] = morph_normals ? 1.0F : 0.0F;
     if (!mat) {
         /* 无材质：沿用历史默认灰（基色白/粗糙度 0.6/无 clearcoat） */
         du[16] = du[17] = du[18] = du[19] = 1.0F;
@@ -3646,8 +3900,9 @@ static WGPUSampler material_sampler(Device* dv, const mq_renderer_pbr_material* 
     return dv ? dv->sampler : nullptr;
 }
 
-static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[24], WGPUBuffer buf, size_t buf_size,
-                                       const mq_renderer_pbr_material* mat, WGPUBuffer skin_buf) {
+static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[25], WGPUBuffer buf, size_t buf_size,
+                                       const mq_renderer_pbr_material* mat, WGPUBuffer skin_buf,
+                                       WGPUBuffer morph_buf) {
     const WGPUTextureView white = dv->whiteTexView;
     const WGPUTextureView neutral = dv->neutralNormalView ? dv->neutralNormalView : dv->whiteTexView;
     std::memset(e, 0, sizeof(e));
@@ -3695,6 +3950,12 @@ static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[24], 
     e[23].binding = 23;
     e[23].buffer = skin_buf ? skin_buf : dv->dummySkinBuf;
     e[23].size = WGPU_WHOLE_SIZE;
+    /* morph target 增量（binding 24，只读 storage，Vertex 阶段）：morph draw 传本网格的增量
+     * buffer（装配期一次性上传）；非 morph draw 绑设备级 32B 全 0 占位（shader 由
+     * dr.morph0.x == 0 提前返回，不读占位内容）。 */
+    e[24].binding = 24;
+    e[24].buffer = morph_buf ? morph_buf : dv->dummyMorphBuf;
+    e[24].size = WGPU_WHOLE_SIZE;
 }
 
 /* 蒙皮调色板（group1 binding23）：joint_count 个列主序 mat4 的只读 storage buffer。
@@ -3722,8 +3983,27 @@ static const mq_renderer_skin* frame_skin(const mq_renderer_frame3d* f, int32_t 
     return sk;
 }
 
-/* draw 槽位 key：只包含 bind group 依赖的材质贴图句柄 + 蒙皮关节数（模型矩阵/颜色等只写 uniform）。 */
-static uint64_t draw_slot_key(const mq_renderer_pbr_material* mat, uint32_t joints) {
+/* GPU morph 权重（plans/28 §3.2）：frame3d.morph_weights 按 **draw 下标** 连续 8 float。
+ * 只有 morph_weight_count == draw_count 且该网格真有增量 buffer 时才生效；否则视为无 morph
+ * （旧调用方零初始化 → 基础网格，与历史像素一致）。 */
+static bool frame_morph(const mq_renderer_frame3d* f, size_t di, const MeshGpu* m,
+                        const float** out_weights, uint32_t* out_count,
+                        uint32_t* out_vertices, bool* out_normals) {
+    *out_weights = nullptr; *out_count = 0; *out_vertices = 0; *out_normals = false;
+    if (!f || !m || !m->morph || m->morph_targets == 0) return false;
+    if (!f->morph_weights || f->morph_weight_count != f->draw_count) return false;
+    if (di >= (size_t)f->draw_count) return false;
+    *out_weights = f->morph_weights + di * 8u;
+    *out_count = m->morph_targets;
+    *out_vertices = m->morph_vertices;
+    *out_normals = m->morph_normals;
+    return true;
+}
+
+/* draw 槽位 key：只包含 bind group 依赖的材质贴图句柄 + 蒙皮关节数 + morph buffer
+ *（模型矩阵/颜色/权重等只写 uniform）。morph buffer 必须混入：否则跨帧/换场景后会绑到
+ * 上一个 draw 的网格增量（同材质不同网格的 morph 会串）。 */
+static uint64_t draw_slot_key(const mq_renderer_pbr_material* mat, uint32_t joints, WGPUBuffer morph) {
     uint64_t h = 1469598103934665603ull;
     auto mix = [&](uint64_t v) { h ^= v; h *= 1099511628211ull; };
     mix(mat ? 1u : 0u);
@@ -3737,6 +4017,7 @@ static uint64_t draw_slot_key(const mq_renderer_pbr_material* mat, uint32_t join
         for (int32_t v : mat->textures7) mix((uint32_t)v);
     }
     mix(joints);
+    mix((uint64_t)(uintptr_t)morph);
     return h;
 }
 
@@ -3748,11 +4029,12 @@ static void trim_draw_slots(std::vector<Device::DrawSlot>& slots, size_t n) {
 /* 取（必要时创建）一个逐 draw 槽位：复用 ub/bind group/skin buffer，只写本帧数据。 */
 static Device::DrawSlot& ensure_draw_slot(Device* dv, std::vector<Device::DrawSlot>& slots, size_t idx,
                                           const mq_renderer_pbr_material* mat, const void* uniform,
-                                          size_t uniform_size, const mq_renderer_skin* skin) {
+                                          size_t uniform_size, const mq_renderer_skin* skin,
+                                          WGPUBuffer morph_buf) {
     if (slots.size() <= idx) slots.resize(idx + 1);
     Device::DrawSlot& s = slots[idx];
     const uint32_t joints = skin ? skin->joint_count : 0;
-    const uint64_t key = draw_slot_key(mat, joints);
+    const uint64_t key = draw_slot_key(mat, joints, morph_buf);
     const bool reuse = s.bg && s.ub && s.key == key &&
                        (!skin || (s.skin && s.skinBytes >= (uint64_t)joints * 64u));
     if (!reuse) {
@@ -3768,16 +4050,44 @@ static Device::DrawSlot& ensure_draw_slot(Device* dv, std::vector<Device::DrawSl
             s.skin = wgpuDeviceCreateBuffer(dv->device, &sbd);
             s.skinBytes = (uint32_t)((uint64_t)joints * 64u);
         }
-        WGPUBindGroupEntry e[24] = {};
-        fill_material_bind_entries(dv, e, s.ub, uniform_size, mat, s.skin);
+        WGPUBindGroupEntry e[25] = {};
+        fill_material_bind_entries(dv, e, s.ub, uniform_size, mat, s.skin, morph_buf);
         WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-        bgd.layout = dv->p3dDrawBgl; bgd.entryCount = 24; bgd.entries = e;
+        bgd.layout = dv->p3dDrawBgl; bgd.entryCount = 25; bgd.entries = e;
         s.bg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
         s.key = key;
     }
     if (s.ub && uniform) wgpuQueueWriteBuffer(dv->queue, s.ub, 0, uniform, uniform_size);
     if (s.skin && skin) wgpuQueueWriteBuffer(dv->queue, s.skin, 0, skin->palette, (size_t)joints * 64u);
     return s;
+}
+
+/* 粒子纹理 bind group（group1）：按 (纹理句柄, view, sampler) 缓存。
+ * 句柄在 gfx 里只追加不复用；RenderTexture 原位配置会换 view → 旧条目替换而非累积。 */
+static WGPUBindGroup part_texture_bg(Device* dv, int32_t tex) {
+    if (!dv || !dv->partTexBgl) return nullptr;
+    WGPUTextureView view = dv->whiteTexView;
+    WGPUSampler sampler = dv->sampler;
+    if (tex >= 0 && (size_t)tex < dv->textures.size() && dv->textures[(size_t)tex]) {
+        const Texture* t = dv->textures[(size_t)tex];
+        if (t->view) view = t->view;
+        if (t->sampler) sampler = t->sampler;
+    }
+    if (!view || !sampler) return nullptr;
+    for (auto& e : dv->partBgs) {
+        if (e.tex != tex) continue;
+        if (e.view == view && e.sampler == sampler) return e.bg;
+        if (e.bg) wgpuBindGroupRelease(e.bg);
+        e.view = view; e.sampler = sampler; e.bg = nullptr;
+    }
+    WGPUBindGroupEntry be[2] = {};
+    be[0].binding = 0; be[0].textureView = view;
+    be[1].binding = 1; be[1].sampler = sampler;
+    WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+    bgd.layout = dv->partTexBgl; bgd.entryCount = 2; bgd.entries = be;
+    WGPUBindGroup bg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+    if (bg) dv->partBgs.push_back(Device::PartBg{ tex, view, sampler, bg });
+    return bg;
 }
 
 /* M2：3D pass（depth + unlit3d）渲染进 target；2D 覆盖层由调用方随后
@@ -3975,6 +4285,51 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         }
     }
 
+    /* ---- 3D 粒子实例缓冲（plans/28 §4.5）----
+     * 一次性上传本帧全部实例（48B × particle_count）；排序由 runtime 决定（gfx 不改顺序，
+     * 保证同一帧多视图看到同一批实例）。每视图 globals（vp/view）各一份 buffer →
+     * 多视图下不会互相覆盖（wgpuQueueWriteBuffer 立即生效，命令缓冲里引用同一 buffer）。 */
+    const bool particles_ready = render_mode == 0 && f->particles && f->particle_systems &&
+                                 f->particle_count > 0 && f->particle_system_count > 0 &&
+                                 dv->partShader && dv->partPl;
+    if (particles_ready) {
+        const uint64_t need = (uint64_t)f->particle_count * sizeof(mq_renderer_particle);
+        if (need > dv->partInstCap) {
+            if (dv->partInstBuf) { wgpuBufferRelease(dv->partInstBuf); dv->partInstBuf = nullptr; }
+            uint64_t cap = 4096;
+            while (cap < need) cap <<= 1;
+            WGPUBufferDescriptor pbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+            pbd.usage = WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst;
+            pbd.size = cap;
+            dv->partInstBuf = wgpuDeviceCreateBuffer(dv->device, &pbd);
+            dv->partInstCap = dv->partInstBuf ? cap : 0;
+            if (!dv->partInstBuf) {
+                static bool warned_part_buf = false;
+                if (!warned_part_buf) {
+                    warned_part_buf = true;
+                    std::print(stderr, "gfx: 粒子实例缓冲创建失败 → 本帧跳过粒子批次\n");
+                }
+            }
+        }
+        if (dv->partInstBuf)
+            wgpuQueueWriteBuffer(dv->queue, dv->partInstBuf, 0, f->particles, (size_t)need);
+        while (dv->partViewBufs.size() < f->view_count) {
+            Device::PartGlobals g;
+            WGPUBufferDescriptor pbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+            pbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+            pbd.size = 176;
+            g.buf = wgpuDeviceCreateBuffer(dv->device, &pbd);
+            if (g.buf) {
+                WGPUBindGroupEntry be = WGPU_BIND_GROUP_ENTRY_INIT;
+                be.binding = 0; be.buffer = g.buf; be.size = 176;
+                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                bgd.layout = dv->partGlobalsBgl; bgd.entryCount = 1; bgd.entries = &be;
+                g.bg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+            }
+            dv->partViewBufs.push_back(g);
+        }
+    }
+
     for (uint32_t vi = 0; vi < f->view_count; ++vi) {
         const mq_renderer_view3d& v = f->views[vi];
         float viewport[4] = { v.viewport[0], v.viewport[1], v.viewport[2], v.viewport[3] };
@@ -4051,7 +4406,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 refraction = false;
             }
         }
-        float cam[228] = {};
+        float cam[236] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -4088,6 +4443,17 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[207] = refraction ? 1.0F : 0.0F;
         /* env4.x = 1 → cubemap env 生效（第 26 轮；shader 走 cube 采样路径） */
         cam[224] = (f->env.env_cubemap >= 0) ? 1.0F : 0.0F;
+        /* plans/27 M1-2/M1-3：场景大气（雾 + 色调映射）→ shader Camera.atmos0/atmos1。
+         * atmos0 = (fog_mode, fog_near, fog_far, fog_density)；
+         * atmos1 = (fog_color.rgb, tone_mapping)。旧调用方零初始化 = 雾关 / tone None。 */
+        cam[228] = (float)f->atmosphere.fog_mode;
+        cam[229] = f->atmosphere.fog_near;
+        cam[230] = f->atmosphere.fog_far;
+        cam[231] = f->atmosphere.fog_density;
+        cam[232] = f->atmosphere.fog_color[0];
+        cam[233] = f->atmosphere.fog_color[1];
+        cam[234] = f->atmosphere.fog_color[2];
+        cam[235] = (float)f->atmosphere.tone_mapping;
         /* inv_vp（208..223）：天空背景全屏 pass 由 NDC 反推世界射线 */
         float inv_vp[16];
         mat4_invert(vp, inv_vp);
@@ -4221,11 +4587,17 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 wgpuRenderPassEncoderSetPipeline(spass, spipe);
                 float du[kMatUniformFloats] = {};
                 /* 传真实材质：阴影 fragment（fs_shadow_alpha）要用 dr.alpha（cutoff/mode）、
-                 * dr.base_color.a、dr.model_params.w(opacity) 与 albedo 贴图做 MASK alpha test（R3）。 */
-                pack_draw_uniform(du, d.model, smat);
+                 * dr.base_color.a、dr.model_params.w(opacity) 与 albedo 贴图做 MASK alpha test（R3）。
+                 * morph 权重同样传给阴影顶点入口 → 影子随形变（plans/28 §3.9 ④）。 */
+                const float* mw = nullptr;
+                uint32_t mc = 0, mv = 0;
+                bool mn = false;
+                (void)frame_morph(f, di, m, &mw, &mc, &mv, &mn);
+                pack_draw_uniform(du, d.model, smat, mw, mc, mv, mn);
                 /* 蒙皮 draw（布局 2/3）在阴影 pass 也要绑调色板；非蒙皮绑 dummy（skin=-1 → 不建 buffer）。 */
                 const mq_renderer_skin* sk = (lay >= 2) ? frame_skin(f, d.skin) : nullptr;
-                Device::DrawSlot& slot = ensure_draw_slot(dv, dv->shadowDrawSlots, di, smat, du, sizeof du, sk);
+                Device::DrawSlot& slot = ensure_draw_slot(dv, dv->shadowDrawSlots, di, smat, du, sizeof du, sk,
+                                                          m->morph);
                 if (slot.bg) {
                     wgpuRenderPassEncoderSetBindGroup(spass, 1, slot.bg, 0, nullptr);
                     wgpuRenderPassEncoderSetVertexBuffer(spass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
@@ -4269,7 +4641,11 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                     ? &f->materials[d.material] : nullptr;
             float du[kMatUniformFloats] = {};
-            pack_draw_uniform(du, d.model, mat);
+            const float* mw = nullptr;
+            uint32_t mc = 0, mv = 0;
+            bool mn = false;
+            (void)frame_morph(f, (size_t)(dpp - f->draws), m, &mw, &mc, &mv, &mn);
+            pack_draw_uniform(du, d.model, mat, mw, mc, mv, mn);
             if (render_mode == 1 || render_mode == 2)
                 du[19] = 1.0F;                 /* solid/wireframe 统一按不透明基色显示；textured 保留贴图 alpha */
             /* 顶点布局由网格决定（0=48B / 1=56B / 2=72B 蒙皮 / 3=80B 蒙皮+布局1），stride 烘焙在管线里。 */
@@ -4277,7 +4653,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             /* 蒙皮 draw（布局 2/3）用逐 draw 槽位的调色板 buffer；非蒙皮绑设备级 dummy。 */
             const mq_renderer_skin* sk = (layout >= 2) ? frame_skin(f, d.skin) : nullptr;
             const size_t di = (size_t)(dpp - f->draws);
-            Device::DrawSlot& slot = ensure_draw_slot(dv, dv->mainDrawSlots, di, mat, du, sizeof du, sk);
+            Device::DrawSlot& slot = ensure_draw_slot(dv, dv->mainDrawSlots, di, mat, du, sizeof du, sk, m->morph);
             WGPUBindGroup drawBg = slot.bg;
             if (!drawBg) return;
             const bool keep_material_alpha = render_mode == 0 || render_mode == 3;
@@ -4348,6 +4724,67 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 wgpuRenderPassEncoderDraw(p, 3, 1, 0, 0);
             }
         };
+        /* 粒子批（plans/28 §4.5）：3D pass 的 blend 列表之后（同一 render pass，深度沿用）。
+         * 透明粒子永远叠在透明物体之上、被不透明物体正确遮挡；与透明物体的前后关系固定为
+         * "粒子后画"（已知限制，写进 docs/13）。 */
+        auto draw_particles = [&](WGPURenderPassEncoder p) {
+            if (!particles_ready || vi >= dv->partViewBufs.size()) return;
+            Device::PartGlobals& pg = dv->partViewBufs[vi];
+            if (!pg.buf || !pg.bg || !dv->partInstBuf) return;
+            /* 176B：vp（64B）+ view（64B）+ eye（16B）+ atmos0（16B）+ atmos1（16B）。
+             * 每视图一份 buffer（见上）。粒子只做雾 + sRGB（与 Basic unlit 同口径）。 */
+            float globals[44] = {};
+            std::memcpy(globals, vp, sizeof vp);
+            std::memcpy(globals + 16, v.view, sizeof v.view);
+            globals[32] = v.eye[0]; globals[33] = v.eye[1]; globals[34] = v.eye[2];
+            globals[36] = (float)f->atmosphere.fog_mode;
+            globals[37] = f->atmosphere.fog_near;
+            globals[38] = f->atmosphere.fog_far;
+            globals[39] = f->atmosphere.fog_density;
+            globals[40] = f->atmosphere.fog_color[0];
+            globals[41] = f->atmosphere.fog_color[1];
+            globals[42] = f->atmosphere.fog_color[2];
+            globals[43] = (float)f->atmosphere.tone_mapping;
+            wgpuQueueWriteBuffer(dv->queue, pg.buf, 0, globals, sizeof globals);
+            const int fi2 = (dv->p3dFormatIndex >= 0 && dv->p3dFormatIndex < 2) ? dv->p3dFormatIndex : 0;
+            const int mi2 = msaa > 1 ? 1 : 0;
+            wgpuRenderPassEncoderSetVertexBuffer(p, 0, dv->partInstBuf, 0, WGPU_WHOLE_SIZE);
+            wgpuRenderPassEncoderSetBindGroup(p, 0, pg.bg, 0, nullptr);
+            /* 合并相邻且状态相同（texture/blend/facing/layer）且实例区间连续的 systems 为一次 draw；
+             * 提取期按实体序生成系统，同材质批次通常相邻（plans/28 §4.5 draw 预算）。 */
+            auto system_valid = [&](const mq_renderer_particle_system& s) {
+                return s.count > 0 && s.first < f->particle_count &&
+                       (uint64_t)s.first + s.count <= f->particle_count &&
+                       ((uint32_t)s.layer & (uint32_t)v.layer_mask) != 0;
+            };
+            uint32_t si = 0;
+            while (si < f->particle_system_count) {
+                const mq_renderer_particle_system& ps = f->particle_systems[si];
+                if (!system_valid(ps)) { ++si; continue; }
+                const int blend = (ps.blend == 1) ? 1 : 0;     /* multiply 暂按 alpha */
+                const int facing = (ps.facing == 1) ? 1 : 0;
+                WGPURenderPipeline pipe = dv->partPipeline[fi2][mi2][blend][facing];
+                WGPUBindGroup tbg = pipe ? part_texture_bg(dv, ps.texture) : nullptr;
+                if (!pipe || !tbg) { ++si; continue; }
+                uint32_t first = ps.first;
+                uint32_t count = ps.count;
+                uint32_t sj = si + 1;
+                while (sj < f->particle_system_count) {
+                    const mq_renderer_particle_system& nx = f->particle_systems[sj];
+                    if (nx.texture != ps.texture || nx.blend != ps.blend ||
+                        nx.facing != ps.facing || nx.layer != ps.layer ||
+                        nx.count == 0 || nx.first != first + count)
+                        break;
+                    if (!system_valid(nx)) break;
+                    count += nx.count;
+                    ++sj;
+                }
+                wgpuRenderPassEncoderSetPipeline(p, pipe);
+                wgpuRenderPassEncoderSetBindGroup(p, 1, tbg, 0, nullptr);
+                wgpuRenderPassEncoderDraw(p, 4, count, 0, first);
+                si = sj;
+            }
+        };
         if (!refraction) {
             /* 旧路径：单 pass，opaque → blend（不透明先画；透明按"相机→物体"远→近，不写深度、混合管线）。 */
             WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
@@ -4357,6 +4794,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             draw_sky(pass);
             for (const mq_renderer_draw3d* dpp : opaque_list) draw_one(pass, dpp, /*allow_two_pass=*/true);
             for (const mq_renderer_draw3d* dpp : blend_list) draw_one(pass, dpp, /*allow_two_pass=*/true);
+            draw_particles(pass);
             wgpuRenderPassEncoderEnd(pass);
             wgpuRenderPassEncoderRelease(pass);
         } else {
@@ -4384,6 +4822,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             apply_viewport(passB);
             wgpuRenderPassEncoderSetBindGroup(passB, 0, camBgB, 0, nullptr);
             for (const mq_renderer_draw3d* dpp : blend_list) draw_one(passB, dpp, /*allow_two_pass=*/false);
+            draw_particles(passB);
             wgpuRenderPassEncoderEnd(passB);
             wgpuRenderPassEncoderRelease(passB);
             if (camBgB) wgpuBindGroupRelease(camBgB);

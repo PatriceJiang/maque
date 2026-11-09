@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **256** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **263** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -1299,7 +1299,7 @@ role: `physics_body`
 | `Combine` | 1 |
 | `Replace` | 2 |
 
-## render（51） · `render/render.yaml`
+## render（56） · `render/render.yaml`
 
 ### render.Billboard — struct (变长（含动态成员）)
 
@@ -1523,6 +1523,18 @@ role: `physics_body`
 | `Bevel` | 1 |
 | `Round` | 2 |
 
+### render.MeshGeometry — enum
+
+| 值 | 数值 |
+|----|------|
+| `Cube` | 0 |
+| `Sphere` | 1 |
+| `Plane` | 2 |
+| `Cylinder` | 3 |
+| `Cone` | 4 |
+| `Torus` | 5 |
+| `Capsule` | 6 |
+
 ### render.MeshRenderer — struct (变长（含动态成员）)
 
 | 字段 | 类型 | 默认值 | attrs |
@@ -1544,6 +1556,9 @@ role: `physics_body`
 | `time` | float | 0.0F |  |
 | `duration` | float | 0.0F |  |
 | `variant` | string |  |  |
+| `geometry` | MeshGeometry | MeshGeometry::Cube |  |
+| `geometry_size` | math.Vec3 | {1.2F, 1.2F, 1.2F} | unit: m |
+| `geometry_segments` | math.Vec3 | {32.0F, 16.0F, 8.0F} |  |
 
 ### render.MotionStreak — struct (变长（含动态成员）)
 
@@ -1567,6 +1582,54 @@ role: `physics_body`
 | `samples` | StreakSample[] | — | transient |
 | `geometry` | math.Vec2[] | — | transient |
 | `indices` | uint32_t[] | — | transient |
+
+### render.ParticleBlend — enum
+
+| 值 | 数值 |
+|----|------|
+| `Alpha` | 0 |
+| `Additive` | 1 |
+| `Multiply` | 2 |
+
+### render.ParticleEmitter3D — struct (变长（含动态成员）)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `emitting` | bool | true |  |
+| `rate` | float | 30.0F | unit: 1/s |
+| `lifetime` | float | 1.5F | unit: s |
+| `speed` | float | 1.2F | unit: m/s |
+| `spread` | float | 0.6F | range: 0,1 |
+| `direction` | math.Vec3 | {0.0F, 1.0F, 0.0F} |  |
+| `gravity` | math.Vec3 | {0.0F, -1.5F, 0.0F} |  |
+| `size_start` | float | 0.25F | unit: m |
+| `size_end` | float | 0.05F | unit: m |
+| `color_start` | math.Color | {1.0F, 0.85F, 0.5F, 1.0F} |  |
+| `color_end` | math.Color | {1.0F, 0.2F, 0.05F, 0.0F} |  |
+| `rotation` | float | 0.0F | unit: radian |
+| `rotation_speed` | float | 0.0F | unit: rad/s |
+| `texture` | string |  |  |
+| `max_count` | uint32_t | 256 | range: 1,4096 |
+| `blend` | ParticleBlend | ParticleBlend::Alpha |  |
+| `facing` | ParticleFacing | ParticleFacing::ViewPlane |  |
+| `sort` | bool | true |  |
+| `culling_mask` | uint32_t | 4294967295 | bitmask |
+
+### render.ParticleFacing — enum
+
+| 值 | 数值 |
+|----|------|
+| `ViewPlane` | 0 |
+| `YAxisLocked` | 1 |
+
+### render.ParticleField3D — struct (变长（含动态成员）)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `enabled` | bool | true |  |
+| `max_count` | uint32_t | 2048 | range: 1,8192 |
+| `texture` | string |  |  |
+| `count` | uint32_t | 0 | transient, readonly |
 
 ### render.PivotAnchor — enum
 
@@ -1965,7 +2028,7 @@ role: `ui_text`
 | `rotation_quat` | math.Quat | — | transient |
 | `world_dirty` | uint8_t | 1 | transient |
 
-## scn（12） · `world/scn.yaml`
+## scn（14） · `world/scn.yaml`
 
 ### scn.AnimationPlayer — struct (变长（含动态成员）)
 
@@ -2012,6 +2075,14 @@ role: `camera`
 | `zoom` | float | 1.0F |  |
 | `rotation` | float | 0.0F |  |
 | `active` | bool | true |  |
+
+### scn.FogMode — enum
+
+| 值 | 数值 |
+|----|------|
+| `None` | 0 |
+| `Linear` | 1 |
+| `Exp2` | 2 |
 
 ### scn.Label — struct (变长（含动态成员）)
 
@@ -2120,6 +2191,12 @@ role: `particle_emitter`
 | `msaa_samples` | int32_t | 0 |  |
 | `gravity_y` | float | -900.0F |  |
 | `restitution` | float | 0.86F |  |
+| `fog_mode` | FogMode | FogMode::None |  |
+| `fog_color` | math.Color | {0.5F, 0.5F, 0.5F, 1.0F} |  |
+| `fog_near` | float | 1.0F | unit: m |
+| `fog_far` | float | 100.0F | unit: m |
+| `fog_density` | float | 0.01F | unit: 1/m |
+| `tone_mapping` | ToneMapping | ToneMapping::ACESFilmic |  |
 
 ### scn.SceneInstance — struct (变长（含动态成员）)
 
@@ -2155,6 +2232,16 @@ role: `sprite`
 |------|------|--------|-------|
 | `base_color` | math.Vec4 | {1.0F,1.0F,1.0F,1.0F} |  |
 | `texture` | string |  |  |
+
+### scn.ToneMapping — enum
+
+| 值 | 数值 |
+|----|------|
+| `None` | 0 |
+| `Linear` | 1 |
+| `Reinhard` | 2 |
+| `Cineon` | 3 |
+| `ACESFilmic` | 4 |
 
 ### scn.Transform2D — struct (8B)
 

@@ -56,6 +56,7 @@ int register_ret_str(mq_script_vm*, const char*, mq_script_ret_str_fn, void*) { 
 int register_mixed(mq_script_vm*, const char*, mq_script_mixed_fn, void*) { return 1; }
 int register_multi(mq_script_vm*, const char*, const char*, mq_script_multi_fn, void*) { return 1; }
 int register_multi_ret_str(mq_script_vm*, const char*, const char*, mq_script_multi_ret_str_fn, void*) { return 1; }
+int register_value(mq_script_vm*, const char*, const char*, int32_t, const char*, mq_script_multi_fn, void*) { return 1; }
 int register_bytes(mq_script_vm*, const char*, const char*, mq_script_bytes_fn, void*) { return 1; }
 void frame_boundary(mq_script_vm*) {}
 
@@ -64,7 +65,7 @@ void frame_boundary(mq_script_vm*) {}
 namespace {
 
 struct HostFn {
-    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr, Bytes } kind = Num;
+    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr, Value, Bytes } kind = Num;
     mq_script_num_fn     num = nullptr;
     mq_script_str_fn     str = nullptr;
     mq_script_ret_str_fn ret_str = nullptr;
@@ -72,7 +73,9 @@ struct HostFn {
     mq_script_multi_fn   multi = nullptr;
     mq_script_multi_ret_str_fn multi_ret_str = nullptr;
     mq_script_bytes_fn bytes = nullptr;
-    std::string kinds;                 /* 逐参数 'n' / 's' / 'b' */
+    std::string kinds;                 /* 逐参数 'n' / 's' / 'b' / '2'|'3'|'4'（值类型分量数） */
+    int value_count = 0;               /* Value：返回值分量数 */
+    std::string value_names;           /* Value：逗号分隔字段名 */
     void* user = nullptr;
 };
 
@@ -145,32 +148,83 @@ int trampoline(lua_State* L) {
     double nums[16] = { 0 };
     const char* strs[16] = { nullptr };
     int nnum = 0, nstr = 0;
-    for (int i = 1; i <= argc && (nnum + nstr) < 16; ++i) {
-        const char kind = h->kinds.empty() ? 'n'
-                        : (size_t)(nnum + nstr) < h->kinds.size() ? h->kinds[(size_t)(nnum + nstr)] : 'n';
-        if (kind == 's' || lua_type(L, i) == LUA_TSTRING) {
-            strs[nstr++] = lua_tostring(L, i);
-        } else {
-            nums[nnum++] = lua_tonumber(L, i);
+    int ai = 1;
+    const size_t nkinds = h->kinds.size();
+    for (size_t k = 0; k < nkinds; ++k) {
+        const char kind = h->kinds[k] ? h->kinds[k] : 'n';
+        if (kind == 's') {
+            if (ai > argc) break;
+            strs[nstr++] = lua_tostring(L, ai++);
+            continue;
         }
+        if (kind >= '2' && kind <= '4') {
+            const int count = kind - '0';
+            if (ai > argc) break;
+            if (lua_istable(L, ai)) {
+                static const char* const kNames[4] = { "x", "y", "z", "w" };
+                static const char* const kColors[4] = { "r", "g", "b", "a" };
+                for (int c = 0; c < count; ++c) {
+                    double v = 0.0;
+                    bool found = false;
+                    for (const char* key : { kNames[c], kColors[c] }) {
+                        if (found) break;
+                        lua_getfield(L, ai, key);
+                        if (lua_isnumber(L, -1)) { v = lua_tonumber(L, -1); found = true; }
+                        lua_pop(L, 1);
+                    }
+                    if (!found) {
+                        lua_rawgeti(L, ai, c + 1);
+                        if (lua_isnumber(L, -1)) v = lua_tonumber(L, -1);
+                        lua_pop(L, 1);
+                    }
+                    nums[nnum++] = v;
+                }
+                ++ai;
+            } else {
+                for (int c = 0; c < count && ai <= argc; ++c) nums[nnum++] = lua_tonumber(L, ai++);
+            }
+            continue;
+        }
+        if (ai > argc) break;
+        nums[nnum++] = lua_tonumber(L, ai++);
     }
-    double ret = 0.0;
+    double ret[16] = { 0 };
     char sbuf[1024] = { 0 };
     int rc = 0;
     switch (h->kind) {
         case HostFn::RetStr:    rc = h->ret_str ? h->ret_str(h->user, nnum, nums, sbuf, (int)sizeof sbuf) : 0; break;
-        case HostFn::Mixed:     rc = h->mixed ? h->mixed(h->user, nnum, nums, nstr ? strs[0] : "", &ret) : 0; break;
-        case HostFn::Str:       rc = h->str ? h->str(h->user, nstr ? strs[0] : "", &ret) : 0; break;
-        case HostFn::Multi:     rc = h->multi ? h->multi(h->user, nnum, nums, nstr, strs, &ret) : 0; break;
+        case HostFn::Mixed:     rc = h->mixed ? h->mixed(h->user, nnum, nums, nstr ? strs[0] : "", ret) : 0; break;
+        case HostFn::Str:       rc = h->str ? h->str(h->user, nstr ? strs[0] : "", ret) : 0; break;
+        case HostFn::Multi:     rc = h->multi ? h->multi(h->user, nnum, nums, nstr, strs, ret) : 0; break;
+        case HostFn::Value:     rc = h->multi ? h->multi(h->user, nnum, nums, nstr, strs, ret) : 0; break;
         case HostFn::MultiRetStr:
             rc = h->multi_ret_str ? h->multi_ret_str(h->user, nnum, nums, nstr, strs, sbuf, (int)sizeof sbuf) : 0;
             break;
-        case HostFn::Num:       rc = h->num ? h->num(h->user, nnum, nums, &ret) : 0; break;
+        case HostFn::Num:       rc = h->num ? h->num(h->user, nnum, nums, ret) : 0; break;
         case HostFn::Bytes:     rc = 1; break;
     }
     if (rc != 0) { lua_pushnil(L); lua_pushstring(L, "host function failed"); return 2; }
     if (h->kind == HostFn::RetStr || h->kind == HostFn::MultiRetStr) { lua_pushstring(L, sbuf); return 1; }
-    lua_pushnumber(L, ret);
+    if (h->kind == HostFn::Value) {
+        lua_createtable(L, 0, h->value_count);
+        const char* p = h->value_names.c_str();
+        for (int i = 0; i < h->value_count && i < 16; ++i) {
+            const char* comma = std::strchr(p, ',');
+            const size_t len = comma ? (size_t)(comma - p) : std::strlen(p);
+            if (len > 0) {
+                char name[32];
+                const size_t n = len < sizeof name - 1 ? len : sizeof name - 1;
+                std::memcpy(name, p, n);
+                name[n] = '\0';
+                lua_pushnumber(L, ret[i]);
+                lua_setfield(L, -2, name);
+            }
+            if (!comma) break;
+            p = comma + 1;
+        }
+        return 1;
+    }
+    lua_pushnumber(L, ret[0]);
     return 1;
 }
 
@@ -508,6 +562,18 @@ int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds
     if (!vm || !name) return 1;
     LuaVm* v = S(vm);
     HostFn h; h.kind = HostFn::MultiRetStr; h.multi_ret_str = fn; h.user = user; h.kinds = kinds ? kinds : "";
+    v->fns.push_back(h);
+    return register_common(v, name, (int)v->fns.size() - 1, true);
+}
+
+int register_value(mq_script_vm* vm, const char* name, const char* kinds, int32_t ret_count,
+                   const char* ret_names, mq_script_multi_fn fn, void* user) {
+    if (!vm || !name || !fn || ret_count <= 0 || ret_count > 16) return 1;
+    LuaVm* v = S(vm);
+    HostFn h; h.kind = HostFn::Value; h.multi = fn; h.user = user;
+    h.kinds = kinds ? kinds : "";
+    h.value_names = ret_names ? ret_names : "";
+    h.value_count = ret_count;
     v->fns.push_back(h);
     return register_common(v, name, (int)v->fns.size() - 1, true);
 }

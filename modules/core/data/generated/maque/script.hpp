@@ -4,6 +4,7 @@
 
 #include "maque_guest_api.h"
 #include "abi/script_guest.h"
+#include "maque_types.h"
 
 #include <cstddef>
 #include <cstdio>
@@ -371,6 +372,48 @@ public:
         }
         float node_position_y(float id) const {
             return c.api_ptr()->host_node_position_y(c.host_ctx(), id);
+        }
+        void node_set_local_position(float id, float x, float y, float z) const {
+            c.api_ptr()->host_node_set_local_position(c.host_ctx(), id, x, y, z);
+        }
+        void node_set_local_rotation(float id, float x, float y, float z) const {
+            c.api_ptr()->host_node_set_local_rotation(c.host_ctx(), id, x, y, z);
+        }
+        void node_set_local_scale(float id, float x, float y, float z) const {
+            c.api_ptr()->host_node_set_local_scale(c.host_ctx(), id, x, y, z);
+        }
+        math::Vec3 node_local_position(float id) const {
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_local_position(c.host_ctx(), id, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        math::Vec3 node_local_rotation(float id) const {
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_local_rotation(c.host_ctx(), id, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        math::Vec3 node_local_scale(float id) const {
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_local_scale(c.host_ctx(), id, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        math::Vec3 node_world_position(float id) const {
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_world_position(c.host_ctx(), id, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        math::Vec3 node_world_rotation(float id) const {
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_world_rotation(c.host_ctx(), id, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        math::Vec3 node_local_to_world(float id, math::Vec3 p) const {
+            const float _v0[3] = { p.x, p.y, p.z };
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_local_to_world(c.host_ctx(), id, _v0, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        math::Vec3 node_world_to_local(float id, math::Vec3 p) const {
+            const float _v0[3] = { p.x, p.y, p.z };
+            float _out[3] = { 0 };
+            c.api_ptr()->host_node_world_to_local(c.host_ctx(), id, _v0, _out); return math::Vec3{ _out[0], _out[1], _out[2] };
+        }
+        void node_look_at(float id, float x, float y, float z) const {
+            c.api_ptr()->host_node_look_at(c.host_ctx(), id, x, y, z);
         }
         void node_set_content_size(float id, float w, float h) const {
             c.api_ptr()->host_node_set_content_size(c.host_ctx(), id, w, h);
@@ -1211,6 +1254,12 @@ public:
         }
         float imgui_last_cmd_count() const {
             return c.api_ptr()->host_imgui_last_cmd_count(c.host_ctx());
+        }
+        Bytes particles3d_upload(float id, mq_script_bytes_view data) const {
+            return Bytes(c.api_ptr()->host_particles3d_upload(c.host_ctx(), id, data));
+        }
+        float particles3d_count(float id) const {
+            return c.api_ptr()->host_particles3d_count(c.host_ctx(), id);
         }
     } host{*this};
 

@@ -363,8 +363,9 @@ F4 面板「RenderTexture MSAA」/ `MAQUE_ENGINE_OPTIONS="rt_msaa=4"` 一次性�
 fragment 入口消费。
 
 - gfx 按 `(shading_model, blend, side)` 懒创建管线；`side` 映射 cullMode（缺省 Double 兼容旧行为）。
-- 材质 uniform 288B（72 floats，plans/19 单一定义 + gfx 统一打包）；camera uniform 816B（含 view 矩阵与
-  analytic studio IBL 参数）。
+- 材质 uniform 384B（96 floats，plans/19/24 单一定义 + gfx 统一打包；plans/28 尾部追加
+  morph0/1/2 三个 vec4 = GPU morph 权重/count/vertex_count）；camera uniform 944B（含 view 矩阵、
+  analytic studio IBL 参数与 atmosphere 雾/tonemap）。
 - **环境光照**：无 HDRI/PMREM 管线时用解析近似 —— 天空/地面渐变 + 软光箱 + Karis env BRDF（漫反射用半球
   辐照度、镜面按 roughness 模糊后采样）；clearcoat 参与环境反射。场景通过 `scn.Scene.env_sky_color/
   env_ground_color/env_highlight/env_rotation` 控制（颜色全 0 = 由 `env_color` 派生）。
@@ -372,6 +373,134 @@ fragment 入口消费。
   （法线，KHR_texture_transform 各贴图可不同）；PBR 贴图运行时生成 CPU mip 链（避免远处高频闪烁）。
 - 无贴图时的缺省绑定：颜色/参数用 1×1 白，法线用 1×1 中性法线 (0.5,0.5,1)（避免法线扰动）。
 - 详细字段/映射/非目标见 plans/19-threejs-materials.md；glTF 扩展由 `tools/gltf_import.py` 导入。
+
+## 3D 程序化图元（render.MeshRenderer.geometry，plans/27 M1-1）
+
+`render.MeshRenderer.mesh_path` 为空时，按 `geometry` 生成内建几何（three.js
+Box/Sphere/Plane/Cylinder/Cone/Torus/Capsule 语义）；`mesh_path` 非空时仍优先用资产网格。
+默认 `Cube` + `geometry_size=1.2` 等价旧内建 cube（±0.6）→ 旧场景逐字节不变。
+
+| 字段 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `geometry` | `MeshGeometry` | `Cube` | 0 Cube / 1 Sphere / 2 Plane / 3 Cylinder / 4 Cone / 5 Torus / 6 Capsule |
+| `geometry_size` | `Vec3` | (1.2,1.2,1.2) | 分量按 kind 解释（见下表） |
+| `geometry_segments` | `Vec3` | (32,16,8) | x=径向/宽，y=高/管向；Cube 固定 1×1/面，取整并夹到安全范围 |
+
+| kind | size.x | size.y | size.z | 备注 |
+|---|---|---|---|---|
+| Cube | 宽 | 高 | 深 | 与旧 cube 同布局（48B 顶点、CCW 外表面） |
+| Sphere | 半径 | — | — | 经纬球，UV 的 v 从底到顶 |
+| Plane | 宽 | 高 | — | XY 平面、法线 +Z（单面；材质默认 Double 所以双面可见） |
+| Cylinder | 半径 | 高 | — | Y 轴，带上下盖 |
+| Cone | 底半径 | 高 | — | Y 轴，底面朝 -Y |
+| Torus | 主半径 | 管半径 | — | 与 three.js 一致：XY 平面（孔轴 Z）；平放需自行旋转 |
+| Capsule | 半径 | 圆柱段高 | — | 总高 = y + 2·半径 |
+
+- 网格按 `(kind,size,segments)` 缓存（切场景销毁；上限 64 组，超出回退内建 cube）；
+  生成/上传在首帧提取期惰性完成（与 `.mesh.json` 的 `load_mesh` 同一条路径）。
+- 拾取（`scene_pick`/`scene_raycast`）用同一解析包围盒（`primitive_bounds`），
+  不再假设所有无路径网格都是 ±0.6。
+- 切线固定 (1,0,0,1)（与内建 cube 一致；PBR 法线贴图用屏幕空间导数构造切线基）。
+- 与 three.js 的差异：Cube 不支持 per-face 分段；UV 方向按引擎既有约定（部分图元与 three.js
+  的 `v` 轴相反）；不做 `Circle/Ring/TorusKnot/Extrude`（离线 `tools/` 生成资产）。
+- 样例：`scenes/pbr/primitives.scn`（7 个图元同框；预览 `scenes/pbr/primitives.png`）；
+  测试 `ctest -R geometry_primitives_e2e`（创建日志 + 轮廓结构断言 + 确定性 + 旧场景零变化）。
+
+## 场景雾与色调映射（scn.Scene.fog_* / tone_mapping，plans/27 M1-2/M1-3）
+
+场景级大气参数（尾部追加，默认 = 旧行为）：
+
+| 字段 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `fog_mode` | `FogMode` | `None` | 0 None / 1 Linear（`fog_near/far`）/ 2 Exp2（`fog_density`） |
+| `fog_color` | `Color` | (0.5,0.5,0.5) | 线性空间；在 tonemap 之前混合 |
+| `fog_near` / `fog_far` | float | 1 / 100 | Linear 的 smoothstep 边界（`d = length(camera-eye - world)`） |
+| `fog_density` | float | 0.01 | Exp2：`1-exp(-(density·d)²)` |
+| `tone_mapping` | `ToneMapping` | `ACESFilmic` | 0 None / 1 Linear / 2 Reinhard / 3 OptimizedCineon / 4 ACES（与 three.js 常量同值） |
+
+- 受光材质（Standard/Physical/Lambert/Phong/Toon/Matcap）走「雾 → 场景 tonemap → sRGB」；
+  Basic/unlit 只叠雾、不做 tonemap（保持 glTF unlit 参考色）；Normal/Depth/Shadow 保持可预测的
+  直接输出（不叠雾/tonemap）。天空背景只做 tonemap，不叠雾。
+- 实现：`scn.Scene` → `mq_renderer_frame3d.atmosphere`（尾部追加）→ gfx camera uniform 尾部
+  `atmos0/atmos1`（944B）→ `pbr` shader 的 `apply_fog` / `scene_tonemap`。
+- 样例：`scenes/pbr/atmosphere.scn`（Linear 雾 + ACES）与 `atmosphere_off/_reinhard/_none.scn`；
+  测试 `ctest -R atmosphere_e2e`（近端不变/远端混色、ACES vs Reinhard/None 亮度差、确定性）。
+- 与 F4 后处理 `post.tonemap` 相互独立：后处理是整帧再次 ACES，默认关闭；不要同时开两套 tonemap。
+
+## GPU morph target 动画（plans/28 §3）
+
+glTF 直读 / `.mesh.json` 的 morph targets 默认走 **顶点着色器**：装配期把每个 target 的
+pos/normal 增量打包成 **32B/目标/顶点**（target 主序）→ `create_mesh` 一次上传到 group1
+`binding 24`（只读 storage）；每帧只在逐 draw 材质 uniform 尾部写 8 个权重
+（`Draw.morph0/1/2`，材质 uniform 84 → 96 floats / 384B）。顶点入口先 `base + Σ w_t·Δ_t`、
+再蒙皮、再乘 model（glTF 顺序）；4 个主入口与 4 个阴影入口统一加一次 `morph0.x == 0` 守卫，
+不新增管线。阴影 pass 同绑增量 → 影子随形变。
+
+- 权重优先级：**动画 `weights` 通道 > primitive 默认权重**；权重是**逐 draw** 的，所以同一 glTF
+  实例化多次、各自 `time` 不同时天然正确（旧 CPU 路径"共享网格只能首实体驱动"的限制只在回退路径保留）。
+- 回退矩阵：`caps.morph_max_targets == 0`（旧插件/null）或 `target_count > 8` → CPU `update_mesh`；
+  `MAQUE_MORPH=0` → 基础网格；`MAQUE_MORPH_GPU=0` → 强制 CPU（A/B 像素门）。
+- 每帧上传量从 `O(顶点数 × stride)` 降到 `O(draw 数 × 32B)`；顶点缓冲不再重传。
+- 样例 `scenes/pbr/morph_gpu/morph_gpu.scn`（两个实例共享同一网格、各自 clip 错相）；
+  测试 `ctest -R 'morph_layout|morph_gpu_e2e|gltf_morph_e2e'`：单实例 GPU vs CPU 同帧像素等价
+  （mean abs ≤ 1/255），双实例共享网格时 GPU 两处形变不同（per-draw 权重的回归）。
+- **Transform Animation（节点 TRS）仍留在 CPU**（plans/28 §3.10）：世界矩阵有蒙皮调色板、
+  `draw3d.model`、OBB 拾取、RenderTexture 相机四个 CPU 消费者，GPU 化必须回读（同步点 + 1 帧延迟）；
+  典型模型 10–200 节点、每帧一次二分查找的 CPU 采样是 µs 级。GPU 只值得做"实例化人群 / GPU 骨骼 /
+  VAT"，属 M3+，不要把节点 TRS 当性能问题。
+
+## 3D 粒子（render.ParticleEmitter3D，plans/27 3D 粒子）
+
+节点挂 `render.ParticleEmitter3D`（不需要 `MeshRenderer`）：CPU 固定步长/引擎 RNG 确定性模拟；
+提取期产出 **48B/粒子的实例数组**（`frame3d.particles` + `particle_systems` 切片），gfx 用
+**实例化 billboard quad 管线**绘制（同 texture/blend/facing 的相邻系统可合并；一个系统一次 draw）。
+模拟仍在 CPU，顶点/光栅化在 GPU；GPU 解析模拟（可选、不进 checksum）见 plans/28。
+
+| 字段 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `emitting` | bool | true | 停止发射（已存在的粒子继续走完生命周期） |
+| `rate` | float | 30 | 每秒发射数（定点累加，确定性） |
+| `lifetime` | float | 1.5 | 秒（每个粒子 ±25% 随机） |
+| `speed` | float | 1.2 | 初速度 m/s（±25% 随机） |
+| `spread` | float | 0.6 | 0=沿 `direction` 锥，1=半球随机 |
+| `direction` | `Vec3` | (0,1,0) | 发射主轴 |
+| `gravity` | `Vec3` | (0,-1.5,0) | 生成时记录（之后改发射器不影响已生成粒子） |
+| `size_start` / `size_end` | float | 0.25 / 0.05 | 世界尺寸线性插值 |
+| `color_start` / `color_end` | `Color` | 橙 / 透明红 | 逐粒子颜色+alpha 线性插值 |
+| `rotation` / `rotation_speed` | float | 0 / 0 | 面片自转（弧度、rad/s） |
+| `texture` | string | "" | 相对场景目录或 `builtin:/textures/particle_soft`（64² 径向 alpha） |
+| `max_count` | uint32_t | 256 | 单发射器上限（1..4096；全局池 4096） |
+| `blend` | `ParticleBlend` | Alpha | Alpha / Additive / Multiply（Multiply 暂按 Alpha） |
+| `facing` | `ParticleFacing` | ViewPlane | 面向相机 / Y 轴锁定 |
+| `sort` | bool | true | Alpha 混合时按相机距离远→近重排实例（不改模拟数组） |
+| `culling_mask` | uint32_t | 0xFFFFFFFF | 与相机 `culling_mask` 求交 |
+
+- 渲染：粒子在 3D pass 的 blend 列表（alpha/additive；不投影）；quad 由 gfx 实例化展开，
+  顶点色/寿命曲线/旋转在 48B 实例里；`sort` 时提取期远→近重排（`flags` bit0）。
+- 材质：内部合成 `Basic`（unlit）+ 顶点色；不需要用户再挂 `asset.PbrMaterial`。
+- 诊断：`MAQUE_PARTICLES=0` 关闭渲染（模拟继续，checksum 不受影响）；`MAQUE_TRACE_STATS=1`
+  看 `3d_draws/tris/verts`（tris = 粒子数×2，按**存活数**而不是容量）。
+- **确定性契约**（plans/28 §4.7）：CPU 模拟状态（位置/年龄）+ 定点发射累加器 + 引擎 RNG 进
+  `world_checksum` 与 `world_snapshot`（快照末尾 `'P3D1'` 魔数块，旧快照无此块 → 跳过）；
+  空闲跳帧判定包含 3D 粒子。回滚后 `world_restore` 会重建派生世界矩阵（否则下一步发射用旧位置）。
+- 样例：`scenes/pbr/particles3d.scn`（火焰 + 烟雾两个发射器；预览 `scenes/pbr/particles3d.png`）；
+  测试 `ctest -R 'particles3d_e2e|particles3d_determinism_e2e'`（可见/可关、随时间变化、两次渲染
+  逐字节一致；逐帧 trail、快照回滚等价、渲染开关不改 checksum）。
+- **外部粒子场**（`render.ParticleField3D` + `particles3d_upload(id, bytes)`）：脚本每帧上传
+  `12×f32 = 48B/粒子`（pos3,size,color4,rotation,pad3）；提取期直接映射为同一套 particle 实例。
+  `max_count` 上限 8192；空数据清空。Boids 参考实现用它（见下）。
+- 已知边界：CPU 模拟；粒子不参与拾取/阴影/反射；粒子固定画在 3D blend 列表之后（与透明物体前后关系
+  固定为"粒子后画"）；`local_space` 与 GPU 解析模拟在 plans/28 M2/M3。
+
+### Boids 示例（`scenes/boids/`）
+
+| 场景 | 实现 | 说明 |
+|---|---|---|
+| `boids.scn` | JS 参考 | 引擎 RNG 初始化 + 16³ 空间网格（cell=2.5）；每帧 `particles3d_upload` → `ParticleField3D`；`BOIDS_N` 控制数量（默认 300） |
+| `boids-webgpu.scn` | 全 shader | `render.ShaderGraph` 4 pass：pos/vel N×1 RGBA32F 反馈状态 + O(N²) 力 + 320×180 splat + 上采样；N=256 编译期常量，无 JS/CPU 回读 |
+
+测试：`ctest -R boids_e2e`（两版可见性/确定性；GPU 版 240 帧 `render < 60ms`、`fps > 10` 的
+Debug+ASan 预算，脚本会打印实测 fps/logic/render）。预览：`boids.png` / `boids-webgpu.png`。
 
 ## 场景自定义全屏 shader（render.ShaderPass）
 

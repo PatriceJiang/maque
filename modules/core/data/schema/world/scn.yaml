@@ -157,6 +157,22 @@
         - { name: zoom,     type: float, default: 1.0F }        # 1 = 1:1 像素
         - { name: rotation, type: float, default: 0.0F }        # 弧度
         - { name: active,   type: bool,  default: true }
+    # 场景雾（plans/27 M1-2，three.js Fog/FogExp2 语义）：None 关闭；Linear 用 fog_near/far；
+    # Exp2 用 fog_density。颜色按**线性空间**参与 tonemap 前的混合。
+    - enum: FogMode
+      values:
+        - { name: None,   value: 0 }
+        - { name: Linear, value: 1 }
+        - { name: Exp2,   value: 2 }
+    # 场景色调映射（plans/27 M1-3，数值与 three.js 常量对齐；5=Custom 不实现）。
+    # 缺省 ACESFilmic = 引擎既有行为，旧场景零变化。
+    - enum: ToneMapping
+      values:
+        - { name: None,       value: 0 }
+        - { name: Linear,     value: 1 }
+        - { name: Reinhard,   value: 2 }
+        - { name: Cineon,     value: 3 }
+        - { name: ACESFilmic, value: 4 }
     - struct: Scene
       fields:
         # 文档版本（docs/32 §6.1）：v1 = 无 version 字段（兼容）；v2 = 完整场景描述 + 实例引用。
@@ -209,4 +225,14 @@
         - { name: msaa_samples, type: int32_t, default: 0 }
         - { name: gravity_y,   type: float, default: -900.0F }  # 重力加速度的 y 分量（像素/秒²，世界 y 向上）
         - { name: restitution, type: float, default: 0.86F }    # 弹性（0..1）
+        # ---- 大气 / 色调映射（plans/27 M1-2/M1-3；尾部追加，默认关闭/ACES = 旧行为）----
+        # 雾距离 = length(camera - world_pos)；Linear 用 smoothstep(near,far)，
+        # Exp2 用 1-exp(-(density*distance)^2)；在 tonemap 之前按线性空间混合。
+        - { name: fog_mode,    type: FogMode, default: "FogMode::None" }
+        - { name: fog_color,   type: math.Color, default: "{0.5F, 0.5F, 0.5F, 1.0F}" }
+        - { name: fog_near,    type: float, default: 1.0F,   attrs: { unit: m } }
+        - { name: fog_far,     type: float, default: 100.0F, attrs: { unit: m } }
+        - { name: fog_density, type: float, default: 0.01F, attrs: { unit: "1/m" } }
+        # 缺省 ACESFilmic（= 既有 tone_output 的 ACES 曲线）；Basic/Normal/Depth/Shadow 不走场景 tonemap。
+        - { name: tone_mapping, type: ToneMapping, default: "ToneMapping::ACESFilmic" }
         # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）

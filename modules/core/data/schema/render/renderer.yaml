@@ -124,6 +124,9 @@
         - { name: direct_present,   type: int32_t }  # 1 = swapchain 直呈可用
         - { name: hdr,              type: int32_t }  # 1 = RGBA16F 离屏可用
         - { name: reserved,         type: int32_t }
+        # GPU morph target 能力（plans/28 §3.2；尾部追加）：0 = 插件不支持 → runtime 保留
+        # CPU `update_mesh` 重算路径；>0 = 顶点着色器可累加的最大 target 数（gfx 恒为 8）。
+        - { name: morph_max_targets, type: int32_t }
     # 纹理创建（PBR 需要 sRGB / mip / wrap / filter；2D 字形图集仍走旧 create_texture）。
     - record: texture_desc
       fields:
@@ -137,6 +140,15 @@
         - { name: wrap_v,       type: int32_t }
         - { name: data,         type: "const uint8_t*" }  # RGBA8 各 mip 连续；cube 为 6 面
         - { name: data_size,    type: uint64_t }
+    # GPU morph target 增量（plans/28 §3.2）：create_mesh 时一次性上传、之后只读。
+    # 布局 = target_count × vertex_count × 8 float（32B/目标/顶点）：
+    #   [pos.xyz, pad, nrm.xyz, pad]；target 主序（t * vertex_count + v）。
+    - record: morph
+      fields:
+        - { name: deltas,       type: "const float*" }  # 见上；flags bit0=0 时 nrm 段可为 0
+        - { name: target_count, type: uint32_t }        # 1..8；0 = 无 morph
+        - { name: vertex_count, type: uint32_t }        # 每条 target 的顶点数（= deltas 行宽）
+        - { name: flags,        type: int32_t }         # bit0 = 含 normal 增量（0 → shader 跳过 nrm 累加）
     # 3D 网格（一次性上传，GPU 常驻；规范顶点布局 = pos3/normal3/tangent4/uv2，stride 48B）。
     - record: mesh_gpu
       fields:
@@ -148,6 +160,8 @@
         - { name: index_count,   type: uint32_t }
         - { name: bounds_min,    type: "float[3]" }
         - { name: bounds_max,    type: "float[3]" }
+        # GPU morph 增量（plans/28；尾部追加，旧调用方零初始化 = 无 morph）。
+        - { name: morph,         type: mq_renderer_morph }
     - record: view3d
       fields:
         - { name: view,        type: "float[16]" }  # 列主序
@@ -307,6 +321,18 @@
         # 作用范围：0 = **只作用于 3D 层**（shader pass + 3D + 天空；2D/UI 在 post 之后叠加，
         # 保持原样 = 默认）；1 = 含 2D/UI（整帧后处理）。纯 2D 场景在 0 时不跑 post（零成本）。
         - { name: include_2d,      type: int32_t }
+    # 每帧大气/色调映射（plans/27 M1-2/M1-3；尾部追加到 frame3d）。
+    # 旧调用方零初始化 = fog 关 / tone 0（None）；runtime 总会按 scn.Scene 填（默认 ACES）。
+    - record: atmosphere
+      fields:
+        - { name: fog_mode,    type: int32_t }      # 0=None 1=Linear 2=Exp2
+        - { name: fog_color,   type: "float[4]" }   # 线性空间 rgb（a 未用）
+        - { name: fog_near,    type: float }
+        - { name: fog_far,     type: float }
+        - { name: fog_density, type: float }
+        - { name: tone_mapping, type: int32_t }     # 0=None 1=Linear 2=Reinhard 3=Cineon 4=ACESFilmic
+        - { name: pad0,        type: int32_t }
+        - { name: pad1,        type: int32_t }
     # 场景自带的全屏 shader pass（**场景资源**，不是 assets/builtin/shaders 内建 shader）：
     # shader = create_shader_pass 返回的句柄（-1 = 无）。引擎提供全屏三角形 VS，
     # 资源只提供 @fragment fs_main；uniform = group0 binding0 的 32B 结构（见 docs/13）。
@@ -364,6 +390,26 @@
         - { name: half_h,     type: float }
         - { name: rotation,   type: float }           # 弧度
         - { name: a,          type: float }           # 透明度（<=0 跳过）
+    # 单个 3D 粒子实例（plans/28 §4.4）：48B，**与 GPU 实例缓冲布局逐字节一致**
+    # （gfx 直接 memcpy 上传，不转换）。pos_size.xyz = 世界位置（m）、w = 世界尺寸（m）；
+    # color = 线性 RGBA（已含寿命曲线与淡出）；misc = (面内旋转 rad, 图集帧, 速度拉伸, 预留)。
+    - record: particle
+      fields:
+        - { name: pos_size, type: "float[4]" }
+        - { name: color,    type: "float[4]" }
+        - { name: misc,     type: "float[4]" }
+    # 一个粒子系统/批次（plans/28 §4.4）：32B。first/count 是 frame3d.particles 的切片，
+    # 允许"一个连续实例数组 + 多个系统"；同 texture/blend/facing 的相邻系统可合并为一次 draw。
+    - record: particle_system
+      fields:
+        - { name: texture, type: int32_t }   # 纹理句柄（-1 = 1×1 白）
+        - { name: blend,   type: int32_t }   # 0=alpha 1=additive 2=multiply（2 暂按 alpha）
+        - { name: facing,  type: int32_t }   # 0=view-plane 1=Y 轴锁定
+        - { name: flags,   type: int32_t }   # bit0=已按远→近排序；bit1=local_space 已烘焙（诊断）
+        - { name: first,   type: uint32_t }  # frame3d.particles 起点
+        - { name: count,   type: uint32_t }  # 本系统粒子数（0 = 跳过）
+        - { name: layer,   type: int32_t }   # culling mask（bit30 语义同 draw3d）
+        - { name: pad,     type: int32_t }
     # 一帧 3D + 2D 覆盖层：非空 out = 离屏渲染并回读；空 out = 直接呈现到窗口。
     - record: frame3d
       fields:
@@ -428,6 +474,18 @@
         # 空/0 = 无 mask。
         - { name: masks,                type: "const mq_renderer_mask*" }
         - { name: mask_count,           type: uint32_t }
+        # 每帧大气/色调映射（plans/27 M1-2/M1-3；尾部追加）。旧调用方零初始化 = 雾关/None。
+        - { name: atmosphere,           type: mq_renderer_atmosphere }
+        # GPU morph 权重（plans/28 §3.2；尾部追加）：按 **draw 下标**连续 8 个 float
+        #（draw i → morph_weights[i*8 .. i*8+7]）。morph_weight_count 必须 == draw_count
+        # 才生效；否则整帧视为"无 morph"（旧调用方零初始化 = 基础网格）。
+        - { name: morph_weights,        type: "const float*" }
+        - { name: morph_weight_count,   type: uint32_t }
+        # 3D 粒子批（plans/28 §4.4；尾部追加）：连续实例数组 + 系统切片。空/0 = 无粒子。
+        - { name: particles,            type: "const mq_renderer_particle*" }
+        - { name: particle_count,       type: uint32_t }
+        - { name: particle_systems,     type: "const mq_renderer_particle_system*" }
+        - { name: particle_system_count, type: uint32_t }
     # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
     # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
     # 没有 samples 字段是刻意的：多采样纹理不能被普通采样/回读 → 物理目标恒单采样，

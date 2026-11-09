@@ -12,6 +12,55 @@
 
 namespace {
 
+void gapi_host_node_local_position(void* ctx, float id, float* out) {
+    const math::Vec3 r = host::node_local_position(ctx, id);
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
+void gapi_host_node_local_rotation(void* ctx, float id, float* out) {
+    const math::Vec3 r = host::node_local_rotation(ctx, id);
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
+void gapi_host_node_local_scale(void* ctx, float id, float* out) {
+    const math::Vec3 r = host::node_local_scale(ctx, id);
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
+void gapi_host_node_world_position(void* ctx, float id, float* out) {
+    const math::Vec3 r = host::node_world_position(ctx, id);
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
+void gapi_host_node_world_rotation(void* ctx, float id, float* out) {
+    const math::Vec3 r = host::node_world_rotation(ctx, id);
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
+void gapi_host_node_local_to_world(void* ctx, float id, const float* p, float* out) {
+    const math::Vec3 r = host::node_local_to_world(ctx, id, math::Vec3{p[0], p[1], p[2]});
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
+void gapi_host_node_world_to_local(void* ctx, float id, const float* p, float* out) {
+    const math::Vec3 r = host::node_world_to_local(ctx, id, math::Vec3{p[0], p[1], p[2]});
+    out[0] = r.x;
+    out[1] = r.y;
+    out[2] = r.z;
+}
+
 constexpr bool api_all_set(const mq_script_api_v1& a) {
     return a.math_clamp
         && a.math_lerp
@@ -100,6 +149,17 @@ constexpr bool api_all_set(const mq_script_api_v1& a) {
         && a.host_node_set_position
         && a.host_node_position_x
         && a.host_node_position_y
+        && a.host_node_set_local_position
+        && a.host_node_set_local_rotation
+        && a.host_node_set_local_scale
+        && a.host_node_local_position
+        && a.host_node_local_rotation
+        && a.host_node_local_scale
+        && a.host_node_world_position
+        && a.host_node_world_rotation
+        && a.host_node_local_to_world
+        && a.host_node_world_to_local
+        && a.host_node_look_at
         && a.host_node_set_content_size
         && a.host_node_set_anchor
         && a.host_node_has_component
@@ -343,7 +403,9 @@ constexpr bool api_all_set(const mq_script_api_v1& a) {
         && a.host_audio_bus_volume
         && a.host_imgui_hovered
         && a.host_imgui_frame
-        && a.host_imgui_last_cmd_count;
+        && a.host_imgui_last_cmd_count
+        && a.host_particles3d_upload
+        && a.host_particles3d_count;
 }
 
 constexpr mq_script_api_v1 kApi = {
@@ -438,6 +500,17 @@ constexpr mq_script_api_v1 kApi = {
     &host::node_set_position,
     &host::node_position_x,
     &host::node_position_y,
+    &host::node_set_local_position,
+    &host::node_set_local_rotation,
+    &host::node_set_local_scale,
+    &gapi_host_node_local_position,
+    &gapi_host_node_local_rotation,
+    &gapi_host_node_local_scale,
+    &gapi_host_node_world_position,
+    &gapi_host_node_world_rotation,
+    &gapi_host_node_local_to_world,
+    &gapi_host_node_world_to_local,
+    &host::node_look_at,
     &host::node_set_content_size,
     &host::node_set_anchor,
     &host::node_has_component,
@@ -682,6 +755,8 @@ constexpr mq_script_api_v1 kApi = {
     &host::imgui_hovered,
     &host::imgui_frame,
     &host::imgui_last_cmd_count,
+    &host::particles3d_upload,
+    &host::particles3d_count,
 };
 
 static_assert(api_all_set(kApi), "maque: API table has a null entry (schema/parser drift)");

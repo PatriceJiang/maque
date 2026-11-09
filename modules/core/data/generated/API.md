@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **331** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
+统计：脚本 API **344** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -130,6 +130,17 @@
 | `node_set_position` | id: float, x: float, y: float | void | ctx |
 | `node_position_x` | id: float | float | ctx |
 | `node_position_y` | id: float | float | ctx |
+| `node_set_local_position` | id: float, x: float, y: float, z: float | void | ctx · 写 scene.Transform3D.local.position（局部空间） |
+| `node_set_local_rotation` | id: float, x: float, y: float, z: float | void | ctx · 写 scene.Transform3D.local.rotation（弧度，Euler；与引擎 m4_from_trs 同一约定） |
+| `node_set_local_scale` | id: float, x: float, y: float, z: float | void | ctx · 写 scene.Transform3D.local.scale（局部空间） |
+| `node_local_position` | id: float | math.Vec3 | ctx · 读 Transform3D.local.position（缺组件 = 0,0,0） |
+| `node_local_rotation` | id: float | math.Vec3 | ctx · 读 Transform3D.local.rotation（弧度） |
+| `node_local_scale` | id: float | math.Vec3 | ctx · 读 Transform3D.local.scale（缺组件 = 1,1,1） |
+| `node_world_position` | id: float | math.Vec3 | ctx · 读派生世界矩阵的平移（three.js getWorldPosition） |
+| `node_world_rotation` | id: float | math.Vec3 | ctx · 读世界矩阵的 Euler（弧度；three.js world quaternion 的 Euler 形式） |
+| `node_local_to_world` | id: float, p: math.Vec3 | math.Vec3 | ctx · 局部点 → 世界点（three.js localToWorld） |
+| `node_world_to_local` | id: float, p: math.Vec3 | math.Vec3 | ctx · 世界点 → 局部点（three.js worldToLocal） |
+| `node_look_at` | id: float, x: float, y: float, z: float | void | ctx · 让本地 -Z 指向世界坐标目标、+Y 向上（相机约定；three.js Object3D.lookAt 的相机分支）；只改 rotation |
 | `node_set_content_size` | id: float, w: float, h: float | void | ctx |
 | `node_set_anchor` | id: float, ax: float, ay: float | void | ctx |
 | `node_has_component` | id: float, type: string | float | ctx |
@@ -374,6 +385,8 @@
 | `imgui_hovered` | — | float | ctx · 指针是否落在面板上 |
 | `imgui_frame` | — | float | ctx · 面板已渲染的帧数（自省：证明真的在跑） |
 | `imgui_last_cmd_count` | — | float | ctx · 上一帧导出的绘制命令数（0 = 面板没画东西） |
+| `particles3d_upload` | id: float, data: bytes | bytes | ctx · 上传粒子数据（返回空 bytes；用 particles3d_count 查数量） |
+| `particles3d_count` | id: float | float | ctx · 当前粒子数（-1=无 ParticleField3D） |
 
 ## 2. 控制面方法（control_list，AI/MCP）
 
@@ -478,9 +491,10 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `mask`：x0: float, y0: float, x1: float, y1: float, fade_l: float, fade_t: float, fade_r: float, fade_b: float, opacity: float, curve: int32_t, next: int32_t, pad: int32_t
 - `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, z: int32_t
 - `window`：kind: int32_t, display: void*, handle: void*, extra: void*, width: int32_t, height: int32_t
-- `caps`：max_texture_size: int32_t, max_lights: int32_t, max_samples: int32_t, target_format: int32_t, depth_format: int32_t, direct_present: int32_t, hdr: int32_t, reserved: int32_t
+- `caps`：max_texture_size: int32_t, max_lights: int32_t, max_samples: int32_t, target_format: int32_t, depth_format: int32_t, direct_present: int32_t, hdr: int32_t, reserved: int32_t, morph_max_targets: int32_t
 - `texture_desc`：width: int32_t, height: int32_t, pixel_format: int32_t, kind: int32_t, mip_levels: int32_t, filter: int32_t, wrap_u: int32_t, wrap_v: int32_t, data: const uint8_t*, data_size: uint64_t
-- `mesh_gpu`：vertices: const void*, vertex_bytes: uint64_t, vertex_stride: uint32_t, vertex_layout: int32_t, indices: const uint32_t*, index_count: uint32_t, bounds_min: float[3], bounds_max: float[3]
+- `morph`：deltas: const float*, target_count: uint32_t, vertex_count: uint32_t, flags: int32_t
+- `mesh_gpu`：vertices: const void*, vertex_bytes: uint64_t, vertex_stride: uint32_t, vertex_layout: int32_t, indices: const uint32_t*, index_count: uint32_t, bounds_min: float[3], bounds_max: float[3], morph: mq_renderer_morph
 - `view3d`：view: float[16], proj: float[16], eye: float[3], viewport: float[4], exposure: float, clear_mode: int32_t, clear_color: float[4], layer_mask: int32_t
 - `light`：type: int32_t, pos: float[3], dir: float[3], color: float[3], intensity: float, range: float, inner_cos: float, outer_cos: float, flags: int32_t, shadow_slot: int32_t
 - `pbr_material`：base_color: float[4], emissive: float[3], metallic: float, roughness: float, normal_scale: float, occlusion_strength: float, alpha_cutoff: float, alpha_mode: int32_t, flags: int32_t, textures: int32_t[5], uv_scale: float[2], uv_offset: float[2], clearcoat: float, clearcoat_roughness: float, shading_model: int32_t, side: int32_t, flags2: int32_t, opacity: float, emissive_intensity: float, env_intensity: float, normal_scale_y: float, specular: float[3], shininess: float, specular_intensity: float, ior: float, sheen: float, sheen_roughness: float, sheen_color: float[3], iridescence: float, iridescence_ior: float, iridescence_thickness_min: float, iridescence_thickness_max: float, anisotropy: float, anisotropy_rotation: float, clearcoat_normal_scale: float, toon_steps: int32_t, depth_packing: int32_t, textures2: int32_t[3], normal_uv_scale: float[2], normal_uv_offset: float[2], uv1_mask: int32_t, textures3: int32_t[7], uv_rotation: float, normal_uv_rotation: float, textures4: int32_t[2], volume_thickness: float, dispersion: float, textures5: int32_t[1], diffuse_transmission_factor: float, diffuse_transmission_color: float[3], textures6: int32_t[2], attenuation_color: float[3], attenuation_distance: float, multiscatter_color: float[3], textures7: int32_t[1]
@@ -488,11 +502,14 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `skin`：palette: const float*, joint_count: uint32_t
 - `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, env_irradiance_texture: int32_t, env_cubemap: int32_t, env_cubemap_irradiance: int32_t, intensity: float, env_sky_color: float[4], env_ground_color: float[4], env_highlight: float, env_rotation: float
 - `post`：exposure: float, tonemap: int32_t, enabled: int32_t, effects: uint32_t, bloom_intensity: float, bloom_threshold: float, bloom_radius: float, vignette: float, aberration: float, saturation: float, contrast: float, grayscale: float, include_2d: int32_t
+- `atmosphere`：fog_mode: int32_t, fog_color: float[4], fog_near: float, fog_far: float, fog_density: float, tone_mapping: int32_t, pad0: int32_t, pad1: int32_t
 - `shader_pass`：shader: int32_t, time: float, frame: float, mouse: float[4]
 - `shader_sprite`：shader: int32_t, z: int32_t, x: float, y: float, half_w: float, half_h: float, rotation: float, a: float, time: float, frame: float, mouse: float[4]
 - `shader_graph_pass`：shader: int32_t, target: int32_t, channels: int32_t[4], resolution: float[2], time: float, frame: float, mouse: float[4], keys: float[4], screen_resolution: float[2]
 - `shader_graph_sprite`：passes: const mq_renderer_shader_graph_pass*, pass_count: uint32_t, z: int32_t, x: float, y: float, half_w: float, half_h: float, rotation: float, a: float
-- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t, present_after_readback: int32_t, shader_sprites: const mq_renderer_shader_sprite*, shader_sprite_count: uint32_t, graph_passes: const mq_renderer_shader_graph_pass*, graph_pass_count: uint32_t, graph_sprites: const mq_renderer_shader_graph_sprite*, graph_sprite_count: uint32_t, masks: const mq_renderer_mask*, mask_count: uint32_t
+- `particle`：pos_size: float[4], color: float[4], misc: float[4]
+- `particle_system`：texture: int32_t, blend: int32_t, facing: int32_t, flags: int32_t, first: uint32_t, count: uint32_t, layer: int32_t, pad: int32_t
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t, present_after_readback: int32_t, shader_sprites: const mq_renderer_shader_sprite*, shader_sprite_count: uint32_t, graph_passes: const mq_renderer_shader_graph_pass*, graph_pass_count: uint32_t, graph_sprites: const mq_renderer_shader_graph_sprite*, graph_sprite_count: uint32_t, masks: const mq_renderer_mask*, mask_count: uint32_t, atmosphere: mq_renderer_atmosphere, morph_weights: const float*, morph_weight_count: uint32_t, particles: const mq_renderer_particle*, particle_count: uint32_t, particle_systems: const mq_renderer_particle_system*, particle_system_count: uint32_t
 - `render_texture_desc`：struct_size: uint32_t, width: int32_t, height: int32_t, pixel_format: int32_t, filter: int32_t, wrap_u: int32_t, wrap_v: int32_t, clear_color: float[4]
 - `resource_usage`：struct_size: uint32_t, texture_bytes: uint64_t, buffer_bytes: uint64_t, other_bytes: uint64_t
 
@@ -925,7 +942,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_spine_attachment_sequence_info` | int | inst: mq_spine_instance*, slot_index: int, out: mq_spine_sequence_info* |
 | `mq_spine_instance_set_sequence_index` | int | inst: mq_spine_instance*, slot_index: int, frame: int |
 
-### script — `maque.script` v4
+### script — `maque.script` v5
 
 头文件：`build/modules/core/data/generated/abi/script.h` · 宏：`MQ_SCRIPT_ABI_VERSION` / `_IFACE_NAME`
 
@@ -989,6 +1006,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_script_register_mixed` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_mixed_fn, user: void* |
 | `mq_script_register_multi` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_fn, user: void* |
 | `mq_script_register_multi_ret_str` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_ret_str_fn, user: void* |
+| `mq_script_register_value` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, ret_count: int32_t, ret_names: const char*, fn: mq_script_multi_fn, user: void* |
 | `mq_script_register_bytes` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_bytes_fn, user: void* |
 
 ### script_guest — `maque.script.guest` v1

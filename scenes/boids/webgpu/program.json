@@ -1,0 +1,17 @@
+{
+  "buffers": [
+    { "name": "pos", "width": 256, "height": 1 },
+    { "name": "vel", "width": 256, "height": 1 },
+    { "name": "image", "width": 320, "height": 180 }
+  ],
+  "passes": [
+    { "name": "vel", "shader": "vel.wgsl", "common": "common.wgsl",
+      "target": "vel", "channels": ["pos", "self", "", ""] },
+    { "name": "pos", "shader": "pos.wgsl", "common": "common.wgsl",
+      "target": "pos", "channels": ["self", "vel", "", ""] },
+    { "name": "image", "shader": "image.wgsl", "common": "common.wgsl",
+      "target": "image", "channels": ["pos", "vel", "", ""] },
+    { "name": "present", "shader": "present.wgsl", "common": "common.wgsl",
+      "target": "screen", "channels": ["image", "", "", ""] }
+  ]
+}

@@ -481,12 +481,16 @@ function parseApiDef(nsName, def) {
       throw new SchemaError(`invalid or duplicate api arg "${arg.name}" in "${nsName}.${def.fn}"`)
     }
     names.add(arg.name)
-    if (!API_SCALARS.has(arg.type) && arg.type !== 'string' && arg.type !== 'bytes') {
+    /* 标量 / string / bytes，或具名 struct 值类型（docs/21 §6.1；由 validate 期的
+     * resolveApiValueTypes 解析为扁平 float 字段）。这里只做语法级白名单。 */
+    if (!API_SCALARS.has(arg.type) && arg.type !== 'string' && arg.type !== 'bytes' &&
+        !/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)$/.test(arg.type)) {
       throw new SchemaError(`unsupported api arg type "${arg.type}" in "${nsName}.${def.fn}"`)
     }
   }
   const returns = def.returns === undefined ? 'void' : String(def.returns)
-  if (returns !== 'void' && returns !== 'string' && returns !== 'bytes' && !API_SCALARS.has(returns)) {
+  if (returns !== 'void' && returns !== 'string' && returns !== 'bytes' && !API_SCALARS.has(returns) &&
+      !/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)$/.test(returns)) {
     throw new SchemaError(`unsupported api return type "${returns}" in "${nsName}.${def.fn}"`)
   }
   if ((returns === 'bytes' || args.some((a) => a.type === 'bytes')) &&
@@ -687,6 +691,56 @@ function resolveTypes(namespaces, registry, errors) {
   }
 }
 
+/* ---- api_list 值类型（docs/21 §6.1「具名 struct 值传递」）----
+ * 只接受**扁平 float POD**（math.Vec2/3/4、math.Color、math.Quat 等）：
+ * 每个字段都是 float（无嵌套 struct/数组/容器）→ 可无损映射成 N 个 double 编组。
+ * 描述符挂在 arg.value / fn.retValue 上，生成器据此产出 C++ 形参、JS 对象、
+ * Lua table、C guest 的 float* 平铺形参。 */
+function apiValueDescriptor(fqName, registry) {
+  const t = registry.byFq.get(fqName)
+  if (!t || t.kind !== 'struct') return null
+  if (!typePod(t)) return null
+  const flat = []
+  for (const f of t.fields) {
+    if (f.typeNode.cat !== 'scalar' || f.typeNode.name !== 'float') return null
+    flat.push(f.name)
+  }
+  if (flat.length === 0) return null
+  return {
+    fqName,
+    cpp: fqName.replace(/\./g, '::'),
+    flat,
+    count: flat.length,
+    names: flat.join(','),
+  }
+}
+
+function resolveApiValueTypes(namespaces, registry, errors) {
+  const scalarish = (t) => t === 'void' || t === 'string' || t === 'bytes' || API_SCALARS.has(t)
+  for (const ns of namespaces) {
+    for (const fn of ns.apis || []) {
+      for (const a of fn.args) {
+        if (scalarish(a.type)) continue
+        const d = apiValueDescriptor(a.type, registry)
+        if (!d) {
+          errors.push(`api ${ns.name}.${fn.name}: arg "${a.name}" type "${a.type}" is not a flat float POD value type`)
+          continue
+        }
+        a.value = d
+      }
+      if (!scalarish(fn.returns)) {
+        const d = apiValueDescriptor(fn.returns, registry)
+        if (!d) errors.push(`api ${ns.name}.${fn.name}: return type "${fn.returns}" is not a flat float POD value type`)
+        else fn.retValue = d
+      }
+      if ((fn.retValue || fn.args.some((a) => a.value)) &&
+          (fn.returns === 'bytes' || fn.args.some((a) => a.type === 'bytes'))) {
+        errors.push(`api ${ns.name}.${fn.name}: value types cannot mix with bytes`)
+      }
+    }
+  }
+}
+
 // pod / dynamic determination, memoized per type with cycle guard
 function typePod(t, guard = new Set()) {
   if (t._pod !== undefined) return t._pod
@@ -877,6 +931,8 @@ function validate(namespaces, registry) {
 
   // resolve references (unknown/ambiguous)
   resolveTypes(namespaces, registry, errors)
+  // api_list 的值类型（具名 struct 值传递；docs/21 §6.1）
+  resolveApiValueTypes(namespaces, registry, errors)
 
   // 3. size/align: only POD may declare size/align, and a declared POD size must
   //    equal the computed layout exactly (not merely be "large enough").
@@ -2097,6 +2153,19 @@ function apiCppType(t, isReturn = false) {
   if (t === 'bytes') return isReturn ? 'mq_script_bytes_result' : 'mq_script_bytes_view'
   return null
 }
+/* 值类型（具名扁平 float POD）走原生 struct 值；其余仍按标量映射。 */
+function apiArgType(a) { return a.value ? a.value.cpp : apiCppType(a.type, false) }
+function apiRetType(fn) {
+  if (fn.retValue) return fn.retValue.cpp
+  return fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true)
+}
+function apiUsesValueTypes(namespaces) {
+  return namespaces.some((ns) => (ns.apis || []).some((fn) =>
+    fn.retValue || (fn.args || []).some((a) => a.value)))
+}
+function apiKinds(fn) {
+  return fn.args.map((a) => (a.value ? String(a.value.count) : (a.type === 'string' ? 's' : 'n'))).join('')
+}
 function apiNumeric(t) { return t === 'void' || API_SCALARS.has(t) }
 function apiCast(t, expr) {
   if (t === 'bool') return `(${expr} != 0.0)`
@@ -2118,6 +2187,11 @@ function genApiHeader(namespaces) {
     lines.push('#include "core/script/mq_script.h"')
     lines.push('')
   }
+  /* 值类型（math.Vec3 等）的 C++ 定义来自生成类型头。 */
+  if (apiUsesValueTypes(namespaces)) {
+    lines.push('#include "maque_types.h"')
+    lines.push('')
+  }
   // MANUAL：收集需要在头文件中内联实现的外部头
   const manualIncludes = new Set()
   for (const ns of namespaces)
@@ -2128,17 +2202,16 @@ function genApiHeader(namespaces) {
     if (!ns.apis || ns.apis.length === 0) continue
     const declared = ns.apis.filter((fn) => {
       if (fn.manual) return false                     // 由 manual 头提供声明+实现
-      const rt = fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true)
-      return rt !== null && fn.args.every((a) => apiCppType(a.type, false) !== null)
+      const rt = apiRetType(fn)
+      return rt !== null && fn.args.every((a) => apiArgType(a) !== null)
     })
     if (declared.length === 0) continue
     lines.push(`namespace ${ns.name} {`)
     for (const fn of declared) {
       const ps = []
       if (fn.ctx) ps.push('void* ctx')
-      for (const a of fn.args) ps.push(`${apiCppType(a.type, false)} ${a.name}`)
-      const ret = fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true)
-      lines.push(`  ${ret} ${fn.name}(${ps.join(', ')});`)
+      for (const a of fn.args) ps.push(`${apiArgType(a)} ${a.name}`)
+      lines.push(`  ${apiRetType(fn)} ${fn.name}(${ps.join(', ')});`)
     }
     lines.push('}')
     lines.push('')
@@ -2171,6 +2244,15 @@ function genBindingsSource(namespaces) {
                    strBinding: false, mixedBinding: false, multiBinding: false, retStr: false })
         continue
       }
+      /* 值类型（math.Vec3 等）：参数按 kinds 里的数字（2/3/4 = 分量数）从
+       * JS 对象/Lua table 或连续的 N 个数字展开；返回值写回 ret[] → 调用方
+       * 组装 {x,y,z} 对象（mq_script_register_value）。 */
+      const valueBinding = !!fn.retValue || args.some((a) => a.value)
+      if (valueBinding) {
+        fns.push({ ns: ns.name, global: !!ns.global, fn, valueBinding: true,
+                   strBinding: false, mixedBinding: false, multiBinding: false, retStr: false })
+        continue
+      }
       const retStr = fn.returns === 'string'
       /* 返回字符串的 api 只能走 ret_str / multi_ret_str（str/mixed 的返回是 double）——
        * 含字符串参数的（如 storage.get(key) → string）必须落到 multi_ret_str，否则会被静默丢弃。 */
@@ -2193,7 +2275,7 @@ function genBindingsSource(namespaces) {
       fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, multiBinding, retStr })
     }
   }
-  for (const { ns, fn, bytesBinding, strBinding, mixedBinding, multiBinding } of fns) {
+  for (const { ns, fn, bytesBinding, strBinding, mixedBinding, multiBinding, valueBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     if (bytesBinding) {
       const parts = []
@@ -2226,6 +2308,36 @@ function genBindingsSource(namespaces) {
       if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
       else lines.push(`  *ret = (double)${call}; return 0;`)
       lines.push('}')
+    } else if (valueBinding) {
+      const kinds = apiKinds(fn)
+      const parts = []
+      if (fn.ctx) parts.push('user')
+      let ni = 0, si = 0
+      for (const a of fn.args) {
+        if (a.value) {
+          const comps = []
+          // JS/Lua 侧数值是 double；值类型构造（math::Vec3 等）的成员是 float →
+          // 显式转换，否则 clang-cl 报 -Wc++11-narrowing（init-list 不允许窄化）。
+          for (let k = 0; k < a.value.count; ++k) comps.push(`(float)a[${ni++}]`)
+          parts.push(`${a.value.cpp}{${comps.join(', ')}}`)
+        } else if (a.type === 'string') {
+          parts.push(`s[${si++}]`)
+        } else {
+          parts.push(apiCast(a.type, `a[${ni++}]`))
+        }
+      }
+      const call = `${ns}::${fn.name}(${parts.join(', ')})`
+      lines.push(`int ${sym}(void* user, int, const double* a, int, const char** s, double* ret) {`)
+      if (fn.retValue) {
+        lines.push(`  const ${fn.retValue.cpp} r = ${call};`)
+        fn.retValue.flat.forEach((f, i) => lines.push(`  ret[${i}] = (double)r.${f};`))
+        lines.push('  return 0;')
+      } else if (fn.returns === 'void') {
+        lines.push(`  ${call}; return 0;`)
+      } else {
+        lines.push(`  *ret = (double)${call}; return 0;`)
+      }
+      lines.push(`}  /* kinds=${kinds} */`)
     } else if (multiBinding) {
       const kinds = fn.args.map((a) => (a.type === 'string' ? 's' : 'n')).join('')
       const parts = []
@@ -2266,20 +2378,25 @@ function genBindingsSource(namespaces) {
   lines.push('} // namespace')
   lines.push('')
   lines.push('extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {')
-  for (const { ns, global, fn, bytesBinding, strBinding, mixedBinding, multiBinding } of fns) {
+  for (const { ns, global, fn, bytesBinding, strBinding, mixedBinding, multiBinding, valueBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     const user = fn.ctx ? 'ctx' : 'nullptr'
     const kinds = bytesBinding ? fn.args.map((a) => (a.type === 'bytes' ? 'b' : 'n')).join('')
-                : multiBinding ? fn.args.map((a) => (a.type === 'string' ? 's' : 'n')).join('') : null
+                : (multiBinding || valueBinding) ? apiKinds(fn) : null
     const reg = bytesBinding ? 'mq_script_register_bytes'
               : strBinding ? 'mq_script_register_str'
               : mixedBinding ? 'mq_script_register_mixed'
+              : valueBinding ? (fn.retValue ? 'mq_script_register_value' : 'mq_script_register_multi')
               : multiBinding ? (fn.returns === 'string' ? 'mq_script_register_multi_ret_str'
                                                         : 'mq_script_register_multi')
               : (fn.returns === 'string' ? 'mq_script_register_ret_str' : 'mq_script_register_num')
     const jsName = global ? fn.name : `${ns}.${fn.name}`
-    lines.push(kinds ? `  ${reg}(vm, "${jsName}", "${kinds}", ${sym}, ${user});`
-                     : `  ${reg}(vm, "${jsName}", ${sym}, ${user});`)
+    if (valueBinding && fn.retValue) {
+      lines.push(`  ${reg}(vm, "${jsName}", "${kinds}", ${fn.retValue.count}, "${fn.retValue.names}", ${sym}, ${user});`)
+    } else {
+      lines.push(kinds ? `  ${reg}(vm, "${jsName}", "${kinds}", ${sym}, ${user});`
+                       : `  ${reg}(vm, "${jsName}", ${sym}, ${user});`)
+    }
   }
   lines.push('}')
   lines.push('')
@@ -2312,11 +2429,15 @@ function guestApiFields(namespaces) {
   const out = []
   for (const ns of namespaces) {
     for (const fn of ns.apis || []) {
-      const ret = fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true)
+      const hasValue = !!fn.retValue || fn.args.some((a) => a.value)
+      /* C ABI 不传 struct 值：值参数平铺为 const float*，值返回用尾部 float* out。 */
+      const ret = fn.retValue ? 'void' : (fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true))
       const ps = []
       if (fn.ctx) ps.push('void* ctx')
-      for (const a of fn.args) ps.push(`${apiCppType(a.type, false)} ${a.name}`)
-      out.push({ ns: ns.name, fn, field: `${ns.name}_${fn.name}`, ret, params: ps.join(', ') })
+      for (const a of fn.args) ps.push(a.value ? `const float* ${a.name}` : `${apiCppType(a.type, false)} ${a.name}`)
+      if (fn.retValue) ps.push('float* out')
+      out.push({ ns: ns.name, fn, field: `${ns.name}_${fn.name}`, ret, params: ps.join(', '),
+                 hasValue, retValue: fn.retValue })
     }
   }
   return out
@@ -2380,6 +2501,35 @@ function genGuestApiSource(namespaces) {
   lines.push('')
   lines.push('namespace {')
   lines.push('')
+  /* 值类型 thunk：C 平铺 float* ↔ C++ struct 值（guest 侧没有 C++ 类型）。 */
+  for (const f of fields) {
+    if (!f.hasValue) continue
+    const ps = []
+    if (f.fn.ctx) ps.push('void* ctx')
+    for (const a of f.fn.args) ps.push(a.value ? `const float* ${a.name}` : `${apiCppType(a.type, false)} ${a.name}`)
+    if (f.retValue) ps.push('float* out')
+    lines.push(`void gapi_${f.ns}_${f.fn.name}(${ps.join(', ')}) {`)
+    const callArgs = []
+    if (f.fn.ctx) callArgs.push('ctx')
+    for (const a of f.fn.args) {
+      if (a.value) {
+        const comps = []
+        for (let k = 0; k < a.value.count; ++k) comps.push(`${a.name}[${k}]`)
+        callArgs.push(`${a.value.cpp}{${comps.join(', ')}}`)
+      } else {
+        callArgs.push(a.name)
+      }
+    }
+    const call = `${f.ns}::${f.fn.name}(${callArgs.join(', ')})`
+    if (f.retValue) {
+      lines.push(`    const ${f.retValue.cpp} r = ${call};`)
+      f.retValue.flat.forEach((name, i) => lines.push(`    out[${i}] = r.${name};`))
+    } else {
+      lines.push(`    ${call};`)
+    }
+    lines.push('}')
+    lines.push('')
+  }
   lines.push('constexpr bool api_all_set(const mq_script_api_v1& a) {')
   lines.push('    return ' + fields.map((f) => `a.${f.field}`).join('\n        && ') + ';')
   lines.push('}')
@@ -2389,7 +2539,7 @@ function genGuestApiSource(namespaces) {
   lines.push('    MQ_SCRIPT_API_HASH,')
   lines.push('    MQ_TARGET_KEY,')
   lines.push('    MQ_ENGINE_VERSION,')
-  for (const f of fields) lines.push(`    &${f.ns}::${f.fn.name},`)
+  for (const f of fields) lines.push(`    ${f.hasValue ? `&gapi_${f.ns}_${f.fn.name}` : `&${f.ns}::${f.fn.name}`},`)
   lines.push('};')
   lines.push('')
   lines.push('static_assert(api_all_set(kApi), "maque: API table has a null entry (schema/parser drift)");')
@@ -2402,12 +2552,14 @@ function genGuestApiSource(namespaces) {
 }
 
 function sdkParamDecl(a) {
+  if (a.value) return `${a.value.cpp} ${a.name}`
   if (a.type === 'string') return `std::string_view ${a.name}`
   if (a.type === 'bytes') return `mq_script_bytes_view ${a.name}`
   return `${a.type} ${a.name}`
 }
 
 function sdkReturnType(fn) {
+  if (fn.retValue) return fn.retValue.cpp
   if (fn.returns === 'void') return 'void'
   if (fn.returns === 'string') return 'std::string'
   if (fn.returns === 'bytes') return 'Bytes'
@@ -2418,9 +2570,14 @@ function sdkMethodBody(fn, nsName) {
   const decls = []
   const args = []
   let si = 0
+  let vi = 0
   if (fn.ctx) args.push('c.host_ctx()')
   for (const a of fn.args) {
-    if (a.type === 'string') {
+    if (a.value) {
+      const v = `_v${vi++}`
+      decls.push(`const float ${v}[${a.value.count}] = { ${a.value.flat.map((f) => `${a.name}.${f}`).join(', ')} };`)
+      args.push(v)
+    } else if (a.type === 'string') {
       const v = `_s${si++}`
       decls.push(`const std::string ${v}(${a.name});`)
       args.push(`${v}.c_str()`)
@@ -2428,9 +2585,17 @@ function sdkMethodBody(fn, nsName) {
       args.push(a.name)
     }
   }
+  let outParam = null
+  if (fn.retValue) {
+    outParam = '_out'
+    decls.push(`float ${outParam}[${fn.retValue.count}] = { 0 };`)
+    args.push(outParam)
+  }
   const call = `c.api_ptr()->${nsName}_${fn.name}(${args.join(', ')})`
   let stmt
-  if (fn.returns === 'void') stmt = `${call};`
+  if (fn.retValue) {
+    stmt = `${call}; return ${fn.retValue.cpp}{ ${fn.retValue.flat.map((_, i) => `${outParam}[${i}]`).join(', ')} };`
+  } else if (fn.returns === 'void') stmt = `${call};`
   else if (fn.returns === 'string') stmt = `return ::maque::detail::to_string(${call});`
   else if (fn.returns === 'bytes') stmt = `return Bytes(${call});`
   else stmt = `return ${call};`
@@ -2464,6 +2629,8 @@ function genScriptSdkHeader(namespaces) {
   lines.push('')
   lines.push('#include "maque_guest_api.h"')
   lines.push('#include "abi/script_guest.h"')
+  /* 值类型（math.Vec3 等）的 C++ 定义来自生成类型头。 */
+  if (apiUsesValueTypes(namespaces)) lines.push('#include "maque_types.h"')
   lines.push('')
   lines.push('#include <cstddef>')
   lines.push('#include <cstdio>')

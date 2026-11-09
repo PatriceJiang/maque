@@ -9,5 +9,5 @@
     let mc = textureSample(matcap_tex, albedo_smp, uv).rgb;
     color = mc * dr.base_color.rgb;
   }
-  return tone_output(color, s.alpha);
+  return final_lit(color, s.alpha, in.w);
 }

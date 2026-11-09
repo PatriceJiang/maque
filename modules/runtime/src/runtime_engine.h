@@ -2,6 +2,8 @@
  * 只有 modules/runtime 的 .cpp 包含；成员分块见 struct 内的注释。 */
 #pragma once
 
+#include <tuple>
+
 #include "runtime_scene.h"
 #include "runtime_math3d.h"
 
@@ -58,6 +60,18 @@ struct SystemsRuntime {
     struct Particle { int owner = -1; float x = 0, y = 0, vx = 0, vy = 0, life = 0, max_life = 1; float size = 2; float r = 1, g = 1, b = 1; };
     std::vector<Particle> particles;
     std::vector<int> emitter_accum;                        // 每个发射器的发射累加器（按实体 id 排序使用）
+    /* plans/27 3D 粒子：3D 粒子（CPU 确定性模拟；渲染在 extract_3d 里合成 billboard 动态网格）。 */
+    struct Particle3D {
+        int owner = -1;
+        float x = 0, y = 0, z = 0, vx = 0, vy = 0, vz = 0;
+        float age = 0, life = 1;
+        float gx = 0, gy = 0, gz = 0;                     // 生成时的重力（发射器后改不影响已生成粒子）
+        float size0 = 0.2F, size1 = 0.05F;
+        float rot = 0.0F, rot_speed = 0.0F;
+        float c0[4] = { 1, 1, 1, 1 }, c1[4] = { 1, 1, 1, 0 };
+    };
+    std::vector<Particle3D> particles3d;
+    std::unordered_map<int, uint32_t> particle3d_accum;    // 实体 → 定点发射累加器（/1024）
     uint32_t max_particles = 2048;
     struct Clip { std::string name; float length = 0; bool loop = true; std::vector<std::string> paths; std::vector<uint8_t> blob; };
     std::vector<Clip> clips;
@@ -586,10 +600,35 @@ struct Engine {
     bool make_camera_view2d(int entity, int width, int height, mq_renderer_view& view,
                             uint32_t* layer_mask = nullptr);
     void fill_frame_environment(mq_renderer_frame3d& fr);
+    /* plans/27 M1-2/M1-3：scn.Scene.fog_* / tone_mapping → frame3d.atmosphere。 */
+    void fill_atmosphere(mq_renderer_frame3d& fr);
     /* M2 3D（plans/18-pbr-3d.md）：场景含 render.* 3D 组件 → 走 mq_renderer_frame3d；
      * cube_mesh = 内建立方体网格句柄（M2 尚无 mesh 资产管线，M4 换成 glTF mesh 资产）。 */
     bool    has_3d = false;
     int32_t cube_mesh = -1;
+    /* plans/27 M1-1：程序化图元（render.MeshRenderer.geometry）缓存。
+     * key = (kind, size, segments)；句柄跨帧复用，切场景时随 mesh_cache 一起销毁。
+     * 缺省 Cube(1.2) 不走这里 —— 直接用内建 cube_mesh，保证旧场景逐字节不变。 */
+    struct PrimitiveKey {
+        int32_t kind = 0;
+        float size[3] = { 1.2F, 1.2F, 1.2F };
+        float seg[3] = { 32.0F, 16.0F, 8.0F };
+        bool operator<(const PrimitiveKey& o) const {
+            return std::tie(kind, size[0], size[1], size[2], seg[0], seg[1], seg[2]) <
+                   std::tie(o.kind, o.size[0], o.size[1], o.size[2], o.seg[0], o.seg[1], o.seg[2]);
+        }
+    };
+    std::map<PrimitiveKey, int32_t> primitive_meshes;
+    bool primitive_cap_warned = false;   /* 缓存上限告警只打印一次（防脚本每帧改参数无限增长） */
+    /* plans/27 3D 粒子：plans/28 起改为 GPU 实例化批渲染（extract_3d 直接填
+     * mq_renderer_particle / particle_system），不再有每发射器的动态网格。 */
+    /* 外部驱动的粒子场（render.ParticleField3D）：脚本每帧 upload 的 12×f32/粒子缓冲。 */
+    struct ParticleField {
+        std::vector<float> data;
+        uint32_t count = 0;
+        bool dirty = true;
+    };
+    std::unordered_map<int, ParticleField> particle_fields;
     /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
     std::unordered_map<std::string, int32_t> mesh_cache;
     struct MeshStats { uint32_t vertex_count = 0, index_count = 0; };
@@ -668,6 +707,9 @@ struct Engine {
             int32_t morph_owner = -1;     /* 共享网格：首个驱动 morph 的实体 */
             bool warned_shared = false;
             bool warned_update = false;
+            /* plans/28：GPU morph 增量已在 create_mesh 时上传（权重逐 draw 传）。 */
+            bool gpu_morph = false;
+            bool gpu_normals = false;
         };
         std::vector<Prim> prims;
         std::vector<mq_renderer_pbr_material> mats;
@@ -723,6 +765,10 @@ struct Engine {
     bool anim_enabled = true;             /* MAQUE_ANIM=0 → 跳过片段采样（保持 bind pose，A/B 对照） */
     bool skin_enabled = true;             /* MAQUE_SKIN=0 → 调色板填 identity（bind pose 不变量） */
     bool morph_enabled = true;            /* MAQUE_MORPH=0 → 不应用 morph（基础网格，A/B 对照） */
+    /* plans/28 §3.6：GPU morph 路径开关（装配期由 caps.morph_max_targets 决定，切场景不重置）。
+     * MAQUE_MORPH_GPU=0 → 强制 CPU `update_mesh` 路径（A/B 像素对照）。 */
+    bool morph_gpu = false;
+    int32_t caps_morph_max_targets = 0;
     bool render3d_info = false;           /* MAQUE_RENDER3D_INFO=1 → 装配/首帧诊断 */
     bool gltf_env_read = false;
     bool gltf_frame_info = false;         /* extract_3d 首帧诊断是否已打印 */
@@ -913,6 +959,8 @@ struct Engine {
     void load_env_cubemap(const std::string& prefix, int32_t& spec_id, int32_t& irr_id);
     bool load_env_image_linear(const std::string& path, int& w, int& h, std::vector<float>& base);
     int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
+    /* plans/27 M1-1：程序化图元 → GPU 网格句柄（按 kind/size/segments 缓存；失败缓存 -1）。 */
+    int32_t load_primitive(const render::MeshRenderer& mesh);
     int load_texture_srgb(const std::string& path);            // M4g：albedo 贴图按 sRGB 采样（RGBA8_SRGB）
     int load_texture_mips(const std::string& path);            // plans/19：线性数据贴图 + CPU mip 链（抗锯齿）
     bool load_material(const std::string& ref, scn::SpriteMaterial& out);
@@ -932,6 +980,9 @@ struct Engine {
                     std::vector<mq_renderer_pbr_material>& out_mats,
                     std::vector<mq_renderer_draw3d>& out_draws,
                     std::vector<mq_renderer_skin>& out_skins,
+                    std::vector<float>& out_morph_weights,
+                    std::vector<mq_renderer_particle>& out_particles,
+                    std::vector<mq_renderer_particle_system>& out_systems,
                     int camera_entity = -1, bool allow_orbit = true);
     /* 3D 拾取（docs/19 §4）：对 render.MeshRenderer 的**本地包围盒**做 OBB 射线求交
      * （glTF / .mesh.json 的 bounds；内建 cube ±0.6；蒙皮/morph 用绑定姿态 bounds）。
@@ -964,6 +1015,7 @@ struct Engine {
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
     void audio_step(float dt);                              // 音频组件同步（docs/30 §6）
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
+    void particles3d_step(float dt);                        // 3D 粒子推进（plans/27 3D 粒子；CPU 确定性）
     bool setup(const std::string& scn_path, const char* renderer_override);   // 加载并装配引擎
     void teardown();                                        // 释放全部实例资源（幂等）
          void step_frame(bool render_frame = true);                // 推进一个模拟帧（单一帧序，docs/10 D1）                                      // 推进一个模拟帧（单一帧序，docs/10 D1）

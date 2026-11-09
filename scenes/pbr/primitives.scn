@@ -1,0 +1,127 @@
+{
+  "title": "pbr_primitives",
+  "width": 1280,
+  "height": 480,
+  "views": 1,
+  "script": "primitives.js",
+  "env_color": { "r": 0.24, "g": 0.26, "b": 0.32, "a": 1.0 },
+  "env_intensity": 1.0,
+  "env_sky_color": { "r": 0.55, "g": 0.58, "b": 0.66, "a": 1.0 },
+  "env_ground_color": { "r": 0.10, "g": 0.09, "b": 0.085, "a": 1.0 },
+  "env_highlight": 1.6,
+  "env_rotation": 20.0,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.25, "z": 7.2 } } },
+        { "type": "render.Camera3D", "fov_y": 40.0, "near": 0.1, "far": 100.0,
+          "clear_color": { "r": 0.14, "g": 0.15, "b": 0.18, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "rotation": { "x": -0.6, "y": -0.4, "z": 0.0 } } },
+        { "type": "render.Light", "intensity": 2.2,
+          "color": { "r": 1.0, "g": 0.97, "b": 0.92, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "p0_cube_default",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -4.2, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.15, "y": 0.5, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.90, "g": 0.55, "b": 0.25, "a": 1.0 },
+          "metallic": 0.1, "roughness": 0.45 }
+      ]
+    },
+    {
+      "name": "p1_sphere",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -2.8, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.MeshRenderer", "geometry": 1,
+          "geometry_size": { "x": 0.62, "y": 0.62, "z": 0.62 },
+          "geometry_segments": { "x": 40.0, "y": 20.0, "z": 8.0 } },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.30, "g": 0.62, "b": 0.95, "a": 1.0 },
+          "metallic": 0.2, "roughness": 0.30 }
+      ]
+    },
+    {
+      "name": "p2_plane",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -1.4, "y": 0.35, "z": 0.0 },
+            "rotation": { "x": -1.0, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.MeshRenderer", "geometry": 2,
+          "geometry_size": { "x": 1.15, "y": 1.15, "z": 0.0 },
+          "geometry_segments": { "x": 1.0, "y": 1.0, "z": 1.0 } },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.35, "g": 0.85, "b": 0.45, "a": 1.0 },
+          "metallic": 0.0, "roughness": 0.5 }
+      ]
+    },
+    {
+      "name": "p3_cylinder",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.35, "z": 0.0 } } },
+        { "type": "render.MeshRenderer", "geometry": 3,
+          "geometry_size": { "x": 0.45, "y": 1.2, "z": 0.0 },
+          "geometry_segments": { "x": 40.0, "y": 1.0, "z": 1.0 } },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.95, "g": 0.85, "b": 0.30, "a": 1.0 },
+          "metallic": 0.6, "roughness": 0.35 }
+      ]
+    },
+    {
+      "name": "p4_cone",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 1.4, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.MeshRenderer", "geometry": 4,
+          "geometry_size": { "x": 0.55, "y": 1.2, "z": 0.0 },
+          "geometry_segments": { "x": 40.0, "y": 1.0, "z": 1.0 } },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.85, "g": 0.35, "b": 0.55, "a": 1.0 },
+          "metallic": 0.1, "roughness": 0.4 }
+      ]
+    },
+    {
+      "name": "p5_torus",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.8, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 1.0, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.MeshRenderer", "geometry": 5,
+          "geometry_size": { "x": 0.52, "y": 0.20, "z": 0.0 },
+          "geometry_segments": { "x": 48.0, "y": 20.0, "z": 1.0 } },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.55, "g": 0.45, "b": 0.95, "a": 1.0 },
+          "metallic": 0.8, "roughness": 0.25 }
+      ]
+    },
+    {
+      "name": "p6_capsule",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 4.2, "y": -0.05, "z": 0.0 } } },
+        { "type": "render.MeshRenderer", "geometry": 6,
+          "geometry_size": { "x": 0.34, "y": 0.78, "z": 0.0 },
+          "geometry_segments": { "x": 32.0, "y": 8.0, "z": 1.0 } },
+        { "type": "asset.PbrMaterial",
+          "base_color": { "r": 0.40, "g": 0.90, "b": 0.80, "a": 1.0 },
+          "metallic": 0.05, "roughness": 0.35 }
+      ]
+    }
+  ]
+}

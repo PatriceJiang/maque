@@ -3,5 +3,5 @@
   var s = surface_common(in, ff);
   surface_alpha_test(s);
   var color = light_phong(s, dr.specular.rgb, dr.phys0.z, dr.phys0.w) + s.emissive;
-  return tone_output(color, s.alpha);
+  return final_lit(color, s.alpha, in.w);
 }

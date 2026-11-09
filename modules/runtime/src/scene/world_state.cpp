@@ -3,7 +3,12 @@
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
 
+#include <algorithm>
+
 namespace maque::rt {
+
+/* 3D 粒子快照块魔数（'P3D1'，小端序）。旧快照没有该块 → 视为"无 3D 粒子"并继续。 */
+constexpr uint32_t kP3D1Magic = 0x31443350u;
 
 bool Engine::world_snapshot(mq_snapshot* snap) {
     if (!scene || !snap) return false;
@@ -29,6 +34,32 @@ bool Engine::world_snapshot(mq_snapshot* snap) {
         w.pod(p.x); w.pod(p.y); w.pod(p.vx); w.pod(p.vy);
         w.pod(p.life); w.pod(p.max_life); w.pod(p.size);
         w.pod(p.r); w.pod(p.g); w.pod(p.b);
+    }
+    /* 3D 粒子（plans/28 §4.7）：与 2D 粒子同口径进入快照（状态 + 定点发射累加器）。
+     * 独立魔数块 'P3D1' → 旧快照没有该块时 restore 会跳过并保持向后兼容。 */
+    w.pod(kP3D1Magic);
+    {
+        std::vector<std::pair<int, uint32_t>> acc(systems.particle3d_accum.begin(),
+                                                  systems.particle3d_accum.end());
+        std::sort(acc.begin(), acc.end(),
+                  [](const auto& a, const auto& b) { return a.first < b.first; });
+        w.pod((uint32_t)acc.size());
+        for (const auto& [owner, value] : acc) {
+            w.pod((int32_t)owner);
+            w.pod(value);
+        }
+        w.pod((uint32_t)systems.particles3d.size());
+        for (const auto& p : systems.particles3d) {
+            w.pod((int32_t)p.owner);
+            w.pod(p.x); w.pod(p.y); w.pod(p.z);
+            w.pod(p.vx); w.pod(p.vy); w.pod(p.vz);
+            w.pod(p.age); w.pod(p.life);
+            w.pod(p.gx); w.pod(p.gy); w.pod(p.gz);
+            w.pod(p.size0); w.pod(p.size1);
+            w.pod(p.rot); w.pod(p.rot_speed);
+            for (int k = 0; k < 4; ++k) w.pod(p.c0[k]);
+            for (int k = 0; k < 4; ++k) w.pod(p.c1[k]);
+        }
     }
     encode_globals(w);                                // 全局状态（docs/32 §16.3；旧快照无此块）
     encode_instances(w);                              // 实例表 + 实体归属（docs/32 §6.3）
@@ -104,6 +135,63 @@ void Engine::world_restore(const mq_snapshot* snap) {
                 }
             }
         }
+        /* 3D 粒子（'P3D1' 块；plans/28 §4.7）。旧快照没有该块：只清空状态、不消费字节。 */
+        systems.particles3d.clear();
+        systems.particle3d_accum.clear();
+        if (off + 4 <= n) {
+            uint32_t magic = 0;
+            std::memcpy(&magic, (const uint8_t*)bytes + off, 4);
+            if (magic == kP3D1Magic) {
+                off += 4;
+                uint32_t acount = 0;
+                if (off + 4 <= n) {
+                    std::memcpy(&acount, (const uint8_t*)bytes + off, 4);
+                    off += 4;
+                    for (uint32_t i = 0; i < acount && off + 8 <= n; ++i) {
+                        int32_t owner = 0;
+                        uint32_t value = 0;
+                        std::memcpy(&owner, (const uint8_t*)bytes + off, 4); off += 4;
+                        std::memcpy(&value, (const uint8_t*)bytes + off, 4); off += 4;
+                        systems.particle3d_accum[owner] = value;
+                    }
+                }
+                uint32_t count = 0;
+                if (off + 4 <= n) {
+                    std::memcpy(&count, (const uint8_t*)bytes + off, 4);
+                    off += 4;
+                    if (count < 100000) {
+                        systems.particles3d.reserve(count);
+                        /* 每粒子固定 96B：owner(4) + 15 float(60) + 8 color float(32)。 */
+                        constexpr size_t kP3D1Bytes = 4 + 15 * 4 + 8 * 4;
+                        for (uint32_t i = 0; i < count; ++i) {
+                            if (off + kP3D1Bytes > n) break;
+                            SystemsRuntime::Particle3D p{};
+                            const uint8_t* q = (const uint8_t*)bytes + off;
+                            std::memcpy(&p.owner, q + 0, 4);
+                            std::memcpy(&p.x, q + 4, 4);
+                            std::memcpy(&p.y, q + 8, 4);
+                            std::memcpy(&p.z, q + 12, 4);
+                            std::memcpy(&p.vx, q + 16, 4);
+                            std::memcpy(&p.vy, q + 20, 4);
+                            std::memcpy(&p.vz, q + 24, 4);
+                            std::memcpy(&p.age, q + 28, 4);
+                            std::memcpy(&p.life, q + 32, 4);
+                            std::memcpy(&p.gx, q + 36, 4);
+                            std::memcpy(&p.gy, q + 40, 4);
+                            std::memcpy(&p.gz, q + 44, 4);
+                            std::memcpy(&p.size0, q + 48, 4);
+                            std::memcpy(&p.size1, q + 52, 4);
+                            std::memcpy(&p.rot, q + 56, 4);
+                            std::memcpy(&p.rot_speed, q + 60, 4);
+                            std::memcpy(p.c0, q + 64, 16);
+                            std::memcpy(p.c1, q + 80, 16);
+                            systems.particles3d.push_back(p);
+                            off += kP3D1Bytes;
+                        }
+                    }
+                }
+            }
+        }
         /* 全局状态（docs/32 §16.3）：必须在实例 on_start 之前恢复（脚本可能读它）。
          * 旧快照没有该块 → restore_globals 探测 magic 失败、原样跳过。 */
         (void)restore_globals((const uint8_t*)bytes, n, off);
@@ -116,6 +204,10 @@ void Engine::world_restore(const mq_snapshot* snap) {
         }
     }
     scene->update_world(*this);
+    /* plans/28 §4.7：3D 粒子的发射点取节点**派生世界矩阵**（`world_m`），它平时由 extract_3d
+     * 的 `update_world3d` 刷新。回滚后如果只恢复组件而不重建派生矩阵，下一步发射会用上一帧
+     * （或 decode 后的）旧位置 → 回放/回滚不一致。这里显式重建一次。 */
+    if (has_3d) scene->update_world3d(*this);
 }
 
 /* 全局状态校验和（docs/32 §16.3）：空 → 0（老场景的 world_trail 零变化）。
@@ -179,6 +271,14 @@ uint64_t Engine::world_checksum() {
         h ^= (uint64_t)(int64_t)(p.x * 4096.0F); h *= 1099511628211ull;
         h ^= (uint64_t)(int64_t)(p.y * 4096.0F); h *= 1099511628211ull;
         h ^= (uint64_t)(int64_t)(p.life * 4096.0F); h *= 1099511628211ull;
+    }
+    /* 3D 粒子（plans/28 §4.7）：CPU 确定性模拟状态进 checksum（与 2D 同口径，定点混入）。
+     * GPU 解析模拟（M3 opt-in）不得进入这里 —— 它没有可回读的 CPU 侧状态。 */
+    for (auto& p : systems.particles3d) {
+        h ^= (uint64_t)(int64_t)(p.x * 4096.0F); h *= 1099511628211ull;
+        h ^= (uint64_t)(int64_t)(p.y * 4096.0F); h *= 1099511628211ull;
+        h ^= (uint64_t)(int64_t)(p.z * 4096.0F); h *= 1099511628211ull;
+        h ^= (uint64_t)(int64_t)(p.age * 4096.0F); h *= 1099511628211ull;
     }
     return h;
 }

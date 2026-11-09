@@ -276,6 +276,67 @@ int b_host_node_position_x(void* user, int, const double* a, double* ret) {
 int b_host_node_position_y(void* user, int, const double* a, double* ret) {
   *ret = (double)host::node_position_y(user, (float)a[0]); return 0;
 }
+int b_host_node_set_local_position(void* user, int, const double* a, double* ret) {
+  host::node_set_local_position(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_node_set_local_rotation(void* user, int, const double* a, double* ret) {
+  host::node_set_local_rotation(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_node_set_local_scale(void* user, int, const double* a, double* ret) {
+  host::node_set_local_scale(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_node_local_position(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_local_position(user, (float)a[0]);
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n */
+int b_host_node_local_rotation(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_local_rotation(user, (float)a[0]);
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n */
+int b_host_node_local_scale(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_local_scale(user, (float)a[0]);
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n */
+int b_host_node_world_position(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_world_position(user, (float)a[0]);
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n */
+int b_host_node_world_rotation(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_world_rotation(user, (float)a[0]);
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n */
+int b_host_node_local_to_world(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_local_to_world(user, (float)a[0], math::Vec3{(float)a[1], (float)a[2], (float)a[3]});
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n3 */
+int b_host_node_world_to_local(void* user, int, const double* a, int, const char** s, double* ret) {
+  const math::Vec3 r = host::node_world_to_local(user, (float)a[0], math::Vec3{(float)a[1], (float)a[2], (float)a[3]});
+  ret[0] = (double)r.x;
+  ret[1] = (double)r.y;
+  ret[2] = (double)r.z;
+  return 0;
+}  /* kinds=n3 */
+int b_host_node_look_at(void* user, int, const double* a, double* ret) {
+  host::node_look_at(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
 int b_host_node_set_content_size(void* user, int, const double* a, double* ret) {
   host::node_set_content_size(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
 }
@@ -1008,6 +1069,14 @@ int b_host_imgui_frame(void* user, int, const double* a, double* ret) {
 int b_host_imgui_last_cmd_count(void* user, int, const double* a, double* ret) {
   *ret = (double)host::imgui_last_cmd_count(user); return 0;
 }
+int b_host_particles3d_upload(void* user, int, const double* a, int, const void** b, const size_t* z, mq_script_bytes_result* ret) {
+  if (!ret) return 1;
+  *ret = host::particles3d_upload(user, (float)a[0], mq_script_bytes_view{b[0], z[0]});
+  return ret->size != 0 && !ret->data ? 1 : 0;
+}  /* kinds=nb */
+int b_host_particles3d_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::particles3d_count(user, (float)a[0]); return 0;
+}
 } // namespace
 
 extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
@@ -1098,6 +1167,17 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "node_set_position", b_host_node_set_position, ctx);
   mq_script_register_num(vm, "node_position_x", b_host_node_position_x, ctx);
   mq_script_register_num(vm, "node_position_y", b_host_node_position_y, ctx);
+  mq_script_register_num(vm, "node_set_local_position", b_host_node_set_local_position, ctx);
+  mq_script_register_num(vm, "node_set_local_rotation", b_host_node_set_local_rotation, ctx);
+  mq_script_register_num(vm, "node_set_local_scale", b_host_node_set_local_scale, ctx);
+  mq_script_register_value(vm, "node_local_position", "n", 3, "x,y,z", b_host_node_local_position, ctx);
+  mq_script_register_value(vm, "node_local_rotation", "n", 3, "x,y,z", b_host_node_local_rotation, ctx);
+  mq_script_register_value(vm, "node_local_scale", "n", 3, "x,y,z", b_host_node_local_scale, ctx);
+  mq_script_register_value(vm, "node_world_position", "n", 3, "x,y,z", b_host_node_world_position, ctx);
+  mq_script_register_value(vm, "node_world_rotation", "n", 3, "x,y,z", b_host_node_world_rotation, ctx);
+  mq_script_register_value(vm, "node_local_to_world", "n3", 3, "x,y,z", b_host_node_local_to_world, ctx);
+  mq_script_register_value(vm, "node_world_to_local", "n3", 3, "x,y,z", b_host_node_world_to_local, ctx);
+  mq_script_register_num(vm, "node_look_at", b_host_node_look_at, ctx);
   mq_script_register_num(vm, "node_set_content_size", b_host_node_set_content_size, ctx);
   mq_script_register_num(vm, "node_set_anchor", b_host_node_set_anchor, ctx);
   mq_script_register_mixed(vm, "node_has_component", b_host_node_has_component, ctx);
@@ -1342,4 +1422,6 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "imgui_hovered", b_host_imgui_hovered, ctx);
   mq_script_register_num(vm, "imgui_frame", b_host_imgui_frame, ctx);
   mq_script_register_num(vm, "imgui_last_cmd_count", b_host_imgui_last_cmd_count, ctx);
+  mq_script_register_bytes(vm, "particles3d_upload", "nb", b_host_particles3d_upload, ctx);
+  mq_script_register_num(vm, "particles3d_count", b_host_particles3d_count, ctx);
 }

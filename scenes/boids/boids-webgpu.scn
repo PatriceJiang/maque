@@ -1,0 +1,14 @@
+{
+  "title": "boids_webgpu",
+  "width": 960,
+  "height": 540,
+  "views": 1,
+  "entities": [
+    {
+      "name": "boids_gpu",
+      "components": [
+        { "type": "render.ShaderGraph", "program": "webgpu/program.json" }
+      ]
+    }
+  ]
+}

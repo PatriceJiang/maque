@@ -11,10 +11,21 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                         std::vector<mq_renderer_pbr_material>& out_mats,
                         std::vector<mq_renderer_draw3d>& out_draws,
                         std::vector<mq_renderer_skin>& out_skins,
+                        std::vector<float>& out_morph_weights,
+                        std::vector<mq_renderer_particle>& out_particles,
+                        std::vector<mq_renderer_particle_system>& out_systems,
                         int camera_entity, bool allow_orbit) {
     out_views.clear(); out_lights.clear(); out_mats.clear(); out_draws.clear();
-    out_skins.clear();
+    out_skins.clear(); out_morph_weights.clear(); out_particles.clear(); out_systems.clear();
     skin_palettes.clear();                       /* 上一帧调色板已随上一帧渲染用完 */
+    /* plans/28 §3.2：morph 权重按 **draw 下标** 连续 8 float；与 out_draws 严格同长，
+     * 渲染器只在 morph_weight_count == draw_count 时启用 GPU morph。 */
+    auto push_draw = [&](const mq_renderer_draw3d& dr, const float* weights8) {
+        out_draws.push_back(dr);
+        const size_t base = out_morph_weights.size();
+        out_morph_weights.resize(base + 8, 0.0F);
+        if (weights8) std::memcpy(out_morph_weights.data() + base, weights8, 8 * sizeof(float));
+    };
     if (!gltf_env_read) read_gltf_env();
     if (!scene || tw <= 0 || th <= 0) return;
     /* plans/22 §6.3：每帧先由节点树 + 片段派生姿态算世界矩阵（extract 只读派生数据）。
@@ -212,7 +223,16 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     if (const auto* m = as_component<render::MeshRenderer>(dmesh, mb->data()))
                         dr.layer = (int32_t)m->culling_mask;
                     dr.sort_key = (uint64_t)idx;
-                    out_draws.push_back(dr);
+                    /* GPU morph 权重（plans/28 §3.6）：动画覆盖 > 默认权重，按 draw 传递 →
+                     * 同一 glTF 多实例各自 time 时两处形变不同（修 G2 的"首实体驱动"）。 */
+                    float w8[8] = {};
+                    if (morph_gpu && morph_enabled && gp.gpu_morph) {
+                        const auto& sw = gst.morph_weights[pi];
+                        const std::vector<float>& src =
+                            sw.size() == gp.morph_targets.size() ? sw : gp.default_weights;
+                        for (size_t k = 0; k < src.size() && k < 8; ++k) w8[k] = src[k];
+                    }
+                    push_draw(dr, w8);
                 }
             }
             continue;
@@ -514,16 +534,25 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                            mat.textures2[0], mat.textures2[1], mat.textures2[2]);
             const int32_t mat_index = (int32_t)out_mats.size();
             out_mats.push_back(mat);
-            /* M4c：mesh_path 非空时用离线导入网格（glTF → .mesh.json），否则内建 cube */
+            /* M4c：mesh_path 非空时用离线导入网格（glTF → .mesh.json）；
+             * plans/27 M1-1：为空时用程序化图元（geometry/geometry_size/geometry_segments），
+             * 缺省 Cube(1.2) 仍走内建 cube_mesh（旧场景逐字节不变）。 */
             int32_t mesh_id = cube_mesh;
             std::string mesh_path_str;
-            if (const std::string* mp = mesh ? &mesh->mesh_path : nullptr) {
-                if (!mp->empty()) {
-                    mesh_path_str = *mp;
-                    const int32_t loaded = load_mesh(*mp);
-                    if (loaded >= 0) mesh_id = loaded;
-                    if (std::getenv("MAQUE_RENDER3D_INFO"))
-                        std::print("runtime: mesh renderer node={} path='{}' → mesh={}\n", idx, *mp, loaded);
+            if (const std::string* mp = mesh ? &mesh->mesh_path : nullptr; mp && !mp->empty()) {
+                mesh_path_str = *mp;
+                const int32_t loaded = load_mesh(*mp);
+                if (loaded >= 0) mesh_id = loaded;
+                if (std::getenv("MAQUE_RENDER3D_INFO"))
+                    std::print("runtime: mesh renderer node={} path='{}' → mesh={}\n", idx, *mp, loaded);
+            } else if (mesh) {
+                const bool default_cube = mesh->geometry == render::MeshGeometry::Cube &&
+                                          mesh->geometry_size.x == 1.2F &&
+                                          mesh->geometry_size.y == 1.2F &&
+                                          mesh->geometry_size.z == 1.2F;
+                if (!default_cube) {
+                    const int32_t prim = load_primitive(*mesh);
+                    if (prim >= 0) mesh_id = prim;
                 }
             }
             /* ---- 蒙皮（plans/22 §6.3）：调色板 palette[j] = world_m(joint) * inverse_bind[j] ----
@@ -586,7 +615,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     }
                 }
             }
-            /* ---- CPU morph（plans/22 §6.4）：权重 = 动画覆盖 > 默认；权变才重算 + update_mesh ---- */
+            /* ---- morph（plans/28 §3.6）----
+             * GPU：增量已在装配期上传，这里只填逐 draw 权重（每实体独立，修 G2）。
+             * CPU 回退：权重 = 动画覆盖 > 默认；权变才重算 + update_mesh；共享 mesh 仍只取首实体。 */
+            float w8[8] = {};
             if (!mesh_path_str.empty()) {
                 auto mit = morph_meshes.find(mesh_path_str);
                 if (mit != morph_meshes.end() && mit->second.mesh >= 0 && !mit->second.targets.empty()) {
@@ -594,13 +626,19 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     auto oit = morph_weight_override.find(idx);
                     const std::vector<float>& mw = (oit != morph_weight_override.end())
                                                        ? oit->second : mm.default_weights;
-                    if (mm.owner_entity < 0) mm.owner_entity = idx;
-                    if (mm.owner_entity == idx) {
-                        if (mm.applied_weights != mw) (void)apply_morph(mesh_path_str, mw);
-                    } else if (!mm.warned_shared) {
-                        mm.warned_shared = true;
-                        std::print(stderr, "runtime: mesh '{}' 被多个实体共享，morph 只取首实体 entity={}\n",
-                                   mesh_path_str, mm.owner_entity);
+                    if (morph_gpu && morph_enabled && mm.gpu_ok) {
+                        for (size_t k = 0; k < mw.size() && k < 8; ++k) w8[k] = mw[k];
+                    } else if (mm.owner_entity < 0) {
+                        mm.owner_entity = idx;
+                    }
+                    if (!(morph_gpu && morph_enabled && mm.gpu_ok)) {
+                        if (mm.owner_entity == idx) {
+                            if (mm.applied_weights != mw) (void)apply_morph(mesh_path_str, mw);
+                        } else if (!mm.warned_shared) {
+                            mm.warned_shared = true;
+                            std::print(stderr, "runtime: mesh '{}' 被多个实体共享，morph 只取首实体 entity={}\n",
+                                       mesh_path_str, mm.owner_entity);
+                        }
                     }
                 }
             }
@@ -614,7 +652,132 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             if (const auto* m = as_component<render::MeshRenderer>(dmesh, mb->data()))
                 dr.layer = (int32_t)m->culling_mask;
             dr.sort_key = (uint64_t)idx;
-            out_draws.push_back(dr);
+            push_draw(dr, w8);
+        }
+    }
+
+    /* ---- plans/28 §4：3D 粒子 → 实例化 billboard 批（**不再建动态网格**）----
+     * 模拟状态保持 CPU 确定性；提取只读：按当前视图相机排序后写 48B 实例 + 系统切片。
+     * MAQUE_PARTICLES=0 只关渲染（模拟继续，checksum 不受开关影响）。
+     * 每个系统 = 一个 draw；同 texture/blend/facing 的相邻系统由 gfx 逐次绑定（可后续合并）。 */
+    static const bool particles3d_on = [] {
+        const char* e = std::getenv("MAQUE_PARTICLES");
+        return !(e && e[0] == '0');
+    }();
+    if (has_cam && particles3d_on) {
+        const float* eye = &cam_wm[12];
+        std::vector<int> pids;
+        scene->collect_preorder(pids);
+        std::vector<const SystemsRuntime::Particle3D*> live;
+        for (int idx : pids) {
+            if (!node_active_effective(*this, idx)) continue;
+            const mq_type_desc* dp = nullptr;
+            auto* pb = comp_by_name(*this, idx, "render.ParticleEmitter3D", &dp);
+            const auto* pe = (pb && dp) ? as_component<render::ParticleEmitter3D>(dp, pb->data()) : nullptr;
+            if (!pe) continue;
+
+            live.clear();
+            for (const auto& p : systems.particles3d)
+                if (p.owner == idx) live.push_back(&p);
+            if (live.empty()) continue;
+
+            const int32_t blend = (pe->blend == render::ParticleBlend::Additive) ? 1
+                                : (pe->blend == render::ParticleBlend::Multiply) ? 2 : 0;
+            if (blend == 2 && !gltf_warned.count("particle:multiply")) {
+                gltf_warned.insert("particle:multiply");
+                std::print(stderr, "runtime: ParticleEmitter3D.blend=Multiply 暂按 Alpha 处理（plans/28 M2 再补）\n");
+            }
+            const int32_t facing = (pe->facing == render::ParticleFacing::YAxisLocked) ? 1 : 0;
+            /* alpha 混合才需要远→近；additive 可交换（排序纯属浪费）。排序只作用于上传顺序，
+             * 模拟数组（systems.particles3d）保持生成序 → checksum/回放不受影响。 */
+            const bool sorted = pe->sort && blend == 0;
+            if (sorted) {
+                std::stable_sort(live.begin(), live.end(),
+                                 [&](const SystemsRuntime::Particle3D* a,
+                                     const SystemsRuntime::Particle3D* b) {
+                    auto d2 = [&](const SystemsRuntime::Particle3D* p) {
+                        const float dx = p->x - eye[0], dy = p->y - eye[1], dz = p->z - eye[2];
+                        return dx * dx + dy * dy + dz * dz;
+                    };
+                    return d2(a) > d2(b);                 // 远 → 近（确定性：同深度按生成序）
+                });
+            }
+
+            mq_renderer_particle_system sys{};
+            sys.texture = -1;
+            if (!pe->texture.empty())
+                sys.texture = load_texture_srgb(scoped_texture_ref(idx, pe->texture));
+            sys.blend = blend;
+            sys.facing = facing;
+            sys.flags = sorted ? 1 : 0;
+            sys.first = (uint32_t)out_particles.size();
+            sys.count = (uint32_t)live.size();
+            sys.layer = (int32_t)pe->culling_mask;
+            for (const SystemsRuntime::Particle3D* pp : live) {
+                const SystemsRuntime::Particle3D& p = *pp;
+                const float t = std::clamp(p.age / std::max(p.life, 1e-4F), 0.0F, 1.0F);
+                /* 旧语义：size0/1 是**半边长**；实例 w = 世界直径（shader 取 half = w*0.5），
+                 * 保证与 M1-4 的 billboard 大小逐像素一致。 */
+                const float half = p.size0 + (p.size1 - p.size0) * t;
+                mq_renderer_particle inst{};
+                inst.pos_size[0] = p.x; inst.pos_size[1] = p.y; inst.pos_size[2] = p.z;
+                inst.pos_size[3] = half * 2.0F;
+                inst.color[0] = p.c0[0] + (p.c1[0] - p.c0[0]) * t;
+                inst.color[1] = p.c0[1] + (p.c1[1] - p.c0[1]) * t;
+                inst.color[2] = p.c0[2] + (p.c1[2] - p.c0[2]) * t;
+                inst.color[3] = p.c0[3] + (p.c1[3] - p.c0[3]) * t;
+                inst.misc[0] = p.rot + p.rot_speed * p.age;
+                out_particles.push_back(inst);
+            }
+            out_systems.push_back(sys);
+        }
+
+        /* render.ParticleField3D：脚本每帧 upload 的外部粒子（Boids 等），48B/粒子同布局。 */
+        std::vector<uint32_t> order;
+        for (int idx : pids) {
+            if (!node_active_effective(*this, idx)) continue;
+            const mq_type_desc* dp = nullptr;
+            auto* pb = comp_by_name(*this, idx, "render.ParticleField3D", &dp);
+            auto* pf = (pb && dp) ? as_component<render::ParticleField3D>(dp, pb->data()) : nullptr;
+            if (!pf || !pf->enabled) continue;
+            auto fit = particle_fields.find(idx);
+            if (fit == particle_fields.end() || fit->second.count == 0) continue;
+            const ParticleField& field = fit->second;
+            const uint32_t count = std::min(field.count, std::clamp(pf->max_count, 1u, 8192u));
+            if (count == 0) continue;
+
+            order.resize(count);
+            for (uint32_t i = 0; i < count; ++i) order[i] = i;
+            std::stable_sort(order.begin(), order.end(), [&](uint32_t a, uint32_t b) {
+                auto d2 = [&](uint32_t i) {
+                    const float* p = &field.data[(size_t)i * 12];
+                    const float dx = p[0] - eye[0], dy = p[1] - eye[1], dz = p[2] - eye[2];
+                    return dx * dx + dy * dy + dz * dz;
+                };
+                return d2(a) > d2(b);
+            });
+
+            mq_renderer_particle_system sys{};
+            sys.texture = -1;
+            if (!pf->texture.empty())
+                sys.texture = load_texture_srgb(scoped_texture_ref(idx, pf->texture));
+            sys.blend = 0;
+            sys.facing = 0;
+            sys.flags = 1;                            /* 已按远→近排序 */
+            sys.first = (uint32_t)out_particles.size();
+            sys.count = count;
+            sys.layer = -1;
+            for (uint32_t s = 0; s < count; ++s) {
+                const float* p = &field.data[(size_t)order[s] * 12];
+                mq_renderer_particle inst{};
+                inst.pos_size[0] = p[0]; inst.pos_size[1] = p[1]; inst.pos_size[2] = p[2];
+                inst.pos_size[3] = p[3] * 2.0F;       /* 半边长 → 直径 */
+                inst.color[0] = p[4]; inst.color[1] = p[5];
+                inst.color[2] = p[6]; inst.color[3] = p[7];
+                inst.misc[0] = p[8];
+                out_particles.push_back(inst);
+            }
+            out_systems.push_back(sys);
         }
     }
 

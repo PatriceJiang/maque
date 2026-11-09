@@ -524,6 +524,18 @@ int Engine::load_texture_ref(const std::string& ref) {
                 const uint8_t v = steps[std::min(3, x * 4 / w)];
                 uint8_t* c = &px[(size_t)x * 4]; c[0] = v; c[1] = v; c[2] = v; c[3] = 255;
             }
+        } else if (tp.vfs == "builtin:/textures/particle_soft") {
+            /* 3D 粒子软边（plans/27 M1-4）：64×64 白色 + 径向 alpha 衰减；clamp 采样。 */
+            w = h = 64; px.resize((size_t)w * h * 4);
+            for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
+                const float nx = ((float)x + 0.5F) / (float)w * 2.0F - 1.0F;
+                const float ny = ((float)y + 0.5F) / (float)h * 2.0F - 1.0F;
+                const float r = std::sqrt(nx * nx + ny * ny);
+                const float a = std::pow(std::clamp(1.0F - r, 0.0F, 1.0F), 1.5F);
+                uint8_t* c = &px[((size_t)y * w + x) * 4];
+                c[0] = c[1] = c[2] = 255;
+                c[3] = (uint8_t)std::clamp((int)(a * 255.0F + 0.5F), 0, 255);
+            }
         } else if (tp.vfs == "builtin:/textures/matcap_studio") {
             /* Matcap：256×256 冷色相影棚球（左上高光、右下暗），线性采样/clamp；用作 view-space 法线查表 */
             w = h = 256; px.resize((size_t)w * h * 4);
@@ -754,6 +766,23 @@ static int32_t upload_prepared_mesh(Engine& e, const std::string& path, Prepared
     const uint64_t vbytes = pm.packed.empty()
                                 ? (uint64_t)pm.verts.size() * sizeof(float)
                                 : (uint64_t)pm.packed.size();
+    /* GPU morph 增量（plans/28 §3.3）：与 glTF 直读共用 pack_morph_deltas（逐字节一致）。
+     * GPU 路径不在装配期应用默认权重（否则 GPU 再乘一遍 = 双重形变）。 */
+    std::vector<float> morph_deltas;
+    std::vector<std::pair<const float*, const float*>> morph_src;
+    bool morph_normals = false;
+    const bool gpu_morph = e.morph_gpu && e.morph_enabled && !pm.morph.targets.empty() &&
+                           pm.morph.targets.size() <= 8;
+    if (gpu_morph) {
+        morph_src.reserve(pm.morph.targets.size());
+        for (const MorphTarget& t : pm.morph.targets)
+            morph_src.push_back({ t.positions.empty() ? nullptr : t.positions.data(),
+                                  t.normals.empty() ? nullptr : t.normals.data() });
+        const int packed = pack_morph_deltas(pm.vn, (uint32_t)morph_src.size(),
+                                             morph_src.data(), morph_deltas);
+        if (packed < 0) morph_deltas.clear();
+        else morph_normals = packed > 0;
+    }
     if (e.rapi && e.rself && e.rapi->create_mesh) {
         mq_renderer_mesh_gpu md{};
         md.vertices = vptr;
@@ -762,6 +791,10 @@ static int32_t upload_prepared_mesh(Engine& e, const std::string& path, Prepared
         md.vertex_layout = pm.vertex_layout;
         md.indices = pm.idx.data();
         md.index_count = (uint32_t)pm.idx.size();
+        md.morph.deltas = morph_deltas.empty() ? nullptr : morph_deltas.data();
+        md.morph.target_count = morph_deltas.empty() ? 0u : (uint32_t)morph_src.size();
+        md.morph.vertex_count = pm.vn;
+        md.morph.flags = morph_normals ? 1 : 0;
         for (int k = 0; k < 3; ++k) {
             md.bounds_min[k] = pm.bounds_min[k];
             md.bounds_max[k] = pm.bounds_max[k];
@@ -769,27 +802,32 @@ static int32_t upload_prepared_mesh(Engine& e, const std::string& path, Prepared
         if (e.rapi->create_mesh(e.rself, &md, &id) != 0) id = -1;
         if (id >= 0) e.mesh_stats[id] = { pm.vn, (uint32_t)pm.idx.size() };
     }
-    /* morph：保存打包后的基础顶点（CPU 重算起点），创建后立即应用默认权重 */
+    /* morph：保存打包后的基础顶点（CPU 回退起点）；GPU 路径的默认权重逐 draw 表达。 */
     if (id >= 0 && !pm.morph.targets.empty()) {
         pm.morph.mesh = id;
         pm.morph.vertex_count = pm.vn;
         pm.morph.stride = pm.stride;
         pm.morph.layout = pm.vertex_layout;
+        pm.morph.gpu_ok = !morph_deltas.empty();
+        pm.morph.gpu_normals = morph_normals;
         pm.morph.base = std::move(pm.packed);
         if (pm.morph.base.empty()) {
             pm.morph.base.resize((size_t)pm.vn * pm.stride);
             std::memcpy(pm.morph.base.data(), pm.verts.data(), (size_t)pm.vn * pm.base_stride);
         }
-        pm.morph.applied_weights = pm.morph.default_weights;
+        pm.morph.applied_weights = pm.morph.gpu_ok ? std::vector<float>{}
+                                                   : pm.morph.default_weights;
         e.morph_meshes[path] = std::move(pm.morph);
         bool any_w = false;
         for (float w : e.morph_meshes[path].default_weights) if (w != 0.0F) { any_w = true; break; }
-        if (any_w) (void)e.apply_morph(path, e.morph_meshes[path].default_weights);
+        if (any_w && !e.morph_meshes[path].gpu_ok)
+            (void)e.apply_morph(path, e.morph_meshes[path].default_weights);
         if (render3d_info)
-            std::print("runtime: morph mesh '{}' targets={} vertices={} stride={}\n",
+            std::print("runtime: morph mesh '{}' targets={} vertices={} stride={} gpu={}\n",
                        path, (int)e.morph_meshes[path].targets.size(),
                        (long long)e.morph_meshes[path].vertex_count,
-                       (long long)e.morph_meshes[path].stride);
+                       (long long)e.morph_meshes[path].stride,
+                       e.morph_meshes[path].gpu_ok ? 1 : 0);
     }
     e.mesh_layout[path] = (id >= 0) ? pm.vertex_layout : -1;
     e.mesh_cache[path] = id;

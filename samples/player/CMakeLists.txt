@@ -243,6 +243,76 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 程序化几何图元端到端（plans/27 M1-1）：MeshRenderer.geometry = Sphere/Plane/Cylinder/
+# Cone/Torus/Capsule；缺省 Cube 仍走内建 cube_mesh（旧场景逐字节不变）。
+#   ① 6 个非缺省图元各自 create_mesh ② 7 物体结构断言（球角背景/立方体中心/圆锥上窄下宽）
+#   ③ 同帧两次逐字节一致 ④ 旧 cube 场景不创建程序化图元。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME geometry_primitives_e2e COMMAND "${MAQUE_BASH}"
+             "${CMAKE_SOURCE_DIR}/tests/geometry_primitives_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/primitives.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/geometry_primitives_e2e")
+    set_tests_properties(geometry_primitives_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 场景雾 + 色调映射端到端（plans/27 M1-2/M1-3）：同一几何/相机，只改 scn.Scene.fog_* / tone_mapping。
+#   ① 距离=near 的球与无雾一致、距离=far 的球混入雾色（偏蓝）
+#   ② ACES vs Reinhard 亮度下降、None 比 ACES 更亮 ③ 两次渲染逐字节一致。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME atmosphere_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/atmosphere_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/atmosphere.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/atmosphere_e2e")
+    set_tests_properties(atmosphere_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 3D 粒子端到端（plans/27 M1-4 → plans/28 M1）：CPU 确定性模拟 + **GPU 实例化 billboard**
+# （每粒子 48B 实例；不再建动态网格）。① 第 60 帧粒子可见 ② MAQUE_PARTICLES=0 时几乎全背景
+# ③ 随时间变化 ④ 两次运行逐字节一致。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME particles3d_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/particles3d_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/particles3d.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/particles3d_e2e")
+    set_tests_properties(particles3d_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 3D 粒子确定性 / 快照回滚（plans/28 §4.7 G6/G7）：CPU 模拟状态进 checksum + 快照，
+# 逐帧 trail 两跑一致、快照回滚等价、MAQUE_PARTICLES 只关渲染不改 checksum、实例化画面可见。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME particles3d_determinism_e2e COMMAND "${MAQUE_BASH}"
+             "${CMAKE_SOURCE_DIR}/tests/particles3d_determinism_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/particles3d.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/particles3d_determinism_e2e")
+    set_tests_properties(particles3d_determinism_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+
+# GPU morph target 动画端到端（plans/28 §3.9）：样例 scenes/pbr/morph_gpu（两个实例共享同一
+# .mesh.json、各自 clip 错相）。① 动画/确定性 ② 单实例 GPU vs CPU 像素等价（≤1/255）
+# ③ 双实例 per-draw 权重（CPU 回退只能首实体驱动 → GPU 图必须不同）④ MAQUE_MORPH=0 基础网格。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME morph_gpu_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/morph_gpu_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/morph_gpu/morph_gpu.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/morph_gpu_e2e")
+    set_tests_properties(morph_gpu_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+
+# Boids 端到端（plans/27 3D 粒子 / plans/28）：JS 参考 + 全 shader 版本 + 性能预算。
+#   ① boids.scn：JS 空间网格模拟 → particles3d_upload → ParticleField3D（1 draw）
+#   ② boids-webgpu.scn：ShaderGraph 4 pass（两个 O(N²) 状态 pass + splat + 上采样），无 JS
+#   ③ 两版都做确定性 A/B；GPU 版 240 帧统计断言 render < 60ms、fps > 10（Debug+ASan 预算）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME boids_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/boids_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/boids/boids.scn"
+             "${CMAKE_SOURCE_DIR}/scenes/boids/boids-webgpu.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/boids_e2e")
+    set_tests_properties(boids_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+
 # 2D raycast + 3D 拾取（docs/15 §3、docs/19 §4）：
 #   ① scenes/pick/pick.scn：正交相机 → 设计坐标精确可算；屏幕点选 + scene_raycast + 距离限制
 #   ② scenes/pick/ray2d.scn：physics_raycast（盒命中/未命中/超程/起点在内）

@@ -2044,6 +2044,34 @@ enum class LineJoin : int32_t {
     Round = 2,
 };
 
+enum class MeshGeometry : int32_t {
+    Cube     = 0,
+    Sphere   = 1,
+    Plane    = 2,
+    Cylinder = 3,
+    Cone     = 4,
+    Torus    = 5,
+    Capsule  = 6,
+};
+
+enum class ParticleBlend : int32_t {
+    Alpha    = 0,
+    Additive = 1,
+    Multiply = 2,
+};
+
+enum class ParticleFacing : int32_t {
+    ViewPlane   = 0,
+    YAxisLocked = 1,
+};
+
+struct ParticleField3D {
+    bool enabled = true;
+    uint32_t max_count = 2048;
+    std::string texture = "";
+    uint32_t count = 0;
+};
+
 enum class PivotAnchor : int32_t {
     TopLeft      = 0,
     Center       = 1,
@@ -2242,6 +2270,9 @@ struct MeshRenderer {
     float time = 0.0F;
     float duration = 0.0F;
     std::string variant = "";
+    render::MeshGeometry geometry = MeshGeometry::Cube;
+    math::Vec3 geometry_size = {1.2F, 1.2F, 1.2F};
+    math::Vec3 geometry_segments = {32.0F, 16.0F, 8.0F};
 };
 
 struct MotionStreak {
@@ -2263,6 +2294,28 @@ struct MotionStreak {
     std::vector<render::StreakSample> samples;
     std::vector<math::Vec2> geometry;
     std::vector<uint32_t> indices;
+};
+
+struct ParticleEmitter3D {
+    bool emitting = true;
+    float rate = 30.0F;
+    float lifetime = 1.5F;
+    float speed = 1.2F;
+    float spread = 0.6F;
+    math::Vec3 direction = {0.0F, 1.0F, 0.0F};
+    math::Vec3 gravity = {0.0F, -1.5F, 0.0F};
+    float size_start = 0.25F;
+    float size_end = 0.05F;
+    math::Color color_start = {1.0F, 0.85F, 0.5F, 1.0F};
+    math::Color color_end = {1.0F, 0.2F, 0.05F, 0.0F};
+    float rotation = 0.0F;
+    float rotation_speed = 0.0F;
+    std::string texture = "";
+    uint32_t max_count = 256;
+    render::ParticleBlend blend = ParticleBlend::Alpha;
+    render::ParticleFacing facing = ParticleFacing::ViewPlane;
+    bool sort = true;
+    uint32_t culling_mask = 4294967295;
 };
 
 struct ReflectionProbe {
@@ -2461,6 +2514,12 @@ struct Camera {
     bool active = true;
 };
 
+enum class FogMode : int32_t {
+    None   = 0,
+    Linear = 1,
+    Exp2   = 2,
+};
+
 struct Label {
     float x = 0.0F;
     float y = 0.0F;
@@ -2526,33 +2585,6 @@ struct PrefabInstance {
     bool detached = false;
 };
 
-struct Scene {
-    int32_t version = 2;
-    std::string title = "maque scene";
-    std::string script = "";
-    std::vector<std::string> scripts;
-    std::string overlay_script = "";
-    std::string global_script = "";
-    int32_t width = 320;
-    int32_t height = 240;
-    uint32_t seed = 0;
-    int32_t views = 1;
-    float eye_sep = 0.0F;
-    float render_scale = 1.0F;
-    math::Color env_color = {0.27F, 0.28F, 0.31F, 1.0F};
-    float env_intensity = 1.6F;
-    math::Color env_sky_color = {0.0F, 0.0F, 0.0F, 1.0F};
-    math::Color env_ground_color = {0.0F, 0.0F, 0.0F, 1.0F};
-    float env_highlight = 1.0F;
-    float env_rotation = 0.0F;
-    std::string env_texture = "";
-    bool env_background = true;
-    std::string env_cubemap = "";
-    int32_t msaa_samples = 0;
-    float gravity_y = -900.0F;
-    float restitution = 0.86F;
-};
-
 struct SceneInstance {
     std::string source = "";
     std::string params = "";
@@ -2580,9 +2612,50 @@ struct SpriteMaterial {
     std::string texture = "";
 };
 
+enum class ToneMapping : int32_t {
+    None       = 0,
+    Linear     = 1,
+    Reinhard   = 2,
+    Cineon     = 3,
+    ACESFilmic = 4,
+};
+
 struct Transform2D {
     float x = 0.0F;
     float y = 0.0F;
+};
+
+struct Scene {
+    int32_t version = 2;
+    std::string title = "maque scene";
+    std::string script = "";
+    std::vector<std::string> scripts;
+    std::string overlay_script = "";
+    std::string global_script = "";
+    int32_t width = 320;
+    int32_t height = 240;
+    uint32_t seed = 0;
+    int32_t views = 1;
+    float eye_sep = 0.0F;
+    float render_scale = 1.0F;
+    math::Color env_color = {0.27F, 0.28F, 0.31F, 1.0F};
+    float env_intensity = 1.6F;
+    math::Color env_sky_color = {0.0F, 0.0F, 0.0F, 1.0F};
+    math::Color env_ground_color = {0.0F, 0.0F, 0.0F, 1.0F};
+    float env_highlight = 1.0F;
+    float env_rotation = 0.0F;
+    std::string env_texture = "";
+    bool env_background = true;
+    std::string env_cubemap = "";
+    int32_t msaa_samples = 0;
+    float gravity_y = -900.0F;
+    float restitution = 0.86F;
+    scn::FogMode fog_mode = FogMode::None;
+    math::Color fog_color = {0.5F, 0.5F, 0.5F, 1.0F};
+    float fog_near = 1.0F;
+    float fog_far = 100.0F;
+    float fog_density = 0.01F;
+    scn::ToneMapping tone_mapping = ToneMapping::ACESFilmic;
 };
 
 } // namespace scn
@@ -2765,6 +2838,8 @@ template <> inline constexpr uint32_t type_id_v<scn::PrefabInstance> = 174380405
 template <> inline constexpr uint32_t type_id_v<scn::SceneInstance> = 576957334u;
 template <> inline constexpr uint32_t type_id_v<scn::NavAgent> = 2085504285u;
 template <> inline constexpr uint32_t type_id_v<scn::Camera> = 2648125948u;
+template <> inline constexpr uint32_t type_id_v<scn::FogMode> = 32639722u;
+template <> inline constexpr uint32_t type_id_v<scn::ToneMapping> = 1117886059u;
 template <> inline constexpr uint32_t type_id_v<scn::Scene> = 410509289u;
 template <> inline constexpr uint32_t type_id_v<audio::AttenuationModel> = 685740996u;
 template <> inline constexpr uint32_t type_id_v<audio::PanningMode> = 1865492929u;
@@ -2830,6 +2905,11 @@ template <> inline constexpr uint32_t type_id_v<render::TileMap> = 1781691217u;
 template <> inline constexpr uint32_t type_id_v<render::Camera2D> = 3001756364u;
 template <> inline constexpr uint32_t type_id_v<render::Camera3D> = 3639452981u;
 template <> inline constexpr uint32_t type_id_v<render::RenderTexture> = 2253190608u;
+template <> inline constexpr uint32_t type_id_v<render::MeshGeometry> = 488514272u;
+template <> inline constexpr uint32_t type_id_v<render::ParticleBlend> = 1437811370u;
+template <> inline constexpr uint32_t type_id_v<render::ParticleFacing> = 1267734405u;
+template <> inline constexpr uint32_t type_id_v<render::ParticleEmitter3D> = 1442787732u;
+template <> inline constexpr uint32_t type_id_v<render::ParticleField3D> = 3432332610u;
 template <> inline constexpr uint32_t type_id_v<render::MeshRenderer> = 956582135u;
 template <> inline constexpr uint32_t type_id_v<render::ShaderPass> = 4275420661u;
 template <> inline constexpr uint32_t type_id_v<render::ShaderSprite> = 2473816933u;
@@ -3023,6 +3103,8 @@ template <> struct type_of<1743804050u> { using type = scn::PrefabInstance; };
 template <> struct type_of<576957334u> { using type = scn::SceneInstance; };
 template <> struct type_of<2085504285u> { using type = scn::NavAgent; };
 template <> struct type_of<2648125948u> { using type = scn::Camera; };
+template <> struct type_of<32639722u> { using type = scn::FogMode; };
+template <> struct type_of<1117886059u> { using type = scn::ToneMapping; };
 template <> struct type_of<410509289u> { using type = scn::Scene; };
 template <> struct type_of<685740996u> { using type = audio::AttenuationModel; };
 template <> struct type_of<1865492929u> { using type = audio::PanningMode; };
@@ -3088,6 +3170,11 @@ template <> struct type_of<1781691217u> { using type = render::TileMap; };
 template <> struct type_of<3001756364u> { using type = render::Camera2D; };
 template <> struct type_of<3639452981u> { using type = render::Camera3D; };
 template <> struct type_of<2253190608u> { using type = render::RenderTexture; };
+template <> struct type_of<488514272u> { using type = render::MeshGeometry; };
+template <> struct type_of<1437811370u> { using type = render::ParticleBlend; };
+template <> struct type_of<1267734405u> { using type = render::ParticleFacing; };
+template <> struct type_of<1442787732u> { using type = render::ParticleEmitter3D; };
+template <> struct type_of<3432332610u> { using type = render::ParticleField3D; };
 template <> struct type_of<956582135u> { using type = render::MeshRenderer; };
 template <> struct type_of<4275420661u> { using type = render::ShaderPass; };
 template <> struct type_of<2473816933u> { using type = render::ShaderSprite; };

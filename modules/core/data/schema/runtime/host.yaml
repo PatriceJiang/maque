@@ -106,6 +106,22 @@
     - { fn: node_set_position,   ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ] }
     - { fn: node_position_x,     ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_position_y,     ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # ---- 3D 变换（plans/27 M1-4；值类型编组 docs/21 §6.1）----
+    # local_* 读写 scene.Transform3D.local（局部空间；rotation 为弧度，与组件的 Euler 约定一致）；
+    # 节点缺组件时 set_local_* 自动补挂 scene.Transform3D。node_set_position 是 2D/世界坐标语义，
+    # 两套名字刻意分开，避免把"局部"与"世界"混成一个动词（three.js 的 position 是局部）。
+    # world_* 读每帧派生的世界矩阵（含父链与 glTF 动画姿态）；返回值在 JS 是 {x,y,z}、Lua 是 table。
+    - { fn: node_set_local_position, ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float }, { name: z, type: float } ], doc: "写 scene.Transform3D.local.position（局部空间）" }
+    - { fn: node_set_local_rotation, ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float }, { name: z, type: float } ], doc: "写 scene.Transform3D.local.rotation（弧度，Euler；与引擎 m4_from_trs 同一约定）" }
+    - { fn: node_set_local_scale,    ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float }, { name: z, type: float } ], doc: "写 scene.Transform3D.local.scale（局部空间）" }
+    - { fn: node_local_position, ctx: true, args: [ { name: id, type: float } ], returns: math.Vec3, doc: "读 Transform3D.local.position（缺组件 = 0,0,0）" }
+    - { fn: node_local_rotation, ctx: true, args: [ { name: id, type: float } ], returns: math.Vec3, doc: "读 Transform3D.local.rotation（弧度）" }
+    - { fn: node_local_scale,    ctx: true, args: [ { name: id, type: float } ], returns: math.Vec3, doc: "读 Transform3D.local.scale（缺组件 = 1,1,1）" }
+    - { fn: node_world_position, ctx: true, args: [ { name: id, type: float } ], returns: math.Vec3, doc: "读派生世界矩阵的平移（three.js getWorldPosition）" }
+    - { fn: node_world_rotation, ctx: true, args: [ { name: id, type: float } ], returns: math.Vec3, doc: "读世界矩阵的 Euler（弧度；three.js world quaternion 的 Euler 形式）" }
+    - { fn: node_local_to_world, ctx: true, args: [ { name: id, type: float }, { name: p, type: math.Vec3 } ], returns: math.Vec3, doc: "局部点 → 世界点（three.js localToWorld）" }
+    - { fn: node_world_to_local, ctx: true, args: [ { name: id, type: float }, { name: p, type: math.Vec3 } ], returns: math.Vec3, doc: "世界点 → 局部点（three.js worldToLocal）" }
+    - { fn: node_look_at,        ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float }, { name: z, type: float } ], doc: "让本地 -Z 指向世界坐标目标、+Y 向上（相机约定；three.js Object3D.lookAt 的相机分支）；只改 rotation" }
     - { fn: node_set_content_size, ctx: true, args: [ { name: id, type: float }, { name: w, type: float }, { name: h, type: float } ] }
     - { fn: node_set_anchor,     ctx: true, args: [ { name: id, type: float }, { name: ax, type: float }, { name: ay, type: float } ] }
     # 组件（getComponent / addComponent / getComponentInChildren 等价）
@@ -493,3 +509,7 @@
     - { fn: imgui_hovered,      ctx: true, returns: float, doc: "指针是否落在面板上" }
     - { fn: imgui_frame,        ctx: true, returns: float, doc: "面板已渲染的帧数（自省：证明真的在跑）" }
     - { fn: imgui_last_cmd_count, ctx: true, returns: float, doc: "上一帧导出的绘制命令数（0 = 面板没画东西）" }
+    # 外部驱动 3D 粒子场（render.ParticleField3D；plans/28）：data 为每粒子 48B
+    # （pos3,size1,color4,rotation1,pad3 共 12×f32），JS 传 Uint8Array/Float32Array 的 buffer。
+    - { fn: particles3d_upload, ctx: true, args: [ { name: id, type: float }, { name: data, type: bytes } ], returns: bytes, doc: "上传粒子数据（返回空 bytes；用 particles3d_count 查数量）" }
+    - { fn: particles3d_count,  ctx: true, args: [ { name: id, type: float } ], returns: float, doc: "当前粒子数（-1=无 ParticleField3D）" }

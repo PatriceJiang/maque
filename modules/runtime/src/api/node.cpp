@@ -185,6 +185,199 @@ float node_position_x(void* ctx, float id) { return entity_x(ctx, id); }
 
 float node_position_y(void* ctx, float id) { return entity_y(ctx, id); }
 
+/* ============================================================================
+ * 3D 变换（plans/27 M1-4；值类型编组 docs/21 §6.1）
+ * - local_*：读写 scene.Transform3D.local（局部空间；rotation 弧度，与 m4_from_trs 同约定）
+ * - world_*：**按父链即时重算**（含 glTF 派生姿态），不依赖上一帧 update_world3d 的缓存
+ *   → 脚本改完父节点后立刻读子节点也正确；O(depth) 而非 O(场景节点数)。
+ * - look_at：与相机一致，本地 -Z 指向目标、+Y 为上；只改 rotation，不写世界矩阵/缓存。
+ * ==========================================================================*/
+
+static scene::Transform3D* ensure_transform3d(Engine& eng, int id) {
+    SceneNode* e = eng.scene->at(id);
+    if (!e) return nullptr;
+    if (scene::Transform3D* t = component<scene::Transform3D>(*e)) return t;
+    attach_component(eng, id, "scene.Transform3D");
+    e = eng.scene->at(id);
+    return e ? component<scene::Transform3D>(*e) : nullptr;
+}
+
+static const scene::Transform3D* find_transform3d(Engine& eng, int id) {
+    SceneNode* e = eng.scene->at(id);
+    return e ? component<scene::Transform3D>(*e) : nullptr;
+}
+
+/* 节点局部矩阵：Transform3D.local 叠加动画派生姿态（与 Scene::update_world3d 同一逻辑）。 */
+static void node_local_matrix(Engine& eng, int id, float out[16]) {
+    math::Transform3D trs{};
+    if (const scene::Transform3D* t = find_transform3d(eng, id)) trs = t->local;
+    AnimPose* pose = nullptr;
+    auto pit = eng.anim_pose.find(id);
+    if (pit != eng.anim_pose.end()) pose = &pit->second;
+    if (pose && pose->has_pos) trs.position = pose->pos;
+    if (pose && pose->has_scale) trs.scale = pose->scale;
+    if (pose && pose->has_rot) m4_from_quat_trs(trs.position, pose->rot, trs.scale, out);
+    else m4_from_trs(trs, out);
+}
+
+/* 世界矩阵 = 父链乘积（根 → 叶）。不写回节点缓存。 */
+static bool node_world_matrix(Engine& eng, int id, float out[16]) {
+    std::vector<int> chain;
+    for (int cur = id, guard = 0; cur >= 0 && guard < 4096; ++guard) {
+        SceneNode* e = eng.scene->at(cur);
+        if (!e) break;
+        chain.push_back(cur);
+        cur = e->parent;
+    }
+    if (chain.empty()) return false;
+    m4_identity(out);
+    for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+        float local[16];
+        node_local_matrix(eng, *it, local);
+        float m[16];
+        m4_mul(out, local, m);
+        std::memcpy(out, m, sizeof m);
+    }
+    return true;
+}
+
+/* 与 m4_from_trs 的矩阵约定一致（three.js 'ZYX' 顺序的同一结果）：
+ *   y = asin(-x.z)；z = atan2(x.y, x.x)；x = atan2(y.z, z.z)。 */
+static math::Vec3 euler_from_columns(const float x[3], const float y[3], const float z[3]) {
+    const float cy = std::sqrt(x[0] * x[0] + x[1] * x[1]);   // = |cos(y)|
+    math::Vec3 e{};
+    e.y = std::asin(std::max(-1.0F, std::min(1.0F, -x[2])));
+    if (cy > 1.0e-5F) {
+        e.x = std::atan2(y[2], z[2]);
+        e.z = std::atan2(x[1], x[0]);
+    } else {
+        /* 万向锁：令 z=0，只保留 x/y（x 由 y 轴与 z 轴的投影确定）。 */
+        e.x = std::atan2(-z[1], y[1]);
+        e.z = 0.0F;
+    }
+    return e;
+}
+
+static math::Vec3 euler_from_matrix(const float m[16]) {
+    float x[3], y[3], z[3];
+    m4_axis(m, 0, x);
+    m4_axis(m, 1, y);
+    m4_axis(m, 2, z);
+    return euler_from_columns(x, y, z);
+}
+
+void node_set_local_position(void* ctx, float id, float x, float y, float z) {
+    if (auto* t = ensure_transform3d(*(Engine*)ctx, (int)id)) t->local.position = math::Vec3{ x, y, z };
+}
+
+void node_set_local_rotation(void* ctx, float id, float x, float y, float z) {
+    if (auto* t = ensure_transform3d(*(Engine*)ctx, (int)id)) t->local.rotation = math::Vec3{ x, y, z };
+}
+
+void node_set_local_scale(void* ctx, float id, float x, float y, float z) {
+    if (auto* t = ensure_transform3d(*(Engine*)ctx, (int)id)) t->local.scale = math::Vec3{ x, y, z };
+}
+
+math::Vec3 node_local_position(void* ctx, float id) {
+    auto& eng = *(Engine*)ctx;
+    if (const auto* t = find_transform3d(eng, (int)id)) return t->local.position;
+    return math::Vec3{ 0.0F, 0.0F, 0.0F };
+}
+
+math::Vec3 node_local_rotation(void* ctx, float id) {
+    auto& eng = *(Engine*)ctx;
+    if (const auto* t = find_transform3d(eng, (int)id)) return t->local.rotation;
+    return math::Vec3{ 0.0F, 0.0F, 0.0F };
+}
+
+math::Vec3 node_local_scale(void* ctx, float id) {
+    auto& eng = *(Engine*)ctx;
+    if (const auto* t = find_transform3d(eng, (int)id)) return t->local.scale;
+    return math::Vec3{ 1.0F, 1.0F, 1.0F };
+}
+
+math::Vec3 node_world_position(void* ctx, float id) {
+    float m[16];
+    if (!node_world_matrix(*(Engine*)ctx, (int)id, m)) return math::Vec3{ 0.0F, 0.0F, 0.0F };
+    return math::Vec3{ m[12], m[13], m[14] };
+}
+
+math::Vec3 node_world_rotation(void* ctx, float id) {
+    float m[16];
+    if (!node_world_matrix(*(Engine*)ctx, (int)id, m)) return math::Vec3{ 0.0F, 0.0F, 0.0F };
+    return euler_from_matrix(m);
+}
+
+math::Vec3 node_local_to_world(void* ctx, float id, math::Vec3 p) {
+    float m[16];
+    if (!node_world_matrix(*(Engine*)ctx, (int)id, m)) return p;
+    return math::Vec3{
+        m[0] * p.x + m[4] * p.y + m[8] * p.z + m[12],
+        m[1] * p.x + m[5] * p.y + m[9] * p.z + m[13],
+        m[2] * p.x + m[6] * p.y + m[10] * p.z + m[14],
+    };
+}
+
+math::Vec3 node_world_to_local(void* ctx, float id, math::Vec3 p) {
+    float m[16], inv[16];
+    if (!node_world_matrix(*(Engine*)ctx, (int)id, m) || !m4_invert(m, inv)) return p;
+    return math::Vec3{
+        inv[0] * p.x + inv[4] * p.y + inv[8] * p.z + inv[12],
+        inv[1] * p.x + inv[5] * p.y + inv[9] * p.z + inv[13],
+        inv[2] * p.x + inv[6] * p.y + inv[10] * p.z + inv[14],
+    };
+}
+
+void node_look_at(void* ctx, float id, float tx, float ty, float tz) {
+    auto& eng = *(Engine*)ctx;
+    scene::Transform3D* t = ensure_transform3d(eng, (int)id);
+    if (!t) return;
+    float wm[16];
+    if (!node_world_matrix(eng, (int)id, wm)) return;
+    const float px = wm[12], py = wm[13], pz = wm[14];
+
+    /* 本地 +Z = normalize(eye - target)（相机约定：-Z 指向目标）。 */
+    float zx = px - tx, zy = py - ty, zz = pz - tz;
+    float zl = std::sqrt(zx * zx + zy * zy + zz * zz);
+    if (zl < 1.0e-6F) return;
+    zx /= zl; zy /= zl; zz /= zl;
+    /* x = normalize(cross(up=(0,1,0), z)) = normalize(z.z, 0, -z.x) */
+    float xx = zz, xy = 0.0F, xz = -zx;
+    float xl = std::sqrt(xx * xx + xz * xz);
+    if (xl < 1.0e-6F) { xx = 1.0F; xy = 0.0F; xz = 0.0F; }       // 目标在正上方/下方
+    else { xx /= xl; xz /= xl; }
+    /* y = cross(z, x) */
+    const float yx = zy * xz - zz * xy;
+    const float yy = zz * xx - zx * xz;
+    const float yz = zx * xy - zy * xx;
+
+    float rx[3] = { xx, xy, xz };
+    float ry[3] = { yx, yy, yz };
+    float rz[3] = { zx, zy, zz };
+
+    /* 世界旋转 → 局部旋转：R_local = R_parent^T · R_target（父轴正交化后取转置投影）。 */
+    SceneNode* e = eng.scene->at((int)id);
+    const int parent = e ? e->parent : -1;
+    if (parent >= 0) {
+        float pwm[16];
+        if (node_world_matrix(eng, parent, pwm)) {
+            float u[3], v[3], w[3];
+            m4_axis(pwm, 0, u); m4_axis(pwm, 1, v); m4_axis(pwm, 2, w);
+            const float* cols[3] = { rx, ry, rz };
+            float out_cols[3][3];
+            for (int c = 0; c < 3; ++c) {
+                out_cols[c][0] = u[0] * cols[c][0] + u[1] * cols[c][1] + u[2] * cols[c][2];
+                out_cols[c][1] = v[0] * cols[c][0] + v[1] * cols[c][1] + v[2] * cols[c][2];
+                out_cols[c][2] = w[0] * cols[c][0] + w[1] * cols[c][1] + w[2] * cols[c][2];
+            }
+            std::memcpy(rx, out_cols[0], sizeof rx);
+            std::memcpy(ry, out_cols[1], sizeof ry);
+            std::memcpy(rz, out_cols[2], sizeof rz);
+        }
+    }
+    t->local.rotation = euler_from_columns(rx, ry, rz);
+}
+
 /* 内容尺寸/锚点：由 ui.Control 承载（UITransform）。 */
 float node_width(void* ctx, float id) {
     auto* eng = (Engine*)ctx;

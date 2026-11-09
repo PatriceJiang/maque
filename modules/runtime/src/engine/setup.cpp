@@ -196,6 +196,24 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     }
     std::print("runtime: renderer '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
+    /* ---- 渲染器能力自省（**必须早于场景装配**）----
+     * plans/28：GPU morph 路径决定"装配期是否上传增量、默认权重是否由每帧权重表达"，
+     * 所以 caps 要在 load_scene_into 之前取；MAQUE_ANIM/SKIN/MORPH 也一并提前读，
+     * 避免"装配期按默认值走、首帧才切换"的不一致。 */
+    if (rapi->caps && rself) {
+        mq_renderer_caps caps{};
+        if (rapi->caps(rself, &caps) == 0) {
+            caps_morph_max_targets = caps.morph_max_targets;
+            const char* mg = std::getenv("MAQUE_MORPH_GPU");
+            const bool off = mg && (std::strcmp(mg, "0") == 0 || std::strcmp(mg, "off") == 0);
+            morph_gpu = caps.morph_max_targets >= 8 && !off;
+        }
+    }
+    read_gltf_env();
+    if (render3d_info)
+        std::print("runtime: gpu morph {} (caps targets={}; MAQUE_MORPH_GPU=0 可强制 CPU)\n",
+                   morph_gpu ? "on" : "off", caps_morph_max_targets);
+
     audio_setup();                               // 音频实例先于场景：脚本 on_start 可 audio_play
     obs = mq_obs_create();                       // 场景装配期即可能产生事件（脚本错误等）
     if (!load_scene_into(scn_path)) {

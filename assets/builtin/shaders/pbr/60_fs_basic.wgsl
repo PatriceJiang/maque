@@ -4,5 +4,5 @@
 @fragment fn fs_basic(in: VOut, @builtin(front_facing) ff: bool) -> @location(0) vec4f {
   var s = surface_common(in, ff);
   surface_alpha_test(s);
-  return output_direct(s.base, s.alpha);
+  return final_direct(s.base, s.alpha, in.w);
 }

@@ -8,7 +8,7 @@
 #include "abi/script.h"
 
 #define MQ_SCRIPT_API_VERSION 1u
-#define MQ_SCRIPT_API_HASH 0xec31fbdfu
+#define MQ_SCRIPT_API_HASH 0x21b2bc7du
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,6 +107,17 @@ typedef struct mq_script_api_v1 {
     void (*host_node_set_position)(void* ctx, float id, float x, float y);
     float (*host_node_position_x)(void* ctx, float id);
     float (*host_node_position_y)(void* ctx, float id);
+    void (*host_node_set_local_position)(void* ctx, float id, float x, float y, float z);  /* 写 scene.Transform3D.local.position（局部空间） */
+    void (*host_node_set_local_rotation)(void* ctx, float id, float x, float y, float z);  /* 写 scene.Transform3D.local.rotation（弧度，Euler；与引擎 m4_from_trs 同一约定） */
+    void (*host_node_set_local_scale)(void* ctx, float id, float x, float y, float z);  /* 写 scene.Transform3D.local.scale（局部空间） */
+    void (*host_node_local_position)(void* ctx, float id, float* out);  /* 读 Transform3D.local.position（缺组件 = 0,0,0） */
+    void (*host_node_local_rotation)(void* ctx, float id, float* out);  /* 读 Transform3D.local.rotation（弧度） */
+    void (*host_node_local_scale)(void* ctx, float id, float* out);  /* 读 Transform3D.local.scale（缺组件 = 1,1,1） */
+    void (*host_node_world_position)(void* ctx, float id, float* out);  /* 读派生世界矩阵的平移（three.js getWorldPosition） */
+    void (*host_node_world_rotation)(void* ctx, float id, float* out);  /* 读世界矩阵的 Euler（弧度；three.js world quaternion 的 Euler 形式） */
+    void (*host_node_local_to_world)(void* ctx, float id, const float* p, float* out);  /* 局部点 → 世界点（three.js localToWorld） */
+    void (*host_node_world_to_local)(void* ctx, float id, const float* p, float* out);  /* 世界点 → 局部点（three.js worldToLocal） */
+    void (*host_node_look_at)(void* ctx, float id, float x, float y, float z);  /* 让本地 -Z 指向世界坐标目标、+Y 向上（相机约定；three.js Object3D.lookAt 的相机分支）；只改 rotation */
     void (*host_node_set_content_size)(void* ctx, float id, float w, float h);
     void (*host_node_set_anchor)(void* ctx, float id, float ax, float ay);
     float (*host_node_has_component)(void* ctx, float id, const char* type);
@@ -351,6 +362,8 @@ typedef struct mq_script_api_v1 {
     float (*host_imgui_hovered)(void* ctx);  /* 指针是否落在面板上 */
     float (*host_imgui_frame)(void* ctx);  /* 面板已渲染的帧数（自省：证明真的在跑） */
     float (*host_imgui_last_cmd_count)(void* ctx);  /* 上一帧导出的绘制命令数（0 = 面板没画东西） */
+    mq_script_bytes_result (*host_particles3d_upload)(void* ctx, float id, mq_script_bytes_view data);  /* 上传粒子数据（返回空 bytes；用 particles3d_count 查数量） */
+    float (*host_particles3d_count)(void* ctx, float id);  /* 当前粒子数（-1=无 ParticleField3D） */
 } mq_script_api_v1;
 
 /* 引擎侧聚合初始化（maque_guest_api_gen.cpp）；进程级常量。 */

@@ -31,6 +31,8 @@ struct Camera {
   env_info: vec4f,      // x=env intensity y=has_env_texture z=has_env_irradiance w=transmission 折射
   inv_vp: mat4x4f,      // NDC -> world ray（天空背景 pass）
   env4: vec4f,          // x=has_env_cube（1 = cubemap IBL 生效；第 26 轮）
+  atmos0: vec4f,        // x=fog_mode(0 none/1 linear/2 exp2) y=fog_near z=fog_far w=fog_density
+  atmos1: vec4f,        // rgb=雾颜色（线性） w=tone_mapping(0 none/1 linear/2 reinhard/3 cineon/4 ACES)
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 @group(0) @binding(1) var shadow_map: texture_depth_2d;
@@ -65,6 +67,10 @@ struct Draw {
   trans: vec4f,        // x = diffuse_transmission_factor, yzw = diffuse_transmission_color（第 22 轮追加）
   vol: vec4f,          // rgb = attenuation_color, w = attenuation_distance（0 = 无限/无吸收；第 24 轮）
   scatter: vec4f,      // rgb = multiscatter_color（volume_scatter），w 未用（第 24 轮）
+  // ---- GPU morph targets（plans/28 §3.4；尾部追加 3 个 vec4）----
+  morph0: vec4f,       // x = target_count（0 = 无 morph）yzw = w[0..2]
+  morph1: vec4f,       // w[3..6]
+  morph2: vec4f,       // x = w[7] y = vertex_count z = has_normals(0/1) w = 预留
 };
 @group(1) @binding(0) var<uniform> dr: Draw;
 @group(1) @binding(1) var albedo_tex: texture_2d<f32>;
@@ -97,6 +103,14 @@ struct Draw {
 // 蒙皮调色板（binding 23；只读 storage，Vertex 阶段；元素 = joint_count 个列主序 mat4）。
 // 非蒙皮 draw 绑 64B 单位 mat4 占位；旧入口（vs/vs1/vs_shadow*）不读它。
 @group(1) @binding(23) var<storage, read> skin_palette: array<mat4x4f>;
+// GPU morph target 增量（binding 24；只读 storage，Vertex 阶段）。布局 = 32B/目标/顶点：
+// { pos: vec4f, nrm: vec4f }，target 主序（t * vertex_count + v）。非 morph draw 绑 32B 全 0 占位，
+// shader 由 dr.morph0.x == 0 提前返回、不读它（plans/28 §3.4）。
+struct MorphDelta {
+  pos: vec4f,
+  nrm: vec4f,
+};
+@group(1) @binding(24) var<storage, read> morph_deltas: array<MorphDelta>;
 
 struct VOut {
   @builtin(position) p: vec4f,

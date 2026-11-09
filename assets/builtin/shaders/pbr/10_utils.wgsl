@@ -44,6 +44,46 @@ fn aces_tonemap(x: vec3f) -> vec3f {
   return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
 }
 
+/* plans/27 M1-3：场景级 tone mapping（three.js tonemapping_pars_fragment 对齐）。
+ * 0=None 1=Linear 2=Reinhard 3=OptimizedCineon 4=ACESFilmic；exposure 由调用方先乘。 */
+fn linear_tonemap(x: vec3f) -> vec3f {
+  return clamp(x, vec3f(0.0), vec3f(1.0));
+}
+fn reinhard_tonemap(x: vec3f) -> vec3f {
+  return clamp(x / (vec3f(1.0) + x), vec3f(0.0), vec3f(1.0));
+}
+fn cineon_tonemap(x: vec3f) -> vec3f {
+  let c = max(x - vec3f(0.004), vec3f(0.0));
+  return pow((c * (6.2 * c + 0.5)) / (c * (6.2 * c + 1.7) + 0.06), vec3f(2.2));
+}
+fn scene_tonemap(x: vec3f) -> vec3f {
+  let mode = i32(cam.atmos1.w + 0.5);
+  if (mode == 0) { return clamp(x, vec3f(0.0), vec3f(1.0)); }
+  if (mode == 1) { return linear_tonemap(x); }
+  if (mode == 2) { return reinhard_tonemap(x); }
+  if (mode == 3) { return cineon_tonemap(x); }
+  return aces_tonemap(x);
+}
+
+/* plans/27 M1-2：场景雾（three.js Fog / FogExp2 语义）。
+ * Linear = smoothstep(near, far, distance)；Exp2 = 1-exp(-(density·distance)²)。
+ * 在 tone mapping **之前**按线性空间混合（与 three.js 一致）。 */
+fn apply_fog(color: vec3f, world: vec3f) -> vec3f {
+  let mode = i32(cam.atmos0.x + 0.5);
+  if (mode == 0) { return color; }
+  let d = length(cam.eye.xyz - world);
+  var f = 0.0;
+  if (mode == 1) {
+    let near = cam.atmos0.y;
+    let far = max(cam.atmos0.z, near + 1e-4);
+    f = smoothstep(near, far, d);
+  } else {
+    let t = max(cam.atmos0.w, 0.0) * d;
+    f = 1.0 - exp(-t * t);
+  }
+  return mix(color, cam.atmos1.xyz, clamp(f, 0.0, 1.0));
+}
+
 /* 由屏幕空间导数求切线基（cotangent frame）：不依赖顶点 TANGENT，导入网格可直接用法线贴图。
  * WebGPU 的 dpdy 以 framebuffer 坐标为准（y 向下），与 GLSL dFdy（y 向上）反号；本公式来自 GLSL 语义，
  * 故 dp2/duv2 先取负。否则 T、B 同时取反 = 法线贴图在切线空间旋转 180°（glTF/three.js 约定 T=+∂P/∂u、B=+∂P/∂v）。
@@ -124,13 +164,24 @@ fn srgb_encode(c: vec3f) -> vec3f {
   return select(hi, lo, x <= vec3f(0.0031308));
 }
 
-/* ACES + exposure + sRGB：Standard/Physical/Basic/Lambert/Phong/Toon/Matcap 用。 */
+/* 场景 tone mapping + exposure + sRGB。仅做 tone mapping（不叠雾）——
+ * 内部反射/折射的逐通道合成需要同一曲线，但不应该把雾算两次。 */
 fn tone_output(color: vec3f, alpha: f32) -> vec4f {
-  let c = aces_tonemap(color * cam.eye.w);
+  return vec4f(srgb_encode(scene_tonemap(color * cam.eye.w)), alpha);
+}
+
+/* 最终输出（受光材质）：雾 → tone mapping → sRGB。plans/27 M1-2/M1-3。 */
+fn final_lit(color: vec3f, alpha: f32, world: vec3f) -> vec4f {
+  let c = scene_tonemap(apply_fog(color, world) * cam.eye.w);
   return vec4f(srgb_encode(c), alpha);
 }
 
-/* 直接 sRGB（不做 tonemap）：Normal/Shadow 保持可预测的可视化数值。 */
+/* 最终输出（unlit）：雾 → 直接 sRGB（不 tonemap，保持 glTF unlit 参考色）。 */
+fn final_direct(color: vec3f, alpha: f32, world: vec3f) -> vec4f {
+  return vec4f(srgb_encode(apply_fog(color, world)), alpha);
+}
+
+/* 直接 sRGB（不做 tonemap/雾）：Normal/Depth/Shadow 保持可预测的可视化数值。 */
 fn output_direct(color: vec3f, alpha: f32) -> vec4f {
   return vec4f(srgb_encode(color), alpha);
 }

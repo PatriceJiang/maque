@@ -5,5 +5,5 @@
   let has_gradient = (flags2_bits() & 4) != 0;
   let steps = i32(dr.misc.w + 0.5);
   var color = light_toon(s, steps, has_gradient, dr.phys0.w) + s.emissive;
-  return tone_output(color, s.alpha);
+  return final_lit(color, s.alpha, in.w);
 }

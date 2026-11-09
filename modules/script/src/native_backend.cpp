@@ -301,6 +301,7 @@ int register_ret_str(mq_script_vm*, const char*, mq_script_ret_str_fn, void*) { 
 int register_mixed(mq_script_vm*, const char*, mq_script_mixed_fn, void*) { return 0; }
 int register_multi(mq_script_vm*, const char*, const char*, mq_script_multi_fn, void*) { return 0; }
 int register_multi_ret_str(mq_script_vm*, const char*, const char*, mq_script_multi_ret_str_fn, void*) { return 0; }
+int register_value(mq_script_vm*, const char*, const char*, int32_t, const char*, mq_script_multi_fn, void*) { return 0; }
 int register_bytes(mq_script_vm*, const char*, const char*, mq_script_bytes_fn, void*) { return 0; }
 
 } // namespace maque::script::native
@@ -332,6 +333,7 @@ int register_ret_str(mq_script_vm*, const char*, mq_script_ret_str_fn, void*) { 
 int register_mixed(mq_script_vm*, const char*, mq_script_mixed_fn, void*) { return 1; }
 int register_multi(mq_script_vm*, const char*, const char*, mq_script_multi_fn, void*) { return 1; }
 int register_multi_ret_str(mq_script_vm*, const char*, const char*, mq_script_multi_ret_str_fn, void*) { return 1; }
+int register_value(mq_script_vm*, const char*, const char*, int32_t, const char*, mq_script_multi_fn, void*) { return 1; }
 int register_bytes(mq_script_vm*, const char*, const char*, mq_script_bytes_fn, void*) { return 1; }
 } // namespace maque::script::native
 

@@ -465,6 +465,24 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
             vptr = packed.data();
             vbytes = packed.size();
         }
+        /* GPU morph 增量（plans/28 §3.3）：装配期一次打包/上传（32B/目标/顶点，target 主序）。
+         * GPU 路径下**不在装配期应用默认权重**（否则 GPU 再乘一遍 = 双重形变）；默认/动画权重
+         * 由 extract_3d 逐 draw 填进 frame3d.morph_weights。> 8 target 仍走 CPU 回退。 */
+        std::vector<float> morph_deltas;
+        std::vector<std::pair<const float*, const float*>> morph_src;
+        bool morph_normals = false;
+        const bool gpu_morph_prim = morph_gpu && morph_enabled && !p.morph_targets.empty() &&
+                                    p.morph_targets.size() <= 8;
+        if (gpu_morph_prim) {
+            morph_src.reserve(p.morph_targets.size());
+            for (const gltf::MorphTarget& mt : p.morph_targets)
+                morph_src.push_back({ mt.positions.empty() ? nullptr : mt.positions.data(),
+                                      mt.normals.empty() ? nullptr : mt.normals.data() });
+            const int packed = pack_morph_deltas(vn, (uint32_t)morph_src.size(),
+                                                 morph_src.data(), morph_deltas);
+            if (packed < 0) morph_deltas.clear();
+            else morph_normals = packed > 0;
+        }
         mq_renderer_mesh_gpu md{};
         md.vertices = vptr;
         md.vertex_bytes = vbytes;
@@ -472,6 +490,10 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
         md.vertex_layout = layout;
         md.indices = p.indices.data();
         md.index_count = (uint32_t)p.indices.size();
+        md.morph.deltas = morph_deltas.empty() ? nullptr : morph_deltas.data();
+        md.morph.target_count = morph_deltas.empty() ? 0u : (uint32_t)morph_src.size();
+        md.morph.vertex_count = vn;
+        md.morph.flags = morph_normals ? 1 : 0;
         for (int k = 0; k < 3; ++k) {
             md.bounds_min[k] = p.bounds_min[k];
             md.bounds_max[k] = p.bounds_max[k];
@@ -495,7 +517,10 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
             pr.bounds_max[k] = p.bounds_max[k];
         }
         pr.default_weights = p.morph_weights;
-        pr.applied_weights = p.morph_weights;
+        /* GPU 路径：基础网格未应用默认权重，applied_weights 留空（仅 CPU 回退会填）。 */
+        if (!gpu_morph_prim) pr.applied_weights = p.morph_weights;
+        pr.gpu_morph = gpu_morph_prim && !morph_deltas.empty();
+        pr.gpu_normals = morph_normals;
         pr.variant_materials = p.variant_materials;
         pr.morph_targets.reserve(p.morph_targets.size());
         for (const gltf::MorphTarget& mt : p.morph_targets) {
@@ -507,7 +532,8 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
         if (!pr.morph_targets.empty()) {
             pr.base.resize((size_t)vn * stride);
             std::memcpy(pr.base.data(), vptr, pr.base.size());
-            pending_morph.push_back(PendingMorph{ gpu.prims.size() });
+            /* GPU 路径不需要装配期 CPU 应用默认权重（提取期逐 draw 表达）。 */
+            if (!pr.gpu_morph) pending_morph.push_back(PendingMorph{ gpu.prims.size() });
         }
         gpu.prims.push_back(std::move(pr));
     }
@@ -526,6 +552,7 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
     if (morph_enabled) {
         for (const PendingMorph& pm : pending_morph) {
             GltfGpuModel::Prim& pr = gpu.prims[pm.prim];
+            if (pr.gpu_morph) continue;                 /* GPU 路径：权重逐帧表达 */
             bool any = false;
             for (float w : pr.default_weights) if (w != 0.0F) { any = true; break; }
             if (any) (void)apply_gltf_morph(-1, gpu, pm.prim, pr.default_weights);

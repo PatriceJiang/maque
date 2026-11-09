@@ -1,0 +1,62 @@
+{
+  "title": "pbr_particles3d",
+  "width": 960,
+  "height": 480,
+  "views": 1,
+  "env_color": { "r": 0.10, "g": 0.11, "b": 0.14, "a": 1.0 },
+  "env_intensity": 0.8,
+  "env_sky_color": { "r": 0.18, "g": 0.22, "b": 0.30, "a": 1.0 },
+  "env_ground_color": { "r": 0.04, "g": 0.04, "b": 0.05, "a": 1.0 },
+  "env_highlight": 1.0,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 1.2, "z": 5.5 },
+            "rotation": { "x": -0.12, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.Camera3D", "fov_y": 40.0, "near": 0.1, "far": 100.0,
+          "clear_color": { "r": 0.03, "g": 0.035, "b": 0.05, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "key",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "rotation": { "x": -0.7, "y": -0.5, "z": 0.0 } } },
+        { "type": "render.Light", "intensity": 1.6,
+          "color": { "r": 1.0, "g": 0.95, "b": 0.85, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "fire",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -0.8, "y": -0.2, "z": 0.0 } } },
+        { "type": "render.ParticleEmitter3D",
+          "rate": 90.0, "lifetime": 1.6, "speed": 1.4, "spread": 0.55,
+          "direction": { "x": 0.0, "y": 1.0, "z": 0.0 },
+          "gravity": { "x": 0.0, "y": -0.4, "z": 0.0 },
+          "size_start": 0.34, "size_end": 0.06,
+          "color_start": { "r": 1.0, "g": 0.62, "b": 0.18, "a": 0.95 },
+          "color_end": { "r": 0.55, "g": 0.08, "b": 0.03, "a": 0.0 },
+          "rotation_speed": 0.8, "texture": "builtin:/textures/particle_soft", "max_count": 512 }
+      ]
+    },
+    {
+      "name": "smoke",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.9, "y": -0.3, "z": -0.4 } } },
+        { "type": "render.ParticleEmitter3D",
+          "rate": 40.0, "lifetime": 2.6, "speed": 0.9, "spread": 0.75,
+          "direction": { "x": 0.0, "y": 1.0, "z": 0.0 },
+          "gravity": { "x": 0.12, "y": 0.05, "z": 0.0 },
+          "size_start": 0.22, "size_end": 0.8,
+          "color_start": { "r": 0.55, "g": 0.58, "b": 0.65, "a": 0.35 },
+          "color_end": { "r": 0.2, "g": 0.22, "b": 0.3, "a": 0.0 },
+          "rotation_speed": -0.4, "texture": "builtin:/textures/particle_soft", "max_count": 256 }
+      ]
+    }
+  ]
+}

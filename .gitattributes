@@ -29,5 +29,6 @@
 # render3d_scene_e2e ④ / gltf_import_e2e 的"资产漂移"门）。importer 已经 `newline="\n"`，
 # 但 autocrlf=true 的检出会给这些 .json 补 \r → 每次比对都假报漂移。强制 LF 检出。
 *.mesh.json text eol=lf
+*.gltf text eol=lf
 *.skel.json text eol=lf
 *.clip.json text eol=lf

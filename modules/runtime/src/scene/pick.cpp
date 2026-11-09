@@ -136,10 +136,13 @@ Engine::PickHit Engine::pick_ray(const float origin[3], const float dir[3], floa
             continue;
         }
 
-        static const float kCubeMin[3] = { -0.6F, -0.6F, -0.6F };
-        static const float kCubeMax[3] = { 0.6F, 0.6F, 0.6F };
+        /* plans/27 M1-1：无资产路径 → 程序化图元包围盒（缺省 Cube 1.2 = 旧 ±0.6）。 */
+        float bmin[3] = { -0.6F, -0.6F, -0.6F };
+        float bmax[3] = { 0.6F, 0.6F, 0.6F };
+        const float gsize[3] = { mesh->geometry_size.x, mesh->geometry_size.y, mesh->geometry_size.z };
+        primitive_bounds((int32_t)mesh->geometry, gsize, bmin, bmax);
         float t = 0.0F;
-        if (!ray_local_aabb(origin, d, wm, kCubeMin, kCubeMax, t) || t > max_t)
+        if (!ray_local_aabb(origin, d, wm, bmin, bmax, t) || t > max_t)
             continue;
         set_hit(best, idx, t, origin, d);
     }

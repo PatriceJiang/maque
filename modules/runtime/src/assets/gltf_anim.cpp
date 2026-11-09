@@ -724,10 +724,11 @@ void Engine::gltf_anim_step(float dt) {
                 if (pr.morph_targets.empty()) continue;
                 const auto& nw = st.node_weights[(size_t)std::max(pr.node, 0)];
                 std::vector<float> w = nw.size() == pr.morph_targets.size() ? nw : pr.default_weights;
-                if (w == pr.applied_weights) {
-                    st.morph_weights[pi] = w;
-                    continue;
-                }
+                /* 权重总是记录（GPU 路径由 extract_3d 填进 frame3d.morph_weights；CPU 路径用于回退）。
+                 * plans/28：GPU 生效的 primitive 不再 CPU 重算顶点（共享 mesh 也只读权重，天然每实体独立）。 */
+                st.morph_weights[pi] = w;
+                if (morph_gpu && pr.gpu_morph) continue;
+                if (w == pr.applied_weights) continue;
                 if (pr.morph_owner < 0) pr.morph_owner = entity;
                 if (pr.morph_owner != entity) {
                     if (!pr.warned_shared) {

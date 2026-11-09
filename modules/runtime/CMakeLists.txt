@@ -15,7 +15,7 @@ add_library(maque_runtime STATIC
     # 宿主 API（schema api_list 的 310 个实现）按前缀分域
     src/api/system.cpp src/api/node.cpp src/api/ui.cpp src/api/scene.cpp
     src/api/spine.cpp src/api/imgui.cpp src/api/physics.cpp src/api/nav.cpp
-    src/api/audio.cpp src/api/storage.cpp src/api/message.cpp
+    src/api/audio.cpp src/api/storage.cpp src/api/message.cpp src/api/particles.cpp
     # 控制面（schema control_list 的 57 个方法）按域
     src/control/system.cpp src/control/scene.cpp src/control/world.cpp
     src/control/render.cpp src/control/storage.cpp src/control/audio.cpp
@@ -27,7 +27,7 @@ add_library(maque_runtime STATIC
     src/ui/debug_panel.cpp src/ui/engine_options.cpp
     # 渲染（3D 数学 / 渲染目标与相机 / 场景 shader / 3D 提取）
     src/render/math3d.cpp src/render/targets.cpp src/render/shader_passes.cpp
-    src/render/extract3d.cpp src/render/text.cpp
+    src/render/extract3d.cpp src/render/primitives.cpp src/render/text.cpp
     # 系统（动画/音频/粒子/导航/物理）
     src/systems/anim.cpp src/systems/audio.cpp src/systems/particles.cpp src/systems/nav.cpp
     src/systems/physics.cpp
@@ -91,4 +91,21 @@ if(MAQUE_BUILD_TESTS)
     target_include_directories(maque_nine_patch_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     set_target_properties(maque_nine_patch_test PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
     add_test(NAME nine_patch COMMAND maque_nine_patch_test)
+    maque_deploy_asan(maque_nine_patch_test)
+
+    # 程序化图元几何单测（plans/27 M1-1）：布局/索引/法线/包围盒/绕序/分段夹紧；不建窗口。
+    add_executable(maque_primitives_test tests/primitives_test.cpp)
+    target_include_directories(maque_primitives_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(maque_primitives_test PRIVATE maque::runtime)
+    set_target_properties(maque_primitives_test PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    add_test(NAME primitives COMMAND maque_primitives_test)
+    maque_deploy_asan(maque_primitives_test)
+
+    # GPU morph 增量打包单测（plans/28 §3.9）：32B/目标/顶点、target 主序、normal 缺失补 0、上限 8。
+    add_executable(maque_morph_layout_test tests/morph_layout_test.cpp)
+    target_include_directories(maque_morph_layout_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_link_libraries(maque_morph_layout_test PRIVATE maque::runtime)
+    set_target_properties(maque_morph_layout_test PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    add_test(NAME morph_layout COMMAND maque_morph_layout_test)
+    maque_deploy_asan(maque_morph_layout_test)
 endif()
