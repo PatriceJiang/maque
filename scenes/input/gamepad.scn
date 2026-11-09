@@ -1,0 +1,8 @@
+{
+  "title": "gamepad",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "script": "gamepad.js",
+  "entities": []
+}

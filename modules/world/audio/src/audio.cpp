@@ -247,12 +247,25 @@ int mq_audio_set_spatial(mq_audio* a, uint64_t voice, float x, float y, float z,
     return ok ? MQ_AUDIO_OK : MQ_AUDIO_ERR_HANDLE;
 }
 
+int mq_audio_set_velocity(mq_audio* a, uint64_t voice, float vx, float vy, float vz, float doppler) {
+    if (!a) return MQ_AUDIO_ERR_ARG;
+    a->device->lock();
+    const bool ok = a->mixer.set_velocity(voice, vx, vy, vz, doppler);
+    a->device->unlock();
+    return ok ? MQ_AUDIO_OK : MQ_AUDIO_ERR_HANDLE;
+}
+
 int mq_audio_set_listener(mq_audio* a, const mq_audio_listener* l) {
     if (!a) return MQ_AUDIO_ERR_ARG;
     Listener out;
     if (l) {
         out.x = l->x; out.y = l->y; out.z = l->z;
         out.dir_x = l->dir_x; out.dir_y = l->dir_y; out.dir_z = l->dir_z;
+        /* 尾部追加字段：旧调用方 struct_size 较小时退回 up=+Y / vel=0（ABI 兼容）。 */
+        if (l->struct_size >= sizeof(mq_audio_listener)) {
+            out.up_x = l->up_x; out.up_y = l->up_y; out.up_z = l->up_z;
+            out.vx = l->vel_x; out.vy = l->vel_y; out.vz = l->vel_z;
+        }
     }
     a->device->lock();
     a->mixer.set_listener(out);

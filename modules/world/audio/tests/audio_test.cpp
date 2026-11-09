@@ -348,6 +348,60 @@ void test_device_sdl() {
 #endif
 }
 
+/* plans/36：3D 听者朝向（up 向量）与 Doppler（远离 → 音高下降、播放变慢）。 */
+void test_spatial3d_and_doppler() {
+    maque::audio::Mixer m;
+    m.init(kRate, 2, 4);
+
+    auto clip = std::make_shared<maque::audio::Clip>();
+    clip->sample_rate = kRate;
+    clip->channels = 1;
+    clip->samples.assign(4800, 0.5F);      /* 0.1s 常量信号，便于算左右能量 */
+
+    maque::audio::Listener l;
+    l.x = 0.0F; l.y = 0.0F; l.z = 0.0F;
+    l.dir_x = 0.0F; l.dir_y = 0.0F; l.dir_z = -1.0F;   /* 看 -Z */
+    l.up_x = 0.0F; l.up_y = 1.0F; l.up_z = 0.0F;
+    m.set_listener(l);
+
+    maque::audio::VoiceParams p;
+    p.panning = MQ_AUDIO_PANNING_SPATIAL;
+    p.attenuation = MQ_AUDIO_ATTEN_INVERSE;
+    p.min_distance = 1.0F;
+    p.max_distance = 50.0F;
+    p.x = 10.0F; p.y = 0.0F; p.z = 0.0F;                 /* 正右方 → pan +1 */
+    m.play(clip, p);
+    std::vector<float> out(2400 * 2, 0.0F);
+    m.mix(out.data(), 2400);
+    double l2 = 0.0, r2 = 0.0;
+    for (uint32_t i = 0; i < 2400; ++i) { l2 += out[i * 2] * out[i * 2]; r2 += out[i * 2 + 1] * out[i * 2 + 1]; }
+    CHECK(r2 > l2 * 4.0);                                /* 右声道显著更响（3D 右向量） */
+
+    /* Doppler：声源快速远离（-Z 方向 100m/s）→ 播放速度 < 1。
+     * 0.1s 的 clip 在 5000 帧（≈0.104s）后仍应 active（无 Doppler 时已播完）。 */
+    maque::audio::Mixer d;
+    d.init(kRate, 2, 4);
+    d.set_listener(l);
+    maque::audio::VoiceParams q = p;
+    q.x = 0.0F; q.y = 0.0F; q.z = -100.0F;
+    q.vx = 0.0F; q.vy = 0.0F; q.vz = -100.0F;            /* away from listener */
+    q.doppler = 1.0F;
+    d.play(clip, q);
+    std::vector<float> sink(5000 * 2, 0.0F);
+    d.mix(sink.data(), 5000);
+    CHECK(d.active_voices() == 1);                       /* 变慢 → 没播完 */
+
+    maque::audio::Mixer n;
+    n.init(kRate, 2, 4);
+    n.set_listener(l);
+    maque::audio::VoiceParams r = q;
+    r.doppler = 0.0F;
+    n.play(clip, r);
+    std::vector<float> sink2(5000 * 2, 0.0F);
+    n.mix(sink2.data(), 5000);
+    CHECK(n.active_voices() == 0);                       /* 无 Doppler → 已播完 */
+}
+
 } // namespace
 
 int main() {
@@ -355,6 +409,7 @@ int main() {
     test_decode_lossy();
     test_offline_mix();
     test_spatial();
+    test_spatial3d_and_doppler();
     test_logical_clock();
     test_capacity();
     test_device_sdl();

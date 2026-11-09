@@ -87,6 +87,12 @@ int mq_input_quit(mq_input* in);
 void mq_input_pointer_pos(mq_input* in, uint32_t pointer_id, float* x, float* y);
 int mq_input_pointer_down(mq_input* in, uint32_t pointer_id);
 int mq_input_key_down(mq_input* in, uint32_t key);
+int mq_input_gamepad_count(mq_input* in);
+int mq_input_gamepad_connected(mq_input* in, uint32_t pad);
+/* 模拟量：左/右摇杆 -1..1，扳机 0..1；无手柄 = 0 */
+float mq_input_axis(mq_input* in, uint32_t pad, uint32_t axis);
+/* 按钮位掩码（mq_gamepad_button） */
+uint32_t mq_input_gamepad_buttons(mq_input* in, uint32_t pad);
 int mq_input_focus(mq_input* in);
 void mq_input_set_focus(mq_input* in, int entity);
 void mq_input_set_capture(mq_input* in, uint32_t pointer_id, int entity);

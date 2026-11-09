@@ -56,6 +56,12 @@ struct mq_input {
     int  hover = -1;
     int  last_consumed = 0;
 
+    /* 手柄（plans/36）：平台每帧写入 mq_input_frame；输入模块只读（模拟量是状态，不是事件）。 */
+    uint32_t gamepad_count = 0;
+    uint32_t gamepad_connected = 0;
+    float    gamepad_axis[24] = {};
+    uint32_t gamepad_buttons[4] = {};
+
     /* 回调 */
     mq_input_hit_test  hit = nullptr;      void* hit_user = nullptr;
     mq_input_parent_fn parent = nullptr;   void* parent_user = nullptr;
@@ -183,6 +189,20 @@ void mq_input_begin_frame(mq_input* in, const mq_input_frame* frame, uint64_t fr
     if (!in) return;
     in->frame_index = frame_index;
     in->events.clear();
+
+    /* 手柄状态：平台每帧写一份；frame 为空（回放/headless 无窗口）时清零，
+     * 保持"读不到设备 = 所有轴 0"的确定性语义。 */
+    if (frame) {
+        in->gamepad_count = frame->gamepad_count;
+        in->gamepad_connected = frame->gamepad_connected;
+        std::memcpy(in->gamepad_axis, frame->gamepad_axis, sizeof in->gamepad_axis);
+        std::memcpy(in->gamepad_buttons, frame->gamepad_buttons, sizeof in->gamepad_buttons);
+    } else {
+        in->gamepad_count = 0;
+        in->gamepad_connected = 0;
+        std::memset(in->gamepad_axis, 0, sizeof in->gamepad_axis);
+        std::memset(in->gamepad_buttons, 0, sizeof in->gamepad_buttons);
+    }
 
     if (in->replaying) {
         // 回放：只喂记录里属于本帧的事件（与录制时的帧号对齐）
@@ -472,6 +492,23 @@ const char* mq_input_log_get_meta(mq_input* in, const char* key) {
     if (!in || !key) return nullptr;
     for (auto& kv : in->meta) if (kv.first == key) return kv.second.c_str();
     return nullptr;
+}
+
+int mq_input_gamepad_count(mq_input* in) {
+    return in ? (int)in->gamepad_count : 0;
+}
+
+int mq_input_gamepad_connected(mq_input* in, uint32_t pad) {
+    return (in && pad < 4 && (in->gamepad_connected & (1u << pad))) ? 1 : 0;
+}
+
+float mq_input_axis(mq_input* in, uint32_t pad, uint32_t axis) {
+    if (!in || pad >= 4 || axis >= 6) return 0.0F;
+    return in->gamepad_axis[pad * 6 + axis];
+}
+
+uint32_t mq_input_gamepad_buttons(mq_input* in, uint32_t pad) {
+    return (in && pad < 4) ? in->gamepad_buttons[pad] : 0u;
 }
 
 } // extern "C"

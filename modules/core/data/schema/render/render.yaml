@@ -246,6 +246,9 @@
         - { name: clear_mode, type: ClearMode, default: "ClearMode::Skybox" }
         - { name: clear_color, type: math.Color }
         - { name: exposure, type: float, default: 1.0F }
+        # 主相机内建 OrbitControls 开关（右键环绕/中键平移/滚轮推拉/触摸手势）。
+        # false = 指针输入不再改写相机变换（跟车相机由脚本 node_look_at 计算）；RenderTexture 相机恒不 Orbit。
+        - { name: orbit_controls, type: bool, default: true }
     # 挂在任意相机节点（scn.Camera / render.Camera2D / render.Camera3D）上，把该相机输出变成
     # 可采样纹理。对外引用统一为 `rendertexture://<name>`；name 为空时使用节点名。
     # width/height=0 跟随场景设计分辨率。截图复用此目标，不另走一套相机/渲染语义。
@@ -354,6 +357,10 @@
         - { name: geometry, type: MeshGeometry, default: "MeshGeometry::Cube" }
         - { name: geometry_size, type: math.Vec3, default: "{1.2F, 1.2F, 1.2F}", attrs: { unit: m } }
         - { name: geometry_segments, type: math.Vec3, default: "{32.0F, 16.0F, 8.0F}" }
+        # 视锥剔除（plans/36）：true = 渲染器按 draw OBB 与相机视锥测试，视锥外跳过主 3D pass
+        # （阴影 pass 仍保留，避免视外投影消失）。false 对应 three.js Object3D.frustumCulled=false。
+        # `MAQUE_CULL=0` 全局关闭（A/B 像素参考）。
+        - { name: frustum_culled, type: bool, default: true }
     # 场景资源全屏 shader pass（docs/13）：shader 是**场景目录相对**的 .wgsl 路径，
     # 只要 @fragment fs_main + 32B uniform（group0 binding0）。引擎供全屏三角形 VS。
     # 绘制顺序：先于 3D/2D（背景层）；没有 3D 组件的纯 shader 场景同样可用。

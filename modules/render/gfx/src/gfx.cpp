@@ -106,6 +106,57 @@ struct MeshGpu {
     float bounds_max[3] = { 0, 0, 0 };
 };
 
+/* ---- 3D 视锥剔除（plans/36）----
+ * draw.flags bit29（0x20000000）= runtime 要求按视锥剔除（render.MeshRenderer.frustum_culled）。
+ * 用 **世界 AABB**（OBB 8 角点的包围盒）保守测试：不会误剔，只可能多画。
+ * `MAQUE_CULL=0` 全局关闭（A/B 像素参考）；`MAQUE_CULL_INFO=1` 每 60 帧打印剔除计数。 */
+struct CullPlane { float n[3]; float d; };
+
+static void cull_planes_from_vp(const float* m, CullPlane out[6]) {
+    /* 列主序 m：行 r = (m[r], m[4+r], m[8+r], m[12+r])。WebGPU NDC z ∈ [0,1]：
+     * 左 = row3+row0，右 = row3-row0，下 = row3+row1，上 = row3-row1，近 = row2，远 = row3-row2。 */
+    auto make = [&](float a, float b, float c, float d, CullPlane& p) {
+        const float len = std::sqrt(a * a + b * b + c * c);
+        const float inv = len > 1e-12F ? 1.0F / len : 0.0F;
+        p.n[0] = a * inv; p.n[1] = b * inv; p.n[2] = c * inv; p.d = d * inv;
+    };
+    const float r0[4] = { m[0], m[4], m[8], m[12] };
+    const float r1[4] = { m[1], m[5], m[9], m[13] };
+    const float r2[4] = { m[2], m[6], m[10], m[14] };
+    const float r3[4] = { m[3], m[7], m[11], m[15] };
+    make(r3[0] + r0[0], r3[1] + r0[1], r3[2] + r0[2], r3[3] + r0[3], out[0]);
+    make(r3[0] - r0[0], r3[1] - r0[1], r3[2] - r0[2], r3[3] - r0[3], out[1]);
+    make(r3[0] + r1[0], r3[1] + r1[1], r3[2] + r1[2], r3[3] + r1[3], out[2]);
+    make(r3[0] - r1[0], r3[1] - r1[1], r3[2] - r1[2], r3[3] - r1[3], out[3]);
+    make(r2[0], r2[1], r2[2], r2[3], out[4]);
+    make(r3[0] - r2[0], r3[1] - r2[1], r3[2] - r2[2], r3[3] - r2[3], out[5]);
+}
+
+static bool draw_outside_frustum(const MeshGpu& mesh, const float* model, const CullPlane planes[6]) {
+    float wmin[3] = { 1e30F, 1e30F, 1e30F };
+    float wmax[3] = { -1e30F, -1e30F, -1e30F };
+    for (int ci = 0; ci < 8; ++ci) {
+        const float p[3] = { (ci & 1) ? mesh.bounds_max[0] : mesh.bounds_min[0],
+                             (ci & 2) ? mesh.bounds_max[1] : mesh.bounds_min[1],
+                             (ci & 4) ? mesh.bounds_max[2] : mesh.bounds_min[2] };
+        const float x = model[0] * p[0] + model[4] * p[1] + model[8] * p[2] + model[12];
+        const float y = model[1] * p[0] + model[5] * p[1] + model[9] * p[2] + model[13];
+        const float z = model[2] * p[0] + model[6] * p[1] + model[10] * p[2] + model[14];
+        wmin[0] = std::min(wmin[0], x); wmax[0] = std::max(wmax[0], x);
+        wmin[1] = std::min(wmin[1], y); wmax[1] = std::max(wmax[1], y);
+        wmin[2] = std::min(wmin[2], z); wmax[2] = std::max(wmax[2], z);
+    }
+    for (int i = 0; i < 6; ++i) {
+        const CullPlane& pl = planes[i];
+        /* AABB 正向顶点：沿法线方向最远的点。全部在平面负侧 → 完全在视锥外。 */
+        const float px = pl.n[0] >= 0.0F ? wmax[0] : wmin[0];
+        const float py = pl.n[1] >= 0.0F ? wmax[1] : wmin[1];
+        const float pz = pl.n[2] >= 0.0F ? wmax[2] : wmin[2];
+        if (pl.n[0] * px + pl.n[1] * py + pl.n[2] * pz + pl.d < 0.0F) return true;
+    }
+    return false;
+}
+
 /* 场景资源全屏 shader pass（docs/13）：fragment 模块来自场景 .wgsl（**不是**内建 shader），
  * 顶点着色器由引擎提供（全屏三角形）。管线按目标格式懒建（离屏 RGBA8 / swapchain 格式各一份）。 */
 struct ShaderPassGpu {
@@ -4208,11 +4259,34 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     if (shadow_ready) {
         std::vector<float> corners;                    /* 每个有效 draw 8 个世界点（xyz 紧排） */
         corners.reserve((size_t)f->draw_count * 24u);
+        /* plans/36：阴影只拟合**相机附近**的可投影物（长赛道上避免全场景包围盒把车影摊成几像素）。
+         * 默认 120 世界单位；MAQUE_SHADOW_RANGE=0 关闭（旧行为 = 全场景）。跳过的是
+         * 距离相机 > range 且包围球完全不进入 range 的 draw；蒙皮网格（model=identity）不参与距离过滤。 */
+        static const float shadow_range = [] {
+            const char* e = std::getenv("MAQUE_SHADOW_RANGE");
+            const float v = (e && *e) ? (float)std::atof(e) : 0.0F;
+            return v > 0.0F ? v : (e && *e ? 0.0F : 120.0F);
+        }();
+        const float* cam_eye = f->views[0].eye;
         for (uint32_t di = 0; di < f->draw_count; ++di) {
             const mq_renderer_draw3d& d = f->draws[di];
             if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
             MeshGpu* m = dv->meshes[(size_t)d.mesh];
             if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
+            if (shadow_range > 0.0F && d.skin < 0) {
+                const float hx = 0.5F * (m->bounds_max[0] - m->bounds_min[0]);
+                const float hy = 0.5F * (m->bounds_max[1] - m->bounds_min[1]);
+                const float hz = 0.5F * (m->bounds_max[2] - m->bounds_min[2]);
+                const float sx = std::sqrt(d.model[0] * d.model[0] + d.model[1] * d.model[1] + d.model[2] * d.model[2]);
+                const float sy = std::sqrt(d.model[4] * d.model[4] + d.model[5] * d.model[5] + d.model[6] * d.model[6]);
+                const float sz = std::sqrt(d.model[8] * d.model[8] + d.model[9] * d.model[9] + d.model[10] * d.model[10]);
+                const float radius = std::sqrt(hx * hx * sx * sx + hy * hy * sy * sy + hz * hz * sz * sz);
+                const float dx = d.model[12] - cam_eye[0];
+                const float dy = d.model[13] - cam_eye[1];
+                const float dz = d.model[14] - cam_eye[2];
+                const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+                if (dist - radius > shadow_range) continue;
+            }
             for (int ci = 0; ci < 8; ++ci) {
                 const float p[3] = { (ci & 1) ? m->bounds_max[0] : m->bounds_min[0],
                                      (ci & 2) ? m->bounds_max[1] : m->bounds_min[1],
@@ -4352,6 +4426,9 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         };
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
+        CullPlane cull_planes[6];
+        cull_planes_from_vp(vp, cull_planes);
+        uint32_t culled_draws = 0;
         /* ---- 透明/折射拆分准备（plans/19 P1 transmission）----
          * 不透明先画；transmission 近似材质需要采样"位于其背后的不透明场景"做折射近似 →
          * opaque 画完把颜色 copy 成 scene color 纹理，再开第二个 pass 画 blend 列表（screen-space 折射）。
@@ -4363,11 +4440,29 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             const mq_renderer_draw3d& d = f->draws[di];
             const uint32_t draw_mask = (d.flags & 0x40000000) ? (uint32_t)d.layer : 0xFFFFFFFFu;
             if ((draw_mask & (uint32_t)v.layer_mask) == 0) continue;
+            /* plans/36：视锥剔除（runtime 按 MeshRenderer.frustum_culled 置 bit29）。
+             * 阴影 pass 不剔除（视外物体的投影仍应落进画面）。 */
+            static const bool cull_enabled = [] {
+                const char* e = std::getenv("MAQUE_CULL");
+                return !(e && *e && (e[0] == '0' || e[0] == 'o' || e[0] == 'O'));
+            }();
+            if (cull_enabled && (d.flags & 0x20000000) && d.skin < 0 && d.mesh >= 0 &&
+                (size_t)d.mesh < dv->meshes.size() && dv->meshes[(size_t)d.mesh] &&
+                dv->meshes[(size_t)d.mesh]->morph_targets == 0 &&
+                draw_outside_frustum(*dv->meshes[(size_t)d.mesh], d.model, cull_planes)) {
+                ++culled_draws;
+                continue;
+            }
             const mq_renderer_pbr_material* mm =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                     ? &f->materials[d.material] : nullptr;
             if (mm && mm->alpha_mode == 2) blend_list.push_back(&d);
             else opaque_list.push_back(&d);
+        }
+        if (culled_draws > 0 && std::getenv("MAQUE_CULL_INFO")) {
+            static uint64_t cull_frame = 0;
+            if ((cull_frame++ % 60) == 0)
+                std::print("gfx: culled draws {}/{} view={}\n", culled_draws, f->draw_count, vi);
         }
         {
             const float ex = v.eye[0], ey = v.eye[1], ez = v.eye[2];

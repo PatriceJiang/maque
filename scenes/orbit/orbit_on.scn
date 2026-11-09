@@ -1,0 +1,16 @@
+{
+  "title": "orbit_on", "width": 320, "height": 240, "views": 1,
+  "entities": [
+    { "name": "camera", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 5.0 } } },
+      { "type": "render.Camera3D", "fov_y": 50.0, "orbit_controls": true,
+        "clear_color": { "r": 0.05, "g": 0.06, "b": 0.08, "a": 1.0 } } ] },
+    { "name": "sun", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.6, "y": -0.4, "z": 0.0 } } },
+      { "type": "render.Light", "intensity": 2.0 } ] },
+    { "name": "cube", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 1.2, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer" },
+      { "type": "asset.PbrMaterial", "base_color": { "r": 0.9, "g": 0.55, "b": 0.25, "a": 1.0 }, "roughness": 0.45 } ] }
+  ]
+}

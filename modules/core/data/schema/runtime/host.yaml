@@ -39,6 +39,16 @@
     - { fn: input_target,  ctx: true, returns: float }     # 命中实体（-1 = 未命中）
     - { fn: input_down,    ctx: true, returns: float }     # 左键/指针是否按住
     - { fn: input_key,     ctx: true, args: [ { name: code, type: float } ], returns: float }
+    # 手柄（plans/36）：模拟量 + 按钮位掩码。无手柄时轴 = 0、按钮 = 0；纯读状态，不进 checksum。
+    # 轴下标见 platform 的 mq_gamepad_axis（0=LX 1=LY 2=RX 3=RY 4=LT 5=RT）；pad 默认 0。
+    - { fn: input_axis,    ctx: true, args: [ { name: axis, type: float } ], returns: float,
+        doc: "pad0 的模拟轴（-1..1；扳机 0..1）" }
+    - { fn: input_axis_pad, ctx: true, args: [ { name: pad, type: float }, { name: axis, type: float } ], returns: float }
+    - { fn: input_gamepad_button, ctx: true, args: [ { name: button, type: float } ], returns: float,
+        doc: "pad0 是否按住该按钮位（值 = mq_gamepad_button，如 (1<<0)=A/South）" }
+    - { fn: input_gamepad_buttons, ctx: true, args: [ { name: pad, type: float } ], returns: float,
+        doc: "pad 的按钮位掩码" }
+    - { fn: input_gamepad_connected, ctx: true, returns: float, doc: "已连接手柄数（0 = 无）" }
     - { fn: input_focus,   ctx: true, returns: float }
     - { fn: input_set_focus, ctx: true, args: [ { name: id, type: float } ] }
     # UI（docs/19 §4/§8、components/04）：命中/悬停查询（引擎按 role，不认具体组件）
@@ -200,6 +210,25 @@
                                              { name: dy, type: float }, { name: dz, type: float },
                                              { name: max_distance, type: float } ], returns: float,
         doc: "**世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限）" }
+    # 3D 碰撞查询（plans/36；**只查询、无动力学**）：网格 OBB（本地 bounds × 世界矩阵）与球/扫掠球/
+    # 定向盒求交。命中写 last_*（距离/点），脚本用 scene_cast_distance / scene_cast_point_* 读。
+    - { fn: scene_sphere_overlap, ctx: true, args: [ { name: x, type: float }, { name: y, type: float },
+                                                     { name: z, type: float }, { name: radius, type: float } ], returns: float,
+        doc: "球与最近网格 OBB 重叠 → 实体 id（-1 = 未命中）" }
+    - { fn: scene_sphere_cast, ctx: true, args: [ { name: ox, type: float }, { name: oy, type: float },
+                                                  { name: oz, type: float }, { name: dx, type: float },
+                                                  { name: dy, type: float }, { name: dz, type: float },
+                                                  { name: radius, type: float }, { name: max_distance, type: float } ], returns: float,
+        doc: "**连续**扫掠球（沿世界方向）→ 最近命中的实体 id；命中距离写入 scene_cast_distance" }
+    - { fn: scene_obb_overlap, ctx: true, args: [ { name: x, type: float }, { name: y, type: float },
+                                                  { name: z, type: float }, { name: hx, type: float },
+                                                  { name: hy, type: float }, { name: hz, type: float },
+                                                  { name: yaw, type: float } ], returns: float,
+        doc: "绕 Y 轴 yaw（弧度）的定向盒与网格 OBB 重叠（SAT）→ 实体 id（-1 = 未命中）" }
+    - { fn: scene_cast_distance, ctx: true, returns: float, doc: "最近一次 scene_sphere_cast/raycast 命中的世界距离（无 = -1）" }
+    - { fn: scene_cast_point_x, ctx: true, returns: float }
+    - { fn: scene_cast_point_y, ctx: true, returns: float }
+    - { fn: scene_cast_point_z, ctx: true, returns: float }
 
     # ---- 场景实例（docs/32）：`.scn` = 节点树 + 行为；每个实例独立 VM/生命周期/事件作用域 ----
     # 变更类：句柄**立即分配**，实体/VM/on_start 在**下一个帧边界**完成（docs/32 §7）。

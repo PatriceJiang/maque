@@ -2571,6 +2571,8 @@ static const void* mq_acc_render_Camera3D_clear_color_getp(const void* p) { cons
 static void* mq_acc_render_Camera3D_clear_color_getmp(void* p) { auto& s = *static_cast<render::Camera3D*>(p); return &s.clear_color; }
 static double mq_acc_render_Camera3D_exposure_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.exposure); }
 static void mq_acc_render_Camera3D_exposure_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.exposure = static_cast<decltype(s.exposure)>(v); }
+static double mq_acc_render_Camera3D_orbit_controls_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return s.orbit_controls ? 1.0 : 0.0; }
+static void mq_acc_render_Camera3D_orbit_controls_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.orbit_controls = v != 0.0; }
 static const mq_field_accessor mq_acc_render_Camera3D[] = {
     { mq_acc_render_Camera3D_active_getf, mq_acc_render_Camera3D_active_setf, 0, 0, 0, 0 },
     { mq_acc_render_Camera3D_priority_getf, mq_acc_render_Camera3D_priority_setf, 0, 0, 0, 0 },
@@ -2584,6 +2586,7 @@ static const mq_field_accessor mq_acc_render_Camera3D[] = {
     { mq_acc_render_Camera3D_clear_mode_getf, mq_acc_render_Camera3D_clear_mode_setf, 0, 0, 0, 0 },
     { 0, 0, 0, 0, mq_acc_render_Camera3D_clear_color_getp, mq_acc_render_Camera3D_clear_color_getmp },
     { mq_acc_render_Camera3D_exposure_getf, mq_acc_render_Camera3D_exposure_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_orbit_controls_getf, mq_acc_render_Camera3D_orbit_controls_setf, 0, 0, 0, 0 },
 };
 static const mq_field_desc mq_fields_render_Camera3D[] = {
     { "active", (uint32_t)offsetof(render::Camera3D, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[0] },
@@ -2598,6 +2601,7 @@ static const mq_field_desc mq_fields_render_Camera3D[] = {
     { "clear_mode", (uint32_t)offsetof(render::Camera3D, clear_mode), MQ_TK_ENUM, 3336631157u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[9] },
     { "clear_color", (uint32_t)offsetof(render::Camera3D, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[10] },
     { "exposure", (uint32_t)offsetof(render::Camera3D, exposure), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[11] },
+    { "orbit_controls", (uint32_t)offsetof(render::Camera3D, orbit_controls), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[12] },
 };
 
 static double mq_acc_render_DrawCommand_op_getf(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return static_cast<double>(static_cast<int64_t>(s.op)); }
@@ -2815,6 +2819,8 @@ static const void* mq_acc_render_MeshRenderer_geometry_size_getp(const void* p) 
 static void* mq_acc_render_MeshRenderer_geometry_size_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.geometry_size; }
 static const void* mq_acc_render_MeshRenderer_geometry_segments_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.geometry_segments; }
 static void* mq_acc_render_MeshRenderer_geometry_segments_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.geometry_segments; }
+static double mq_acc_render_MeshRenderer_frustum_culled_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.frustum_culled ? 1.0 : 0.0; }
+static void mq_acc_render_MeshRenderer_frustum_culled_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.frustum_culled = v != 0.0; }
 static const mq_field_accessor mq_acc_render_MeshRenderer[] = {
     { 0, 0, 0, 0, mq_acc_render_MeshRenderer_mesh_getp, mq_acc_render_MeshRenderer_mesh_getmp },
     { 0, 0, mq_acc_render_MeshRenderer_mesh_path_gets, mq_acc_render_MeshRenderer_mesh_path_sets, mq_acc_render_MeshRenderer_mesh_path_getp, mq_acc_render_MeshRenderer_mesh_path_getmp },
@@ -2836,6 +2842,7 @@ static const mq_field_accessor mq_acc_render_MeshRenderer[] = {
     { mq_acc_render_MeshRenderer_geometry_getf, mq_acc_render_MeshRenderer_geometry_setf, 0, 0, 0, 0 },
     { 0, 0, 0, 0, mq_acc_render_MeshRenderer_geometry_size_getp, mq_acc_render_MeshRenderer_geometry_size_getmp },
     { 0, 0, 0, 0, mq_acc_render_MeshRenderer_geometry_segments_getp, mq_acc_render_MeshRenderer_geometry_segments_getmp },
+    { mq_acc_render_MeshRenderer_frustum_culled_getf, mq_acc_render_MeshRenderer_frustum_culled_setf, 0, 0, 0, 0 },
 };
 static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "mesh", (uint32_t)offsetof(render::MeshRenderer, mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[0] },
@@ -2858,6 +2865,7 @@ static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "geometry", (uint32_t)offsetof(render::MeshRenderer, geometry), MQ_TK_ENUM, 488514272u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[17] },
     { "geometry_size", (uint32_t)offsetof(render::MeshRenderer, geometry_size), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[18] },
     { "geometry_segments", (uint32_t)offsetof(render::MeshRenderer, geometry_segments), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[19] },
+    { "frustum_culled", (uint32_t)offsetof(render::MeshRenderer, frustum_culled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[20] },
 };
 
 static double mq_acc_render_MotionStreak_mode_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
@@ -8618,7 +8626,7 @@ extern const mq_type_desc mq_type_render_Camera3D = {
     3639452981u,
     (uint32_t)sizeof(render::Camera3D),
     (uint32_t)alignof(render::Camera3D),
-    12u,
+    13u,
     mq_fields_render_Camera3D,
     2u,
     0u,
@@ -8856,7 +8864,7 @@ extern const mq_type_desc mq_type_render_MeshRenderer = {
     956582135u,
     (uint32_t)sizeof(render::MeshRenderer),
     (uint32_t)alignof(render::MeshRenderer),
-    20u,
+    21u,
     mq_fields_render_MeshRenderer,
     4u,
     0u,
@@ -12415,6 +12423,9 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
         case 18111872u:
             if (std::strcmp(name, "exposure") == 0) return &type->fields[11];
             break;
+        case 2014957426u:
+            if (std::strcmp(name, "orbit_controls") == 0) return &type->fields[12];
+            break;
         }
         break;
     case 2472060372u:
@@ -12601,6 +12612,9 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
             break;
         case 121275080u:
             if (std::strcmp(name, "geometry_segments") == 0) return &type->fields[19];
+            break;
+        case 2749141335u:
+            if (std::strcmp(name, "frustum_culled") == 0) return &type->fields[20];
             break;
         }
         break;

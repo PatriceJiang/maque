@@ -96,6 +96,11 @@
       - { fn: mq_input_pointer_pos, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
       - { fn: mq_input_pointer_down, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" } ] }
       - { fn: mq_input_key_down, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: key, type: "uint32_t" } ] }
+      # ---- 手柄模拟量（plans/36）：数据由平台每帧写进 mq_input_frame，输入模块只读 ----
+      - { fn: mq_input_gamepad_count, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_gamepad_connected, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: pad, type: "uint32_t" } ] }
+      - { fn: mq_input_axis, returns: "float", args: [ { name: in, type: "mq_input*" }, { name: pad, type: "uint32_t" }, { name: axis, type: "uint32_t" } ], doc: "模拟量：左/右摇杆 -1..1，扳机 0..1；无手柄 = 0" }
+      - { fn: mq_input_gamepad_buttons, returns: "uint32_t", args: [ { name: in, type: "mq_input*" }, { name: pad, type: "uint32_t" } ], doc: "按钮位掩码（mq_gamepad_button）" }
       - { fn: mq_input_focus, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
       - { fn: mq_input_set_focus, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: entity, type: "int" } ] }
       - { fn: mq_input_set_capture, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" }, { name: entity, type: "int" } ] }

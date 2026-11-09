@@ -103,6 +103,11 @@ constexpr bool api_all_set(const mq_script_api_v1& a) {
         && a.host_input_target
         && a.host_input_down
         && a.host_input_key
+        && a.host_input_axis
+        && a.host_input_axis_pad
+        && a.host_input_gamepad_button
+        && a.host_input_gamepad_buttons
+        && a.host_input_gamepad_connected
         && a.host_input_focus
         && a.host_input_set_focus
         && a.host_ui_hit
@@ -209,6 +214,13 @@ constexpr bool api_all_set(const mq_script_api_v1& a) {
         && a.host_scene_path
         && a.host_scene_pick
         && a.host_scene_raycast
+        && a.host_scene_sphere_overlap
+        && a.host_scene_sphere_cast
+        && a.host_scene_obb_overlap
+        && a.host_scene_cast_distance
+        && a.host_scene_cast_point_x
+        && a.host_scene_cast_point_y
+        && a.host_scene_cast_point_z
         && a.host_scene_instantiate
         && a.host_scene_unload
         && a.host_scene_reload
@@ -454,6 +466,11 @@ constexpr mq_script_api_v1 kApi = {
     &host::input_target,
     &host::input_down,
     &host::input_key,
+    &host::input_axis,
+    &host::input_axis_pad,
+    &host::input_gamepad_button,
+    &host::input_gamepad_buttons,
+    &host::input_gamepad_connected,
     &host::input_focus,
     &host::input_set_focus,
     &host::ui_hit,
@@ -560,6 +577,13 @@ constexpr mq_script_api_v1 kApi = {
     &host::scene_path,
     &host::scene_pick,
     &host::scene_raycast,
+    &host::scene_sphere_overlap,
+    &host::scene_sphere_cast,
+    &host::scene_obb_overlap,
+    &host::scene_cast_distance,
+    &host::scene_cast_point_x,
+    &host::scene_cast_point_y,
+    &host::scene_cast_point_z,
     &host::scene_instantiate,
     &host::scene_unload,
     &host::scene_reload,

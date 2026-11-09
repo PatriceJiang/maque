@@ -232,6 +232,21 @@ public:
         float input_key(float code) const {
             return c.api_ptr()->host_input_key(c.host_ctx(), code);
         }
+        float input_axis(float axis) const {
+            return c.api_ptr()->host_input_axis(c.host_ctx(), axis);
+        }
+        float input_axis_pad(float pad, float axis) const {
+            return c.api_ptr()->host_input_axis_pad(c.host_ctx(), pad, axis);
+        }
+        float input_gamepad_button(float button) const {
+            return c.api_ptr()->host_input_gamepad_button(c.host_ctx(), button);
+        }
+        float input_gamepad_buttons(float pad) const {
+            return c.api_ptr()->host_input_gamepad_buttons(c.host_ctx(), pad);
+        }
+        float input_gamepad_connected() const {
+            return c.api_ptr()->host_input_gamepad_connected(c.host_ctx());
+        }
         float input_focus() const {
             return c.api_ptr()->host_input_focus(c.host_ctx());
         }
@@ -592,6 +607,27 @@ public:
         }
         float scene_raycast(float ox, float oy, float oz, float dx, float dy, float dz, float max_distance) const {
             return c.api_ptr()->host_scene_raycast(c.host_ctx(), ox, oy, oz, dx, dy, dz, max_distance);
+        }
+        float scene_sphere_overlap(float x, float y, float z, float radius) const {
+            return c.api_ptr()->host_scene_sphere_overlap(c.host_ctx(), x, y, z, radius);
+        }
+        float scene_sphere_cast(float ox, float oy, float oz, float dx, float dy, float dz, float radius, float max_distance) const {
+            return c.api_ptr()->host_scene_sphere_cast(c.host_ctx(), ox, oy, oz, dx, dy, dz, radius, max_distance);
+        }
+        float scene_obb_overlap(float x, float y, float z, float hx, float hy, float hz, float yaw) const {
+            return c.api_ptr()->host_scene_obb_overlap(c.host_ctx(), x, y, z, hx, hy, hz, yaw);
+        }
+        float scene_cast_distance() const {
+            return c.api_ptr()->host_scene_cast_distance(c.host_ctx());
+        }
+        float scene_cast_point_x() const {
+            return c.api_ptr()->host_scene_cast_point_x(c.host_ctx());
+        }
+        float scene_cast_point_y() const {
+            return c.api_ptr()->host_scene_cast_point_y(c.host_ctx());
+        }
+        float scene_cast_point_z() const {
+            return c.api_ptr()->host_scene_cast_point_z(c.host_ctx());
         }
         float scene_instantiate(float parent, std::string_view path, std::string_view params) const {
             const std::string _s0(path);

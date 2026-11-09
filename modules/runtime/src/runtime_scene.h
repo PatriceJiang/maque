@@ -16,6 +16,9 @@ struct Scene {
     Engine* eng = nullptr;                  // 组件析构需要反射 ctx（remove/重建时）
     std::unordered_map<int, SceneNode> nodes;   // id → 节点（id 只是稳定键；层级看 children）
     std::vector<int> roots;                    // 根节点 id（升序）
+    /* .scn 平级实体的 `parent` 名字引用（plans/36）：加载完整个场景后再解析 →
+     * 允许前向引用；与嵌套 children 同时给出时以 children 为准。 */
+    std::vector<std::pair<int, std::string>> pending_parents;
     std::vector<std::pair<int, int>> visit_stack_;   // visit 的 DFS 栈（复用容量，不每帧分配）
 
     Scene() = default;
@@ -23,7 +26,8 @@ struct Scene {
     Scene(const Scene&) = delete; Scene& operator=(const Scene&) = delete;
     Scene(Scene&& o) noexcept
         : desc(std::move(o.desc)), text_(std::move(o.text_)), next_id(o.next_id), eng(o.eng),
-          nodes(std::move(o.nodes)), roots(std::move(o.roots)) {
+          nodes(std::move(o.nodes)), roots(std::move(o.roots)),
+          pending_parents(std::move(o.pending_parents)) {
         o.eng = nullptr;             // 所有权转移：源对象不得再析构已移交的资源
     }
     Scene& operator=(Scene&& o) noexcept {
@@ -35,15 +39,17 @@ struct Scene {
         eng = o.eng; o.eng = nullptr;
         nodes = std::move(o.nodes);
         roots = std::move(o.roots);
+        pending_parents = std::move(o.pending_parents);
         return *this;
     }
     /* 析构全部组件 blob（含动态成员）。 */
     void destroy_all() {
-        if (!eng) { nodes.clear(); roots.clear(); return; }
+        if (!eng) { nodes.clear(); roots.clear(); pending_parents.clear(); return; }
         for (auto& [k, ent] : nodes)
             for (auto& [t, b] : ent.comps) destroy_blob(*eng, t, b.bytes);
         nodes.clear();
         roots.clear();
+        pending_parents.clear();
     }
 
     bool deserialize(Engine& eng, const std::string& text);

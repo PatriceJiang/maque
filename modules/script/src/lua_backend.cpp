@@ -150,6 +150,14 @@ int trampoline(lua_State* L) {
     int nnum = 0, nstr = 0;
     int ai = 1;
     const size_t nkinds = h->kinds.size();
+    if (nkinds == 0) {
+        /* 旧注册方式（register_num/str/mixed/ret_str）不传 kinds：按实参类型拆分，
+         * 与历史语义一致（Str/Mixed 依赖这里区分字符串/数字）。 */
+        for (int i = 1; i <= argc && (nnum + nstr) < 16; ++i) {
+            if (lua_type(L, i) == LUA_TSTRING) strs[nstr++] = lua_tostring(L, i);
+            else nums[nnum++] = lua_tonumber(L, i);
+        }
+    } else
     for (size_t k = 0; k < nkinds; ++k) {
         const char kind = h->kinds[k] ? h->kinds[k] : 'n';
         if (kind == 's') {

@@ -124,6 +124,7 @@ void Engine::clear_asset_caches() {
     entity_morph_mesh.clear();
     entity_by_name.clear();
     skin_palettes.clear();
+    audio_prev_pos.clear();
     gltf_warned.clear();
     gltf_frame_info = false;
     gltf_anim_info = false;

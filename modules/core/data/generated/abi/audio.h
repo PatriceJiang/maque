@@ -85,7 +85,7 @@ typedef struct mq_audio_voice_desc {
     float doppler;   /* 0=关（P0 仅记录，P2 生效） */
 } mq_audio_voice_desc;
 
-/* 听者（世界坐标；dir 为单位朝向）。 */
+/* 听者（世界坐标；dir/up 为单位向量，右向量由 cross(dir, up) 派生）。 */
 typedef struct mq_audio_listener {
     uint32_t struct_size;
     float x;
@@ -94,6 +94,12 @@ typedef struct mq_audio_listener {
     float dir_x;
     float dir_y;
     float dir_z;
+    float up_x;   /* 上向量（0 向量 = 回退世界 +Y） */
+    float up_y;
+    float up_z;
+    float vel_x;   /* 听者速度（世界 m/s；Doppler 用） */
+    float vel_y;
+    float vel_z;
 } mq_audio_listener;
 
 /* 运行期统计（只读诊断；控制面/Tracy 用）。 */
@@ -129,6 +135,8 @@ int mq_audio_set_volume(mq_audio* a, uint64_t voice, float volume);
 int mq_audio_set_pitch(mq_audio* a, uint64_t voice, float pitch);
 /* 组件/AudioSource 每帧同步世界位置与衰减参数 */
 int mq_audio_set_spatial(mq_audio* a, uint64_t voice, float x, float y, float z, uint32_t panning, uint32_t attenuation, float min_distance, float max_distance);
+/* 声源速度（世界 m/s）+ Doppler 强度（0=关）；与 listener.vel_* 一起算音高偏移 */
+int mq_audio_set_velocity(mq_audio* a, uint64_t voice, float vx, float vy, float vz, float doppler);
 int mq_audio_set_listener(mq_audio* a, const mq_audio_listener* l);
 int mq_audio_set_bus(mq_audio* a, const char* bus, float volume, uint32_t mute);
 int mq_audio_set_master(mq_audio* a, float volume, uint32_t mute);

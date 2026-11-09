@@ -117,7 +117,7 @@
           - { name: max_distance, type: "float" }
           - { name: doppler, type: "float", doc: "0=关（P0 仅记录，P2 生效）" }
       - name: mq_audio_listener
-        doc: "听者（世界坐标；dir 为单位朝向）。"
+        doc: "听者（世界坐标；dir/up 为单位向量，右向量由 cross(dir, up) 派生）。"
         fields:
           - { name: struct_size, type: "uint32_t" }
           - { name: x, type: "float" }
@@ -126,6 +126,13 @@
           - { name: dir_x, type: "float" }
           - { name: dir_y, type: "float" }
           - { name: dir_z, type: "float" }
+          # ---- 尾部追加（plans/36）：3D 朝向 + Doppler 速度 ----
+          - { name: up_x, type: "float", doc: "上向量（0 向量 = 回退世界 +Y）" }
+          - { name: up_y, type: "float" }
+          - { name: up_z, type: "float" }
+          - { name: vel_x, type: "float", doc: "听者速度（世界 m/s；Doppler 用）" }
+          - { name: vel_y, type: "float" }
+          - { name: vel_z, type: "float" }
       - name: mq_audio_stats
         doc: "运行期统计（只读诊断；控制面/Tracy 用）。"
         fields:
@@ -148,6 +155,7 @@
       - { fn: mq_audio_set_volume, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: volume, type: "float" } ], doc: "只改变量（保留 pitch/pan）" }
       - { fn: mq_audio_set_pitch, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: pitch, type: "float" } ], doc: "只改音高（保留 volume/pan）" }
       - { fn: mq_audio_set_spatial, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: x, type: "float" }, { name: y, type: "float" }, { name: z, type: "float" }, { name: panning, type: "uint32_t" }, { name: attenuation, type: "uint32_t" }, { name: min_distance, type: "float" }, { name: max_distance, type: "float" } ], doc: "组件/AudioSource 每帧同步世界位置与衰减参数" }
+      - { fn: mq_audio_set_velocity, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: vx, type: "float" }, { name: vy, type: "float" }, { name: vz, type: "float" }, { name: doppler, type: "float" } ], doc: "声源速度（世界 m/s）+ Doppler 强度（0=关）；与 listener.vel_* 一起算音高偏移" }
       - { fn: mq_audio_set_listener, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: l, type: "const mq_audio_listener*" } ] }
       - { fn: mq_audio_set_bus, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: bus, type: "const char*" }, { name: volume, type: "float" }, { name: mute, type: "uint32_t" } ] }
       - { fn: mq_audio_set_master, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: volume, type: "float" }, { name: mute, type: "uint32_t" } ] }

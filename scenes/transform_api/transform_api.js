@@ -20,6 +20,9 @@ function update() {
     const child = entity_find("child");
     const looker = entity_find("looker");
     const plain = entity_find("plain");
+    const camera = entity_find("camera");
+    const flat_child = entity_find("flat_child");
+    const flat_fwd = entity_find("flat_fwd");
 
     let ok = true;
     ok = check(root >= 0 && child >= 0 && looker >= 0 && plain >= 0, "entity_find") && ok;
@@ -85,6 +88,14 @@ function update() {
     node_set_local_scale(child, 1.0, 2.0, 3.0);
     const sc = node_local_scale(child);
     ok = check(near(sc.x, 1.0) && near(sc.y, 2.0) && near(sc.z, 3.0), "local_scale") && ok;
+
+    /* ---- 平级 `"parent": "名字"`（plans/36）：后向与前向引用都要挂上 ---- */
+    ok = check(node_parent(flat_child) === root, "flat parent (after root)") && ok;
+    ok = check(node_parent(flat_fwd) === root, "flat parent (before root)") && ok;
+
+    /* ---- 主相机 Orbit 开关字段（plans/36）：反射读取 = 0（场景显式关闭） ---- */
+    ok = check(node_get_number(camera, "render.Camera3D", "orbit_controls") == 0,
+               "camera orbit_controls=false") && ok;
 
     /* ---- 无 Transform3D 的节点：set_local_* 自动补挂组件 ---- */
     node_set_local_position(plain, 1.0, 2.0, 3.0);

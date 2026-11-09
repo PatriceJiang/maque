@@ -96,6 +96,9 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 camera_mask = (int32_t)cam->culling_mask;
                 camera_viewport = cam->viewport;
                 clear = cam->clear_color;
+                /* plans/36：主相机可关闭内建 Orbit（跟车相机）；同时缓存给输入分发用。 */
+                allow_orbit = allow_orbit && cam->orbit_controls;
+                orbit_controls = cam->orbit_controls;
             }
         }
         auto* lb = comp_by_name(*this, idx, "render.Light", &dlight);
@@ -219,6 +222,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     }
                     dr.skin = skin_index;
                     dr.flags |= 0x40000000;            /* draw.layer 是有效 culling mask（旧调用方无此位） */
+                    if (mesh->frustum_culled) dr.flags |= 0x20000000;   /* gfx 主 pass 视锥剔除 */
                     dr.layer = -1;
                     if (const auto* m = as_component<render::MeshRenderer>(dmesh, mb->data()))
                         dr.layer = (int32_t)m->culling_mask;
@@ -648,6 +652,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             std::memcpy(dr.model, model_m, sizeof dr.model);
             dr.skin = skin_index;
             dr.flags |= 0x40000000;            /* draw.layer 是有效 culling mask（旧调用方无此位） */
+            if (mesh && mesh->frustum_culled) dr.flags |= 0x20000000;   /* gfx 主 pass 视锥剔除 */
             dr.layer = -1;
             if (const auto* m = as_component<render::MeshRenderer>(dmesh, mb->data()))
                 dr.layer = (int32_t)m->culling_mask;

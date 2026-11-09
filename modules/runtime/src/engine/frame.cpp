@@ -239,7 +239,8 @@ void Engine::step_frame(bool render_frame) {
         MQ_TRACY_ZONE_N(runtime, "input.sample");    // Tracy：平台事件泵 + 原始事件（窗口像素）
         window_event_hooks();                        // CI/演示：MAQUE_WINDOW_EVENT_AT → 真实 SDL 窗口事件
         mq_platform_pump(platform);
-        if (window) mq_platform_poll(platform, &iframe);
+        /* 无窗口也要 poll：手柄状态与设备队列不依赖窗口（headless 的 CI 用手柄模拟量）。 */
+        mq_platform_poll(platform, &iframe);
         /* 窗口 resize/最大化 → 自动重建渲染目标（FBO）。必须在 canvas_resolve / 渲染之前：
          * 画布映射、文本栅格化倍率（ss）、视图几何都读 TW/ss（下一段代码）。 */
         if (window) sync_window_size(iframe.width, iframe.height);
@@ -422,7 +423,10 @@ void Engine::step_frame(bool render_frame) {
      *   右键拖拽 = 环绕（platform 按钮编码：0=左 / 1=右 / 2=中）
      *   中键拖拽 = 平移（沿相机右/上轴移动 orbit_target，模型跟随鼠标）
      *   滚轮     = 推拉 */
-    if (has_3d && !imgui_pointer_capture) {
+    /* 主相机 render.Camera3D.orbit_controls=false：指针只给脚本，不改写相机（跟车相机）。
+     * 关掉时清拖拽状态，避免重新打开后接着上一次的半截拖拽。 */
+    if (!orbit_controls) { orbit_dragging = false; orbit_panning = false; }
+    if (has_3d && orbit_controls && !imgui_pointer_capture) {
         for (uint32_t i = 0; i < iframe.pointer_count; ++i) {
             const mq_platform_pointer_event& pe = iframe.pointers[i];
             if (pe.pointer_type == MQ_PLATFORM_POINTER_TOUCH) {
@@ -458,7 +462,7 @@ void Engine::step_frame(bool render_frame) {
     }
     // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
     if (input) {
-        if (!mq_input_replaying(input) && window) mq_input_begin_frame(input, &iframe, frame);
+        if (!mq_input_replaying(input)) mq_input_begin_frame(input, &iframe, frame);
         else mq_input_begin_frame(input, nullptr, frame);
         mq_input_dispatch(input);
         if (mq_input_quit(input)) quit = true;

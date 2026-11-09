@@ -100,9 +100,10 @@
 | 23 | 运行时 glTF/GLB 直读（C++，[plans/23](23-runtime-gltf-loading.md)） | ✅ | — | ✅ | ✅ | `render.MeshRenderer.mesh_path` 直接吃 `.gltf`/`.glb`（外部 bin/data URI/GLB BIN）；静态网格 + 核心 PBR；蒙皮/动画/压缩扩展未做 |
 | 24 | 运行时 glTF 蒙皮/动画/morph+材质+灯光（[plans/24](24-runtime-gltf-capabilities.md)） | ✅ | — | ✅ | 🟡 | P1–P5 已落地；P6 instancing/sparse/node_visibility/materials_variants 已做，animation_pointer 材质数值子集；KTX2/BasisU 已接入；贴图/节点 pointer、块格式 KTX2 与压缩未做 |
 | 26 | C/C++ 脚本（native guest，[plans/26](26-cpp-scripts.md)） | ✅ | ✅ P0 | ✅ | 🟡 | 桌面 native 动态 guest P0（API 表/SDK/后端/manifest/e2e）；桌面 static E2E 已落地；Android/iOS/WASM 平台集成与 wasm guest 待做 |
-| 27 | **three.js 常用功能迁移评估**（能力矩阵/命名对照/路线图，[plans/27](27-threejs-feature-migration.md)） | ✅ | — | ✅ M1-1/M1-2/M1-3 | 🟡 | 几何图元、雾、色调映射、3D 粒子（实例化批次）已落地；Boids JS 参考 + 全 shader 版（`boids_e2e`）；变换 API/Billboard 待做 |
+| 27 | **three.js 常用功能迁移评估**（能力矩阵/命名对照/路线图，[plans/27](27-threejs-feature-migration.md)） | ✅ | — | ✅ M1-1/M1-2/M1-3/M1-4 | 🟡 | 几何图元、雾、色调映射、3D 粒子（实例化批次）、**变换/朝向 typed API** 已落地；Boids JS 参考 + 全 shader 版（`boids_e2e`）；Billboard 待做 |
 | 28 | **GPU morph / 3D 粒子批渲染**（[plans/28](28-gpu-morph-and-particles.md)） | ✅ | ✅ M1/M2 | ✅ morph/粒子 | 🟡 | GPU morph（morph 增量 storage + 逐 draw 权重，`gltf_morph_e2e`）与粒子实例化批次 ABI/管线已落地；GPU 解析模拟（非确定性、默认关）未做 |
 | 29 | **脚本 props 与 SceneInstance 属性覆盖**（[plans/29](29-script-props-and-instance-overrides.md)） | ✅ | — | — | ⬜ | 设计稿：现状 `SceneInstance` 无覆盖字段、`Script.exposed`(map) 不可序列化、`script.Script` 未实例化；方案 B（组件字段覆盖）+ A1–A3（props/实例覆盖）分阶段 |
+| 36 | **赛车方向引擎补强**（[plans/36](36-racing-engine-hardening.md)） | ✅ | ✅ | ✅ | 🟡 | 3D 变换 typed API、手柄模拟量、orbit 开关、视锥剔除、阴影相机附近拟合、3D 音频 listener/Doppler、3D 碰撞查询、静态网格合并工具；3D 刚体/InstancedMesh 未做 |
 
 **声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、
@@ -126,4 +127,5 @@
 [26](26-cpp-scripts.md) C/C++ 脚本（native guest：桌面 dynamic + static E2E 已落地；平台 static/wasm P1/P2）；
 [27](27-threejs-feature-migration.md) three.js 常用功能迁移评估（能力矩阵 + 命名对照 + M1–M4 路线图，部分落地）；
 [28](28-gpu-morph-and-particles.md) GPU morph 与 3D 粒子批渲染设计（设计稿，未实现）；
-[29](29-script-props-and-instance-overrides.md) 脚本 props 与 SceneInstance 属性覆盖（设计稿：现状缺口 + 方案 B/A1–A3）。
+[29](29-script-props-and-instance-overrides.md) 脚本 props 与 SceneInstance 属性覆盖（设计稿：现状缺口 + 方案 B/A1–A3）；
+[36](36-racing-engine-hardening.md) 赛车方向引擎补强（typed transform/手柄/剔除/阴影/3D 音频/碰撞查询/静态合批，已落地）。

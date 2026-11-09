@@ -13,6 +13,7 @@ set -u
 PLAYER="$1"
 SCENE="$2"
 WORK="$3"
+LUA_SCENE="${4:-}"
 
 rm -rf "$WORK"
 mkdir -p "$WORK"
@@ -34,4 +35,13 @@ grep -q "transform_api: PASS" "$WORK/run.log" || { cat "$WORK/run.log"; fail "�
 # 反射路径与 typed API 必须指向同一份存储（脚本已断言，这里再确认脚本确实跑了）
 grep -q "\[game\] transform_api: PASS" "$WORK/run.log" || { cat "$WORK/run.log"; fail "脚本未执行"; }
 
-echo "node_transform_api_e2e: PASS（局部/世界读写、lookAt 父链补偿、localToWorld 互逆、值类型编组）"
+# Lua 侧值类型（table）与同一批动词（plans/36）：单独场景/脚本，避免混语言干扰。
+if [ -n "$LUA_SCENE" ] && [ -f "$LUA_SCENE" ]; then
+    timeout 120 "$PLAYER" --frames 4 "$LUA_SCENE" > "$WORK/lua.log" 2>&1
+    RC=$?
+    [ "$RC" -eq 0 ] || { cat "$WORK/lua.log"; fail "lua player exit=$RC"; }
+    grep -q "\[game\] transform_api_lua: PASS" "$WORK/lua.log" \
+        || { cat "$WORK/lua.log"; fail "Lua 值类型/变换 API 自检失败"; }
+fi
+
+echo "node_transform_api_e2e: PASS（JS/Lua 局部/世界读写、lookAt 父链补偿、localToWorld 互逆、值类型编组）"

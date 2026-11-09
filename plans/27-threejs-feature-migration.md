@@ -418,7 +418,13 @@ mesh.localToWorld(p);
   post 的 tonemap 必须为 none，否则二次 tonemap；优先级写进 `engine_options_fill_post`（场景 > F4 > 默认）。
 - **验收**：`tone_mapping_e2e`：同一 HDR 场景在 6 种模式下的亮度/高光裁剪差异可区分；ACES 默认像素零差异。
 
-#### M1-4 变换 / 朝向 API（three.js `Object3D` 动词）
+#### M1-4 变换 / 朝向 API（three.js `Object3D` 动词）—— ✅ 已落地
+
+> 实现（2026-11）：`api_list` 值类型编组（`math.Vec3` ↔ JS `{x,y,z}` / Lua table / C guest `float*`）+
+> `mq_script_register_value`（script ABI 5）；新增 `node_set_local_position/rotation/scale`、
+> `node_local_position/rotation/scale`、`node_world_position/rotation`、`node_local_to_world`、
+> `node_world_to_local`、`node_look_at`（含父链补偿；缺组件自动补挂 `scene.Transform3D`）。
+> 样例 `scenes/transform_api/`，测试 `ctest -R node_transform_api_e2e`；细节见 [plans/36](36-racing-engine-hardening.md) §2。
 
 ```yaml
 # host.yaml（api_list）建议：

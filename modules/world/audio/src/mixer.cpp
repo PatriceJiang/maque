@@ -131,6 +131,16 @@ bool Mixer::set_spatial(uint64_t handle, float x, float y, float z, uint32_t pan
     return true;
 }
 
+bool Mixer::set_velocity(uint64_t handle, float vx, float vy, float vz, float doppler) {
+    Voice* v = find(handle);
+    if (!v || !v->active) return false;
+    v->params.vx = vx;
+    v->params.vy = vy;
+    v->params.vz = vz;
+    v->params.doppler = std::clamp(doppler, 0.0F, 2.0F);
+    return true;
+}
+
 bool Mixer::set_params(uint64_t handle, float volume, float pitch, float pan) {
     Voice* v = find(handle);
     if (!v || !v->active) return false;
@@ -175,12 +185,13 @@ void Mixer::mix(float* out, uint32_t frames) {
         const uint32_t cch = c.channels;
         if (!cframes || !cch) continue;
 
-        const double step = static_cast<double>(v.params.pitch) *
-                            static_cast<double>(c.sample_rate) / static_cast<double>(rate_);
-        if (!(step > 0.0)) continue;
+        const double base_step = static_cast<double>(v.params.pitch) *
+                                 static_cast<double>(c.sample_rate) / static_cast<double>(rate_);
+        if (!(base_step > 0.0)) continue;
 
         float gain = v.params.volume * bus_gain(v.params.bus) * master;
         float pan = v.params.pan;
+        double step = base_step;
         if (v.params.panning != 0 && cch >= 1) {
             const float dx = v.params.x - listener_.x;
             const float dy = v.params.y - listener_.y;
@@ -188,14 +199,43 @@ void Mixer::mix(float* out, uint32_t frames) {
             const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
             gain *= attenuation_gain(v.params.attenuation, dist, v.params.min_distance,
                                      v.params.max_distance);
-            /* 听者右向量：朝向 (dir_x, dir_y) 在 2D 平面内旋转 -90° → (-dir_y, dir_x)。
-             * 投影到右向量并按水平距离归一化 → 方位 pan（3D 的 HRTF 留 P2）。 */
-            /* 朝向 dir 的"右"：y 向上的 2D 里 facing +x 时右手边是 -y → (dir_y, -dir_x) */
-            const float right_x = listener_.dir_y;
-            const float right_y = -listener_.dir_x;
-            const float horiz = std::sqrt(dx * dx + dy * dy);
-            const float proj = dx * right_x + dy * right_y;
-            pan = std::clamp(proj / std::max(horiz, 1e-3F), -1.0F, 1.0F);
+            /* 3D：右向量 = normalize(cross(dir, up))；方位 pan = 单位方向在右向量上的投影。
+             * 兼容旧调用方（listener.up 全 0）：退回 2D 的 (dir_y, -dir_x)，保持历史 pan 语义。 */
+            float rx, ry, rz;
+            const float ul = std::sqrt(listener_.up_x * listener_.up_x +
+                                       listener_.up_y * listener_.up_y +
+                                       listener_.up_z * listener_.up_z);
+            if (ul < 1e-6F) {
+                rx = listener_.dir_y; ry = -listener_.dir_x; rz = 0.0F;
+            } else {
+                const float ux = listener_.up_x / ul, uy = listener_.up_y / ul, uz = listener_.up_z / ul;
+                rx = listener_.dir_y * uz - listener_.dir_z * uy;
+                ry = listener_.dir_z * ux - listener_.dir_x * uz;
+                rz = listener_.dir_x * uy - listener_.dir_y * ux;
+            }
+            const float rl = std::sqrt(rx * rx + ry * ry + rz * rz);
+            if (rl > 1e-6F) { rx /= rl; ry /= rl; rz /= rl; }
+            else { rx = 1.0F; ry = 0.0F; rz = 0.0F; }
+            if (dist > 1e-4F) {
+                const float inv = 1.0F / dist;
+                pan = std::clamp((dx * rx + dy * ry + dz * rz) * inv, -1.0F, 1.0F);
+            } else {
+                pan = 0.0F;
+            }
+            /* Doppler：径向相对速度（听者→声源为正）。
+             * v_rel = dot(v_src - v_listener, u)；远离 → v_rel > 0 → 音高下降。
+             * scale = c / (c + v_rel)，再按 doppler 强度插值（0 = 不改变音高）。 */
+            if (v.params.doppler > 0.0F && dist > 1e-4F) {
+                const float inv = 1.0F / dist;
+                const float ux = dx * inv, uy = dy * inv, uz = dz * inv;
+                const float v_rel = (v.params.vx - listener_.vx) * ux +
+                                    (v.params.vy - listener_.vy) * uy +
+                                    (v.params.vz - listener_.vz) * uz;
+                constexpr float kSoundSpeed = 343.0F;
+                float scale = kSoundSpeed / std::max(kSoundSpeed + v_rel, 1.0F);
+                scale = 1.0F + (scale - 1.0F) * std::clamp(v.params.doppler, 0.0F, 2.0F);
+                step = base_step * std::clamp(scale, 0.5F, 2.0F);
+            }
         }
         if (channels_ == 2) {
             /* 等功率 pan：pan=0 时两侧各 1/√2。 */

@@ -8,8 +8,31 @@ namespace maque::rt {
 void Engine::audio_step(float dt) {
     (void)dt;
     if (!audio || !scene || !has_audio_components) return;   // 无音源/听者：跳过两次全树遍历
+    /* 3D 位置/朝向取节点世界矩阵（含父链）。脚本/动画可能在本步之前改过变换 →
+     * 先刷新一次派生矩阵，保证声音定位与画面同一帧一致（与拾取同口径）。 */
+    scene->update_world3d(*this);
     std::vector<int> ids;
     scene->collect_preorder(ids);
+    const float sdt = dt > 1e-6F ? dt : 1.0F / 60.0F;
+    auto world_pos = [&](int id, SceneNode& e, float out[3]) -> bool {
+        if (component<scene::Transform3D>(e)) {
+            out[0] = e.world_m[12]; out[1] = e.world_m[13]; out[2] = e.world_m[14];
+            return true;
+        }
+        out[0] = e.world_x; out[1] = e.world_y; out[2] = 0.0F;
+        return false;
+    };
+    auto velocity = [&](int id, const float pos[3], float out[3]) {
+        auto& prev = audio_prev_pos[id];
+        if (prev.valid) {
+            out[0] = (pos[0] - prev.x) / sdt;
+            out[1] = (pos[1] - prev.y) / sdt;
+            out[2] = (pos[2] - prev.z) / sdt;
+        } else {
+            out[0] = out[1] = out[2] = 0.0F;
+        }
+        prev.x = pos[0]; prev.y = pos[1]; prev.z = pos[2]; prev.valid = true;
+    };
 
     /* 听者：每 instance 取稳定排序后的第一个 active */
     for (int id : ids) {
@@ -17,15 +40,25 @@ void Engine::audio_step(float dt) {
         if (!e) continue;
         const auto* lis = component<audio::AudioListener>(*e);
         if (!lis || !lis->active) continue;
-        const float rad = e->angle * 3.14159265358979F / 180.0F;
         mq_audio_listener l{};
         l.struct_size = sizeof l;
-        l.x = e->world_x;
-        l.y = e->world_y;
-        l.z = 0.0F;
-        l.dir_x = std::cos(rad);
-        l.dir_y = std::sin(rad);
-        l.dir_z = 0.0F;
+        float pos[3];
+        const bool is3d = world_pos(id, *e, pos);
+        l.x = pos[0]; l.y = pos[1]; l.z = pos[2];
+        if (is3d) {
+            float fwd[3], up[3];
+            m4_axis(e->world_m, 2, fwd);
+            m4_axis(e->world_m, 1, up);
+            l.dir_x = -fwd[0]; l.dir_y = -fwd[1]; l.dir_z = -fwd[2];   /* 相机/节点 -Z 朝前 */
+            l.up_x = up[0]; l.up_y = up[1]; l.up_z = up[2];
+        } else {
+            const float rad = e->angle * 3.14159265358979F / 180.0F;
+            l.dir_x = std::cos(rad); l.dir_y = std::sin(rad); l.dir_z = 0.0F;
+            l.up_x = 0.0F; l.up_y = 1.0F; l.up_z = 0.0F;
+        }
+        float vel[3];
+        velocity(id, pos, vel);
+        l.vel_x = vel[0]; l.vel_y = vel[1]; l.vel_z = vel[2];
         mq_audio_set_listener(audio, &l);
         const float master = lis->master_volume;
         if (master != last_listener_master) {
@@ -58,6 +91,9 @@ void Engine::audio_step(float dt) {
         const uint32_t panning = (uint32_t)src->panning;
         const uint32_t attenuation = (uint32_t)src->attenuation;
         const std::string* bus = &src->bus;
+        float pos[3], vel[3];
+        world_pos(id, *e, pos);
+        velocity(id, pos, vel);
 
         if (voice == 0) {
             if (!autoplay) continue;
@@ -76,9 +112,10 @@ void Engine::audio_step(float dt) {
             vd.attenuation = attenuation;
             vd.min_distance = min_d;
             vd.max_distance = max_d;
-            vd.x = e->world_x;
-            vd.y = e->world_y;
-            vd.z = 0.0F;
+            vd.x = pos[0];
+            vd.y = pos[1];
+            vd.z = pos[2];
+            vd.doppler = src->doppler;
             voice = mq_audio_play(audio, &vd);
             if (std::getenv("MAQUE_TRACE_AUDIO")) {
                 uint32_t fr = 0, rt = 0, chn = 0;
@@ -91,8 +128,9 @@ void Engine::audio_step(float dt) {
         /* 每帧同步可调参数（脚本可用 node_set_number 改 volume 等） */
         mq_audio_set_volume(audio, voice, volume);
         mq_audio_set_pitch(audio, voice, pitch);
-        mq_audio_set_spatial(audio, voice, e->world_x, e->world_y, 0.0F, panning, attenuation,
+        mq_audio_set_spatial(audio, voice, pos[0], pos[1], pos[2], panning, attenuation,
                              min_d, max_d);
+        mq_audio_set_velocity(audio, voice, vel[0], vel[1], vel[2], src->doppler);
         uint32_t st = 0;
         float head = 0.0F;
         if (mq_audio_voice_state(audio, voice, &st, &head) == MQ_AUDIO_OK) {
@@ -155,6 +193,7 @@ void Engine::audio_setup() {
 
 void Engine::audio_teardown() {
     audio_capture_finish();
+    audio_prev_pos.clear();
     if (audio) {
         mq_audio_destroy(audio);   // 内含 stop/close（join 音频线程）
         audio = nullptr;

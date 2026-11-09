@@ -361,11 +361,12 @@ int32_t Engine::load_primitive(const render::MeshRenderer& mesh) {
     key.seg[2] = sane(mesh.geometry_segments.z, 8.0F);
     auto it = primitive_meshes.find(key);
     if (it != primitive_meshes.end()) return it->second;
-    /* 参数组合上限（正常场景远小于此）；超限回退内建 cube，防止脚本逐帧改参导致句柄无限增长。 */
-    if (primitive_meshes.size() >= 64) {
+    /* 参数组合上限（正常场景远小于此；512 = 8 车 × 多种图元 + 场景道具仍有富余）。
+     * 超限回退内建 cube，防止脚本逐帧改参导致句柄无限增长。 */
+    if (primitive_meshes.size() >= 512) {
         if (!primitive_cap_warned) {
             primitive_cap_warned = true;
-            std::print(stderr, "runtime: 程序化图元缓存已达上限 64，后续组合回退内建 cube\n");
+            std::print(stderr, "runtime: 程序化图元缓存已达上限 512，后续组合回退内建 cube\n");
         }
         return -1;
     }

@@ -2224,6 +2224,7 @@ struct Camera3D {
     render::ClearMode clear_mode = ClearMode::Skybox;
     math::Color clear_color;
     float exposure = 1.0F;
+    bool orbit_controls = true;
 };
 
 struct DrawCommand {
@@ -2273,6 +2274,7 @@ struct MeshRenderer {
     render::MeshGeometry geometry = MeshGeometry::Cube;
     math::Vec3 geometry_size = {1.2F, 1.2F, 1.2F};
     math::Vec3 geometry_segments = {32.0F, 16.0F, 8.0F};
+    bool frustum_culled = true;
 };
 
 struct MotionStreak {

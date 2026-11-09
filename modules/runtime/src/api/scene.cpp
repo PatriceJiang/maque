@@ -49,6 +49,35 @@ float scene_raycast(void* ctx, float ox, float oy, float oz, float dx, float dy,
     return (float)eng->pick_ray(origin, dir, max_distance).entity;
 }
 
+/* ---- 3D 碰撞查询（plans/36；只查询、无动力学）---- */
+float scene_sphere_overlap(void* ctx, float x, float y, float z, float radius) {
+    const float c[3] = { x, y, z };
+    return (float)((Engine*)ctx)->pick_sphere_overlap(c, radius).entity;
+}
+
+float scene_sphere_cast(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz,
+                        float radius, float max_distance) {
+    const float o[3] = { ox, oy, oz };
+    const float d[3] = { dx, dy, dz };
+    return (float)((Engine*)ctx)->pick_sphere_cast(o, d, radius, max_distance).entity;
+}
+
+float scene_obb_overlap(void* ctx, float x, float y, float z, float hx, float hy, float hz,
+                        float yaw) {
+    const float c[3] = { x, y, z };
+    const float h[3] = { hx, hy, hz };
+    return (float)((Engine*)ctx)->pick_obb_overlap(c, h, yaw).entity;
+}
+
+float scene_cast_distance(void* ctx) {
+    const auto& h = ((Engine*)ctx)->cast_last;
+    return h.entity >= 0 ? h.distance : -1.0F;
+}
+
+float scene_cast_point_x(void* ctx) { return ((Engine*)ctx)->cast_last.entity >= 0 ? ((Engine*)ctx)->cast_last.point[0] : 0.0F; }
+float scene_cast_point_y(void* ctx) { return ((Engine*)ctx)->cast_last.entity >= 0 ? ((Engine*)ctx)->cast_last.point[1] : 0.0F; }
+float scene_cast_point_z(void* ctx) { return ((Engine*)ctx)->cast_last.entity >= 0 ? ((Engine*)ctx)->cast_last.point[2] : 0.0F; }
+
 /* ---- 场景实例（docs/32 §7.1）：句柄立即分配，构建/卸载在帧边界（apply_instance_ops） ---- */
 float scene_instantiate(void* ctx, float parent, const char* path, const char* params) {
     auto* eng = (Engine*)ctx;

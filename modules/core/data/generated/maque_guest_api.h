@@ -8,7 +8,7 @@
 #include "abi/script.h"
 
 #define MQ_SCRIPT_API_VERSION 1u
-#define MQ_SCRIPT_API_HASH 0x21b2bc7du
+#define MQ_SCRIPT_API_HASH 0x14f46ae5u
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +61,11 @@ typedef struct mq_script_api_v1 {
     float (*host_input_target)(void* ctx);
     float (*host_input_down)(void* ctx);
     float (*host_input_key)(void* ctx, float code);
+    float (*host_input_axis)(void* ctx, float axis);  /* pad0 的模拟轴（-1..1；扳机 0..1） */
+    float (*host_input_axis_pad)(void* ctx, float pad, float axis);
+    float (*host_input_gamepad_button)(void* ctx, float button);  /* pad0 是否按住该按钮位（值 = mq_gamepad_button，如 (1<<0)=A/South） */
+    float (*host_input_gamepad_buttons)(void* ctx, float pad);  /* pad 的按钮位掩码 */
+    float (*host_input_gamepad_connected)(void* ctx);  /* 已连接手柄数（0 = 无） */
     float (*host_input_focus)(void* ctx);
     void (*host_input_set_focus)(void* ctx, float id);
     float (*host_ui_hit)(void* ctx);
@@ -167,6 +172,13 @@ typedef struct mq_script_api_v1 {
     const char* (*host_scene_path)(void* ctx);  /* 当前场景路径（启动/切场景时给出的原始路径） */
     float (*host_scene_pick)(void* ctx, float x, float y);  /* 主 Camera3D 从**设计坐标** (x,y)（= input_x/input_y 同一套）发射线 → 最近命中的 3D 网格实体（最近成帧相机；无命中/首帧前 = -1） */
     float (*host_scene_raycast)(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz, float max_distance);  /* **世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限） */
+    float (*host_scene_sphere_overlap)(void* ctx, float x, float y, float z, float radius);  /* 球与最近网格 OBB 重叠 → 实体 id（-1 = 未命中） */
+    float (*host_scene_sphere_cast)(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz, float radius, float max_distance);  /* **连续**扫掠球（沿世界方向）→ 最近命中的实体 id；命中距离写入 scene_cast_distance */
+    float (*host_scene_obb_overlap)(void* ctx, float x, float y, float z, float hx, float hy, float hz, float yaw);  /* 绕 Y 轴 yaw（弧度）的定向盒与网格 OBB 重叠（SAT）→ 实体 id（-1 = 未命中） */
+    float (*host_scene_cast_distance)(void* ctx);  /* 最近一次 scene_sphere_cast/raycast 命中的世界距离（无 = -1） */
+    float (*host_scene_cast_point_x)(void* ctx);
+    float (*host_scene_cast_point_y)(void* ctx);
+    float (*host_scene_cast_point_z)(void* ctx);
     float (*host_scene_instantiate)(void* ctx, float parent, const char* path, const char* params);  /* 实例化一个 .scn（parent=-1 挂到世界根；params=JSON 参数，可省略）；返回实例句柄（-1=失败） */
     float (*host_scene_unload)(void* ctx, float instance);  /* 卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM） */
     float (*host_scene_reload)(void* ctx, float instance);

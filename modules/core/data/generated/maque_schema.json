@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 263,
-  "api_count": 344,
+  "api_count": 356,
   "control_count": 64,
   "callback_count": 11,
   "module_count": 27,
@@ -7477,7 +7477,7 @@
       "namespace": "render",
       "kind": "struct",
       "type_id": 3639452981,
-      "size": 72,
+      "size": 76,
       "align": 4,
       "pod": true,
       "has_dynamic": false,
@@ -7595,6 +7595,15 @@
           "type_id": 0,
           "count": 0,
           "offset": 68,
+          "attrs": {}
+        },
+        {
+          "name": "orbit_controls",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": 72,
           "attrs": {}
         }
       ]
@@ -8608,6 +8617,15 @@
           "type": "math.Vec3",
           "kind": "struct",
           "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "frustum_culled",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
           "count": 0,
           "offset": null,
           "attrs": {}
@@ -18443,6 +18461,85 @@
       "manual": null
     },
     {
+      "name": "host.input_axis",
+      "namespace": "host",
+      "fn": "input_axis",
+      "global": true,
+      "args": [
+        {
+          "name": "axis",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "pad0 的模拟轴（-1..1；扳机 0..1）",
+      "manual": null
+    },
+    {
+      "name": "host.input_axis_pad",
+      "namespace": "host",
+      "fn": "input_axis_pad",
+      "global": true,
+      "args": [
+        {
+          "name": "pad",
+          "type": "float"
+        },
+        {
+          "name": "axis",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.input_gamepad_button",
+      "namespace": "host",
+      "fn": "input_gamepad_button",
+      "global": true,
+      "args": [
+        {
+          "name": "button",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "pad0 是否按住该按钮位（值 = mq_gamepad_button，如 (1<<0)=A/South）",
+      "manual": null
+    },
+    {
+      "name": "host.input_gamepad_buttons",
+      "namespace": "host",
+      "fn": "input_gamepad_buttons",
+      "global": true,
+      "args": [
+        {
+          "name": "pad",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "pad 的按钮位掩码",
+      "manual": null
+    },
+    {
+      "name": "host.input_gamepad_connected",
+      "namespace": "host",
+      "fn": "input_gamepad_connected",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": "已连接手柄数（0 = 无）",
+      "manual": null
+    },
+    {
       "name": "host.input_focus",
       "namespace": "host",
       "fn": "input_focus",
@@ -20412,6 +20509,162 @@
       "returns": "float",
       "ctx": true,
       "doc": "**世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_sphere_overlap",
+      "namespace": "host",
+      "fn": "scene_sphere_overlap",
+      "global": true,
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        },
+        {
+          "name": "radius",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "球与最近网格 OBB 重叠 → 实体 id（-1 = 未命中）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_sphere_cast",
+      "namespace": "host",
+      "fn": "scene_sphere_cast",
+      "global": true,
+      "args": [
+        {
+          "name": "ox",
+          "type": "float"
+        },
+        {
+          "name": "oy",
+          "type": "float"
+        },
+        {
+          "name": "oz",
+          "type": "float"
+        },
+        {
+          "name": "dx",
+          "type": "float"
+        },
+        {
+          "name": "dy",
+          "type": "float"
+        },
+        {
+          "name": "dz",
+          "type": "float"
+        },
+        {
+          "name": "radius",
+          "type": "float"
+        },
+        {
+          "name": "max_distance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "**连续**扫掠球（沿世界方向）→ 最近命中的实体 id；命中距离写入 scene_cast_distance",
+      "manual": null
+    },
+    {
+      "name": "host.scene_obb_overlap",
+      "namespace": "host",
+      "fn": "scene_obb_overlap",
+      "global": true,
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        },
+        {
+          "name": "hx",
+          "type": "float"
+        },
+        {
+          "name": "hy",
+          "type": "float"
+        },
+        {
+          "name": "hz",
+          "type": "float"
+        },
+        {
+          "name": "yaw",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "绕 Y 轴 yaw（弧度）的定向盒与网格 OBB 重叠（SAT）→ 实体 id（-1 = 未命中）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_cast_distance",
+      "namespace": "host",
+      "fn": "scene_cast_distance",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": "最近一次 scene_sphere_cast/raycast 命中的世界距离（无 = -1）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_cast_point_x",
+      "namespace": "host",
+      "fn": "scene_cast_point_x",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_cast_point_y",
+      "namespace": "host",
+      "fn": "scene_cast_point_y",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_cast_point_z",
+      "namespace": "host",
+      "fn": "scene_cast_point_z",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -27295,6 +27548,26 @@
               "name": "height",
               "type": "int",
               "doc": null
+            },
+            {
+              "name": "gamepad_count",
+              "type": "uint32_t",
+              "doc": "已连接 pad 数（0..MQ_GAMEPAD_MAX）"
+            },
+            {
+              "name": "gamepad_connected",
+              "type": "uint32_t",
+              "doc": "bit i = pad i 已连接"
+            },
+            {
+              "name": "gamepad_axis",
+              "type": "float[24]",
+              "doc": null
+            },
+            {
+              "name": "gamepad_buttons",
+              "type": "uint32_t[4]",
+              "doc": "每 pad 的按钮位掩码（mq_gamepad_button）"
             }
           ]
         },
@@ -27325,6 +27598,126 @@
         }
       ],
       "enums": [
+        {
+          "name": "mq_gamepad_axis",
+          "values": [
+            {
+              "name": "MQ_GAMEPAD_AXIS_LEFT_X",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_AXIS_LEFT_Y",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_AXIS_RIGHT_X",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_AXIS_RIGHT_Y",
+              "value": 3,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_AXIS_TRIGGER_LEFT",
+              "value": 4,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_AXIS_TRIGGER_RIGHT",
+              "value": 5,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_gamepad_button",
+          "values": [
+            {
+              "name": "MQ_GAMEPAD_BUTTON_SOUTH",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_EAST",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_WEST",
+              "value": 4,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_NORTH",
+              "value": 8,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_BACK",
+              "value": 16,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_GUIDE",
+              "value": 32,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_START",
+              "value": 64,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_LEFT_STICK",
+              "value": 128,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_RIGHT_STICK",
+              "value": 256,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_LEFT_SHOULDER",
+              "value": 512,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_RIGHT_SHOULDER",
+              "value": 1024,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_DPAD_UP",
+              "value": 2048,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_DPAD_DOWN",
+              "value": 4096,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_DPAD_LEFT",
+              "value": 8192,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_DPAD_RIGHT",
+              "value": 16384,
+              "doc": null
+            },
+            {
+              "name": "MQ_GAMEPAD_BUTTON_MISC1",
+              "value": 32768,
+              "doc": null
+            }
+          ]
+        },
         {
           "name": "mq_platform_pointer_type",
           "values": [
@@ -32103,6 +32496,42 @@
           ]
         },
         {
+          "name": "mq_audio_set_velocity",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "vx",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "vy",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "vz",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "doppler",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_audio_set_listener",
           "returns": "int",
           "args": [
@@ -32432,6 +32861,36 @@
             },
             {
               "name": "dir_z",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "up_x",
+              "type": "float",
+              "doc": "上向量（0 向量 = 回退世界 +Y）"
+            },
+            {
+              "name": "up_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "up_z",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "vel_x",
+              "type": "float",
+              "doc": "听者速度（世界 m/s；Doppler 用）"
+            },
+            {
+              "name": "vel_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "vel_z",
               "type": "float",
               "doc": null
             }
@@ -34612,6 +35071,70 @@
             },
             {
               "name": "key",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_input_gamepad_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "in",
+              "type": "mq_input*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_input_gamepad_connected",
+          "returns": "int",
+          "args": [
+            {
+              "name": "in",
+              "type": "mq_input*",
+              "doc": null
+            },
+            {
+              "name": "pad",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_input_axis",
+          "returns": "float",
+          "args": [
+            {
+              "name": "in",
+              "type": "mq_input*",
+              "doc": null
+            },
+            {
+              "name": "pad",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "axis",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_input_gamepad_buttons",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "in",
+              "type": "mq_input*",
+              "doc": null
+            },
+            {
+              "name": "pad",
               "type": "uint32_t",
               "doc": null
             }

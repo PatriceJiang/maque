@@ -1,0 +1,1203 @@
+{
+  "title": "cull",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "env_intensity": 1.0,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 10.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 50.0,
+          "near": 0.1,
+          "far": 600.0,
+          "clear_color": {
+            "r": 0.05,
+            "g": 0.06,
+            "b": 0.08,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -0.6,
+              "y": -0.4,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.0
+        }
+      ]
+    },
+    {
+      "name": "visible",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.9,
+            "g": 0.5,
+            "b": 0.2,
+            "a": 1.0
+          },
+          "roughness": 0.5
+        }
+      ]
+    },
+    {
+      "name": "offscreen_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 200.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 203.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_2",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 206.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_3",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 209.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_4",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 212.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_5",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 215.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_6",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 218.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_7",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 221.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_8",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 224.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_9",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 227.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_10",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 230.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_11",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 233.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_12",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 236.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_13",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 239.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_14",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 242.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_15",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 245.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_16",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 248.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_17",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 251.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_18",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 254.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_19",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 257.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_20",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 260.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_21",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 263.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_22",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 266.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_23",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 269.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_24",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 272.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_25",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 275.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_26",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 278.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_27",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 281.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_28",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 284.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_29",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 287.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_30",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 290.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_31",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 293.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_32",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 296.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_33",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 299.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_34",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 302.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_35",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 305.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_36",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 308.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_37",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 311.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_38",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 314.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    },
+    {
+      "name": "offscreen_39",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 317.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "base_color": {
+            "r": 0.2,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1.0
+          },
+          "roughness": 0.6
+        }
+      ]
+    }
+  ]
+}

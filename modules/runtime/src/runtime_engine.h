@@ -535,6 +535,11 @@ struct Engine {
     mq_audio* audio = nullptr;
     std::unordered_map<std::string, mq_audio_clip*> audio_clips;   // 解码缓存（切场景清空）
     float last_listener_master = 1.0F;                             // 组件 master 只在变化时下发（避免覆盖脚本 audio_master_volume）
+    /* plans/36：Doppler 用的上一帧世界位置（id → xyz）与上一帧 dt；只为"速度"服务，
+     * 不进快照/checksum，切场景清空。 */
+    struct AudioPrevPos { float x = 0.0F, y = 0.0F, z = 0.0F; bool valid = false; };
+    std::unordered_map<int, AudioPrevPos> audio_prev_pos;
+    float audio_prev_dt = 0.0F;
     void audio_setup();
     void audio_teardown();
     mq_audio_clip* audio_clip(const std::string& path);
@@ -832,6 +837,9 @@ struct Engine {
     bool  orbit_dragging = false;      // 右键环绕
     bool  orbit_panning = false;       // 中键平移
     bool  orbit_inited = false;
+    /* render.Camera3D.orbit_controls 的缓存（主相机；输入分发在提取前，故用上一帧值）。
+     * false = 右键/中键/滚轮/触摸手势不改写相机（跟车相机）。 */
+    bool  orbit_controls = true;
     float orbit_yaw = 0.0F, orbit_pitch = 0.3F, orbit_dist = 1.0F;
     float orbit_target[3] = { 0.0F, 0.0F, 0.0F };
     float orbit_fov_y = 45.0F;         // 最近一次 3D 提取的主相机 fov（平移速度按屏幕高度换算）
@@ -994,6 +1002,13 @@ struct Engine {
     };
     PickHit pick_ray(const float origin[3], const float dir[3], float max_distance = 0.0F);
     PickHit pick_screen(float x, float y);   /* **设计坐标**（与 input_x/input_y 同一套；2D 场景里即世界坐标） */
+    /* 3D 碰撞查询（plans/36）：球/扫掠球/定向盒 vs 网格 OBB。只读、无动力学。
+     * 返回实体 id；命中详情写 last（脚本用 scene_cast_* 读）。 */
+    PickHit pick_sphere_overlap(const float center[3], float radius);
+    PickHit pick_sphere_cast(const float origin[3], const float dir[3], float radius,
+                             float max_distance);
+    PickHit pick_obb_overlap(const float center[3], const float half[3], float yaw);
+    PickHit cast_last;                       /* 最近一次查询的命中（无 = entity<0） */
     bool  pick_cam_valid = false;
     float pick_view[16] = {};
     float pick_proj[16] = {};

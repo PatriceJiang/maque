@@ -43,15 +43,18 @@ struct VoiceParams {
     uint32_t panning = 0;        /* mq_audio_panning */
     uint32_t attenuation = 0;    /* mq_audio_attenuation */
     float x = 0.0F, y = 0.0F, z = 0.0F;
+    float vx = 0.0F, vy = 0.0F, vz = 0.0F;   /* 世界速度（m/s，Doppler 用） */
     float min_distance = 1.0F;
     float max_distance = 50.0F;
-    float doppler = 0.0F;        /* P0 只记录 */
+    float doppler = 0.0F;        /* 0 = 关；>0 = 强度（0..2） */
     std::string bus = "sfx";
 };
 
 struct Listener {
     float x = 0.0F, y = 0.0F, z = 0.0F;
     float dir_x = 1.0F, dir_y = 0.0F, dir_z = 0.0F;
+    float up_x = 0.0F, up_y = 1.0F, up_z = 0.0F;
+    float vx = 0.0F, vy = 0.0F, vz = 0.0F;
     float master_volume = 1.0F;
 };
 
@@ -69,6 +72,7 @@ public:
     bool set_pitch(uint64_t handle, float pitch);
     bool set_spatial(uint64_t handle, float x, float y, float z, uint32_t panning,
                      uint32_t attenuation, float min_distance, float max_distance);
+    bool set_velocity(uint64_t handle, float vx, float vy, float vz, float doppler);
 
     void set_listener(const Listener& l);
     void set_bus(const std::string& name, float volume, bool mute);

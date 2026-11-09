@@ -133,6 +133,32 @@ float input_key(void* ctx, float code) {
     return e->input && mq_input_key_down(e->input, (uint32_t)code) ? 1.0F : 0.0F;
 }
 
+/* 手柄（plans/36）：模拟量/按钮是**状态**，由平台每帧写进输入帧；脚本读的是同一份快照。 */
+float input_axis(void* ctx, float axis) { return input_axis_pad(ctx, 0.0F, axis); }
+
+float input_axis_pad(void* ctx, float pad, float axis) {
+    auto* e = (Engine*)ctx;
+    if (!e->input || pad < 0.0F || axis < 0.0F) return 0.0F;
+    return mq_input_axis(e->input, (uint32_t)pad, (uint32_t)axis);
+}
+
+float input_gamepad_button(void* ctx, float button) {
+    auto* e = (Engine*)ctx;
+    if (!e->input || button < 0.0F) return 0.0F;
+    return (mq_input_gamepad_buttons(e->input, 0) & (uint32_t)button) ? 1.0F : 0.0F;
+}
+
+float input_gamepad_buttons(void* ctx, float pad) {
+    auto* e = (Engine*)ctx;
+    if (!e->input || pad < 0.0F) return 0.0F;
+    return (float)mq_input_gamepad_buttons(e->input, (uint32_t)pad);
+}
+
+float input_gamepad_connected(void* ctx) {
+    auto* e = (Engine*)ctx;
+    return e->input ? (float)mq_input_gamepad_count(e->input) : 0.0F;
+}
+
 float input_focus(void* ctx) { return (float)mq_input_focus(((Engine*)ctx)->input); }
 
 void  input_set_focus(void* ctx, float id) { mq_input_set_focus(((Engine*)ctx)->input, (int)id); }

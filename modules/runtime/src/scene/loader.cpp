@@ -119,6 +119,10 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
     sc.attach(idx, parent);                              // 层级真相：父的 children（id 升序）
     SceneNode* ent = sc.at(idx);
     if (nm) ent->name = nm;
+    /* plans/36：平级实体可用 `"parent": "名字"` 声明父节点（可在父之后或之前出现 →
+     * 延迟到整场景加载完再挂）。嵌套 children 优先：已经有父的节点忽略该字段。 */
+    if (const char* pname = mq_json_str(mq_json_get(e, "parent"), nullptr); pname && *pname)
+        sc.pending_parents.emplace_back(idx, pname);
 
     for (uint32_t i = 0; i < cn; ++i) {
         const mq_json* c = mq_json_at(comps, i);
@@ -210,6 +214,39 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
     return idx;
 }
 
+/* 解析平级 `"parent": "名字"`（plans/36）：整棵实体树加载完后统一挂接。
+ * 语义：名字取**最小 id**（与 entity_find 一致）；父不存在/自环/成环 → 警告并保持根；
+ * 已经有父（嵌套 children / prefab 壳）的节点不覆盖（children 优先）。 */
+static void resolve_pending_parents(Engine& eng, Scene& sc) {
+    for (const auto& [child, name] : sc.pending_parents) {
+        SceneNode* c = sc.at(child);
+        if (!c || c->parent >= 0) continue;
+        int target = -1;
+        sc.visit([&](int id, SceneNode& n, int) {
+            if (n.name == name && (target < 0 || id < target)) target = id;
+        });
+        if (target < 0) {
+            std::print(stderr, "runtime: entity '{}' parent '{}' not found — kept at root\n",
+                       c->name, name);
+            continue;
+        }
+        if (target == child) continue;
+        bool cycle = false;
+        for (int cur = target, guard = 0; cur >= 0 && guard < 4096; ++guard) {
+            if (cur == child) { cycle = true; break; }
+            SceneNode* pe = sc.at(cur);
+            cur = pe ? pe->parent : -1;
+        }
+        if (cycle) {
+            std::print(stderr, "runtime: entity '{}' parent '{}' would create a cycle — ignored\n",
+                       c->name, name);
+            continue;
+        }
+        sc.attach(child, target);
+    }
+    sc.pending_parents.clear();
+}
+
 void Scene::instantiate(Engine& eng) {
     this->eng = &eng;
     mq_json* dom = mq_json_parse(text_.c_str(), text_.size());
@@ -218,6 +255,7 @@ void Scene::instantiate(Engine& eng) {
     uint32_t n = mq_json_len(ents_json);
     for (uint32_t i = 0; i < n; ++i) load_entity(eng, *this, mq_json_at(ents_json, i), -1);
     mq_json_free(dom);
+    resolve_pending_parents(eng, *this);
     std::print("runtime: instantiated {} root entities\n", n);
 }
 

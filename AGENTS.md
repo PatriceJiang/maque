@@ -325,6 +325,27 @@ tools\win\build.cmd -Sanitize address -RunTests
   `MAQUE_TEX_INFO=1` 打印统计）；`.mesh.json` 也由 `preload_mesh_refs()` 并行 parse
   （`MAQUE_MESH_PRELOAD=0` / `MAQUE_MESH_INFO=1`）。GPU 上传仍在主线程，mip/网格与旧实现逐字节一致
   （`texture_preload_e2e`）。
+- **赛车方向补强（plans/36，评估 P0/P1 可落地部分）**：
+  **3D 变换 typed API**——`api_list` 支持扁平 float 具名结构（`math.Vec3` 等）作为参数/返回值；
+  JS 返回 `{x,y,z}`、Lua table、C guest 平铺 `float*`（`mq_script_register_value`，script ABI 5）。
+  新增 `node_set_local_position/rotation/scale`、`node_local_position/rotation/scale`、
+  `node_world_position/rotation`、`node_local_to_world`、`node_world_to_local`、`node_look_at`
+  （世界目标、-Z 朝前、含父链补偿；缺组件自动补挂 `scene.Transform3D`）。样例 `scenes/transform_api/`，
+  测试 `node_transform_api_e2e`。**手柄模拟量**：`SDL_GameController`（4 pad 热插拔）→
+  `mq_input_frame.gamepad_axis/buttons` → 脚本 `input_axis/input_axis_pad/input_gamepad_button(s)/
+  input_gamepad_connected`；CI 用 `MAQUE_GAMEPAD="lx,ly,rx,ry,lt,rt[,buttons]"`。**跟车相机**：
+  `render.Camera3D.orbit_controls=false` 关闭主相机内建 Orbit（指针仍给脚本）。
+  **视锥剔除**：`render.MeshRenderer.frustum_culled`（默认 true）→ draw.flags bit29 → gfx 主 pass
+  六平面剔除（阴影 pass 不剔除）；`MAQUE_CULL=0` 关闭、`MAQUE_CULL_INFO=1` 打印计数。
+  **阴影拟合**：新增相机距离过滤 `MAQUE_SHADOW_RANGE`（默认 120m，0=旧全场景）。
+  **3D 音频**：listener `up_*/vel_*` + `mq_audio_set_velocity`；pan 用 `cross(dir,up)`（up=0 回退旧
+  2D 语义）、Doppler `c/(c+v_rel)`（`AudioSource.doppler`）。**3D 碰撞查询**（只读无动力学）：
+  `scene_sphere_overlap/scene_sphere_cast/scene_obb_overlap` + `scene_cast_distance/point_*`；
+  命中几何与拾取同源（网格 OBB）。**静态网格合并**：`tools/merge_static_meshes.py <manifest> --out <dir>`
+  （按 group 烘焙 TRS，输出确定性 `.mesh.json`，1 个 MeshRenderer = 1 draw）。
+  平级 `.scn` 实体 `"parent": "名字"` 现在生效（整树加载后解析；嵌套 `children` 优先）；
+  程序化图元缓存上限 64 → 512。测试：`node_transform_api_e2e|gamepad_e2e|collision_e2e|orbit_toggle_e2e|
+  cull_e2e|merge_static_meshes_e2e|audio`。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

@@ -18,6 +18,36 @@ typedef struct mq_platform_key_event mq_platform_key_event;
 typedef struct mq_input_frame mq_input_frame;
 typedef struct mq_platform_native_window mq_platform_native_window;
 
+/* 轴下标（mq_input_frame.gamepad_axis 的每 pad 步长 = MQ_GAMEPAD_AXIS_COUNT） */
+typedef enum mq_gamepad_axis {
+    MQ_GAMEPAD_AXIS_LEFT_X = 0,
+    MQ_GAMEPAD_AXIS_LEFT_Y = 1,
+    MQ_GAMEPAD_AXIS_RIGHT_X = 2,
+    MQ_GAMEPAD_AXIS_RIGHT_Y = 3,
+    MQ_GAMEPAD_AXIS_TRIGGER_LEFT = 4,
+    MQ_GAMEPAD_AXIS_TRIGGER_RIGHT = 5
+} mq_gamepad_axis;
+
+/* 按钮位（与 SDL_GameControllerButton 顺序一致；脚本用 input_gamepad_button(bit)） */
+typedef enum mq_gamepad_button {
+    MQ_GAMEPAD_BUTTON_SOUTH = 1,
+    MQ_GAMEPAD_BUTTON_EAST = 2,
+    MQ_GAMEPAD_BUTTON_WEST = 4,
+    MQ_GAMEPAD_BUTTON_NORTH = 8,
+    MQ_GAMEPAD_BUTTON_BACK = 16,
+    MQ_GAMEPAD_BUTTON_GUIDE = 32,
+    MQ_GAMEPAD_BUTTON_START = 64,
+    MQ_GAMEPAD_BUTTON_LEFT_STICK = 128,
+    MQ_GAMEPAD_BUTTON_RIGHT_STICK = 256,
+    MQ_GAMEPAD_BUTTON_LEFT_SHOULDER = 512,
+    MQ_GAMEPAD_BUTTON_RIGHT_SHOULDER = 1024,
+    MQ_GAMEPAD_BUTTON_DPAD_UP = 2048,
+    MQ_GAMEPAD_BUTTON_DPAD_DOWN = 4096,
+    MQ_GAMEPAD_BUTTON_DPAD_LEFT = 8192,
+    MQ_GAMEPAD_BUTTON_DPAD_RIGHT = 16384,
+    MQ_GAMEPAD_BUTTON_MISC1 = 32768
+} mq_gamepad_button;
+
 typedef enum mq_platform_pointer_type {
     MQ_PLATFORM_POINTER_MOUSE = 0,
     MQ_PLATFORM_POINTER_TOUCH = 1,
@@ -98,6 +128,10 @@ typedef struct mq_input_frame {
     int resized;
     int width;
     int height;
+    uint32_t gamepad_count;   /* 已连接 pad 数（0..MQ_GAMEPAD_MAX） */
+    uint32_t gamepad_connected;   /* bit i = pad i 已连接 */
+    float gamepad_axis[24];
+    uint32_t gamepad_buttons[4];   /* 每 pad 的按钮位掩码（mq_gamepad_button） */
 } mq_input_frame;
 
 typedef struct mq_platform_native_window {
@@ -111,6 +145,9 @@ typedef struct mq_platform_native_window {
 #define MQ_PLATFORM_MOD_CTRL (1u << 1)
 #define MQ_PLATFORM_MOD_ALT (1u << 2)
 #define MQ_PLATFORM_MOD_META (1u << 3)
+#define MQ_GAMEPAD_MAX 4
+#define MQ_GAMEPAD_AXIS_COUNT 6
+#define MQ_GAMEPAD_BUTTON_COUNT 16
 
 mq_platform* mq_platform_create(const char* title, int w, int h);
 /* 把 RGBA8 帧等比居中呈现到窗口（无窗口/off 安全空操作；MAQUE_PRESENT=off|software|accelerated） */

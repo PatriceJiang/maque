@@ -267,6 +267,68 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(atmosphere_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 3D 变换 typed API 端到端（plans/27 M1-4）：api_list 值类型编组（math.Vec3 ↔ JS {x,y,z}）。
+#   ① 局部/世界读写（父链 yaw/scale）；② set 后立即读 world；③ localToWorld/worldToLocal 互逆；
+#   ④ node_look_at（含父链补偿）；⑤ 与反射路径读数一致；无 Transform3D 节点自动补挂。
+# 纯脚本逻辑，不需要 GPU。
+if(MAQUE_BUILD_TESTS)
+set(_maque_transform_lua_scene "")
+if(MAQUE_ENABLE_LUA)
+    set(_maque_transform_lua_scene "${CMAKE_SOURCE_DIR}/scenes/transform_api/transform_api_lua.scn")
+endif()
+add_test(NAME node_transform_api_e2e COMMAND "${MAQUE_BASH}"
+         "${CMAKE_SOURCE_DIR}/tests/node_transform_api_e2e.sh"
+         $<TARGET_FILE:maque_player>
+         "${CMAKE_SOURCE_DIR}/scenes/transform_api/transform_api.scn"
+         "${CMAKE_CURRENT_BINARY_DIR}/node_transform_api_e2e"
+         "${_maque_transform_lua_scene}")
+set_tests_properties(node_transform_api_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+# 手柄模拟量（plans/36）：MAQUE_GAMEPAD 覆盖 pad0 → input_axis/按钮位。
+add_test(NAME gamepad_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gamepad_e2e.sh"
+         $<TARGET_FILE:maque_player>
+         "${CMAKE_SOURCE_DIR}/scenes/input/gamepad.scn"
+         "${CMAKE_CURRENT_BINARY_DIR}/gamepad_e2e")
+set_tests_properties(gamepad_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+# 主相机 Orbit 开关（plans/36）：orbit_controls=false 时 MAQUE_ORBIT 不得改写相机。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME orbit_toggle_e2e COMMAND "${MAQUE_BASH}"
+             "${CMAKE_SOURCE_DIR}/tests/orbit_toggle_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/orbit/orbit_off.scn"
+             "${CMAKE_SOURCE_DIR}/scenes/orbit/orbit_on.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/orbit_toggle_e2e")
+    set_tests_properties(orbit_toggle_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+
+# 3D 碰撞查询（plans/36）：球重叠/扫掠球/OBB SAT/命中距离与点。
+add_test(NAME collision_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/collision_e2e.sh"
+         $<TARGET_FILE:maque_player>
+         "${CMAKE_SOURCE_DIR}/scenes/collision/collision.scn"
+         "${CMAKE_CURRENT_BINARY_DIR}/collision_e2e")
+set_tests_properties(collision_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+# 3D 视锥剔除（plans/36）：41 个 mesh 里 40 个在视锥外；开/关像素逐字节一致。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME cull_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/cull_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/cull/cull.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/cull_e2e")
+    set_tests_properties(cull_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+
+# 静态网格合并（plans/36 内容管线）：TRS 烘焙 → 1 个 MeshRenderer/1 draw。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME merge_static_meshes_e2e COMMAND "${MAQUE_BASH}"
+             "${CMAKE_SOURCE_DIR}/tests/merge_static_meshes_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/assets/cube.mesh.json"
+             "${CMAKE_CURRENT_BINARY_DIR}/merge_static_meshes_e2e")
+    set_tests_properties(merge_static_meshes_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+endif()   # MAQUE_BUILD_TESTS（plans/36 新测试）
+
 # 3D 粒子端到端（plans/27 M1-4 → plans/28 M1）：CPU 确定性模拟 + **GPU 实例化 billboard**
 # （每粒子 48B 实例；不再建动态网格）。① 第 60 帧粒子可见 ② MAQUE_PARTICLES=0 时几乎全背景
 # ③ 随时间变化 ④ 两次运行逐字节一致。

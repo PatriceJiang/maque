@@ -11,7 +11,39 @@
       - { name: MQ_PLATFORM_MOD_CTRL, value: "(1u << 1)" }
       - { name: MQ_PLATFORM_MOD_ALT, value: "(1u << 2)" }
       - { name: MQ_PLATFORM_MOD_META, value: "(1u << 3)" }
+      # 手柄（plans/36 赛车补强）：4 个 pad × 6 轴（LX/LY/RX/RY/LT/RT）；按钮为位掩码。
+      - { name: MQ_GAMEPAD_MAX, value: "4" }
+      - { name: MQ_GAMEPAD_AXIS_COUNT, value: "6" }
+      - { name: MQ_GAMEPAD_BUTTON_COUNT, value: "16" }
     enums:
+      - name: mq_gamepad_axis
+        doc: "轴下标（mq_input_frame.gamepad_axis 的每 pad 步长 = MQ_GAMEPAD_AXIS_COUNT）"
+        values:
+          - { name: MQ_GAMEPAD_AXIS_LEFT_X,  value: 0 }
+          - { name: MQ_GAMEPAD_AXIS_LEFT_Y,  value: 1 }
+          - { name: MQ_GAMEPAD_AXIS_RIGHT_X, value: 2 }
+          - { name: MQ_GAMEPAD_AXIS_RIGHT_Y, value: 3 }
+          - { name: MQ_GAMEPAD_AXIS_TRIGGER_LEFT,  value: 4 }
+          - { name: MQ_GAMEPAD_AXIS_TRIGGER_RIGHT, value: 5 }
+      - name: mq_gamepad_button
+        doc: "按钮位（与 SDL_GameControllerButton 顺序一致；脚本用 input_gamepad_button(bit)）"
+        values:
+          - { name: MQ_GAMEPAD_BUTTON_SOUTH,       value: 1 }      # SDL A / Xbox A
+          - { name: MQ_GAMEPAD_BUTTON_EAST,        value: 2 }      # SDL B / Xbox B
+          - { name: MQ_GAMEPAD_BUTTON_WEST,        value: 4 }      # SDL X / Xbox X
+          - { name: MQ_GAMEPAD_BUTTON_NORTH,       value: 8 }      # SDL Y / Xbox Y
+          - { name: MQ_GAMEPAD_BUTTON_BACK,        value: 16 }
+          - { name: MQ_GAMEPAD_BUTTON_GUIDE,       value: 32 }
+          - { name: MQ_GAMEPAD_BUTTON_START,       value: 64 }
+          - { name: MQ_GAMEPAD_BUTTON_LEFT_STICK,  value: 128 }
+          - { name: MQ_GAMEPAD_BUTTON_RIGHT_STICK, value: 256 }
+          - { name: MQ_GAMEPAD_BUTTON_LEFT_SHOULDER,  value: 512 }
+          - { name: MQ_GAMEPAD_BUTTON_RIGHT_SHOULDER, value: 1024 }
+          - { name: MQ_GAMEPAD_BUTTON_DPAD_UP,    value: 2048 }
+          - { name: MQ_GAMEPAD_BUTTON_DPAD_DOWN,  value: 4096 }
+          - { name: MQ_GAMEPAD_BUTTON_DPAD_LEFT,  value: 8192 }
+          - { name: MQ_GAMEPAD_BUTTON_DPAD_RIGHT, value: 16384 }
+          - { name: MQ_GAMEPAD_BUTTON_MISC1,      value: 32768 }
       - name: mq_platform_pointer_type
         values:
           - { name: MQ_PLATFORM_POINTER_MOUSE, value: 0 }
@@ -91,6 +123,12 @@
           - { name: resized, type: "int" }
           - { name: width, type: "int" }
           - { name: height, type: "int" }
+          # ---- 手柄（尾部追加；旧调用方零初始化 = 无手柄）----
+          - { name: gamepad_count, type: "uint32_t", doc: "已连接 pad 数（0..MQ_GAMEPAD_MAX）" }
+          - { name: gamepad_connected, type: "uint32_t", doc: "bit i = pad i 已连接" }
+          # 4 × 6 轴（-1..1；扳机 0..1），布局 pad * MQ_GAMEPAD_AXIS_COUNT + axis
+          - { name: gamepad_axis, type: "float[24]" }
+          - { name: gamepad_buttons, type: "uint32_t[4]", doc: "每 pad 的按钮位掩码（mq_gamepad_button）" }
       # 原生窗口句柄（plans/18-pbr-3d.md §2.4）：renderer 用它建 wgpu surface 直接呈现。
       # kind: 0=none 1=win32 2=xlib 3=wayland 4=android；display/handle 含义随 kind。
       - name: mq_platform_native_window

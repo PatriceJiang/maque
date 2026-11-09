@@ -137,6 +137,17 @@ struct mq_platform {
     std::deque<KEv> queued_keys;
     float last_x = 0, last_y = 0;
     int   have_last = 0;
+
+    /* ---- 手柄（plans/36）：SDL_GameController → mq_input_frame 的轴/按钮 ----
+     * 4 个槽位；热插拔按 instance id 关旧开新。轮询在 mq_platform_poll（不是事件）：
+     * 模拟量是**状态**不是事件，每帧采样一次才能得到连续轴值。 */
+    bool gamepad_ok = false;                       /* SDL gamecontroller 子系统可用 */
+    SDL_GameController* pads[4] = {};
+    SDL_JoystickID pad_ids[4] = {};
+    uint32_t pad_connected = 0;                    /* bit i = pad i */
+    float pad_axis[24] = {};
+    uint32_t pad_buttons[4] = {};
+    bool gamepad_env_applied = false;
 };
 
 /* 窗口逻辑尺寸（用户看到的点/像素，DPI 缩放后；与 drawable_size 的设备像素区分）。
@@ -454,6 +465,98 @@ static bool maque_should_force_headless() {
 #endif
 }
 
+/* ---- 手柄（plans/36）------------------------------------------------------
+ * SDL_GameController 封装成 4 个固定槽位。轮询（不是事件）：摇杆/扳机是连续状态，
+ * 每帧读一次写进 mq_input_frame；事件只用于热插拔。没有手柄时所有轴为 0。 */
+static void gamepad_clear_slot(mq_platform* p, int slot) {
+    if (!p || slot < 0 || slot >= 4) return;
+    if (p->pads[slot]) {
+        SDL_GameControllerClose(p->pads[slot]);
+        p->pads[slot] = nullptr;
+    }
+    p->pad_ids[slot] = -1;
+    p->pad_connected &= ~(1u << slot);
+    for (int a = 0; a < 6; ++a) p->pad_axis[slot * 6 + a] = 0.0F;
+    p->pad_buttons[slot] = 0;
+}
+
+static int gamepad_open(mq_platform* p, int device_index) {
+    if (!p || !p->gamepad_ok || device_index < 0) return -1;
+    if (!SDL_IsGameController(device_index)) return -1;
+    SDL_GameController* gc = SDL_GameControllerOpen(device_index);
+    if (!gc) return -1;
+    SDL_Joystick* js = SDL_GameControllerGetJoystick(gc);
+    const SDL_JoystickID id = js ? SDL_JoystickInstanceID(js) : -1;
+    int slot = -1;
+    for (int i = 0; i < 4; ++i) {
+        if (p->pad_ids[i] == id && p->pads[i]) { SDL_GameControllerClose(gc); return i; }
+        if (!p->pads[i]) { slot = i; break; }
+    }
+    if (slot < 0) { SDL_GameControllerClose(gc); return -1; }   // 已满 4 个
+    p->pads[slot] = gc;
+    p->pad_ids[slot] = id;
+    p->pad_connected |= (1u << slot);
+    std::print("platform: gamepad slot={} '{}' ({})\n", slot,
+               SDL_GameControllerName(gc) ? SDL_GameControllerName(gc) : "?",
+               SDL_GameControllerGetSerial(gc) ? SDL_GameControllerGetSerial(gc) : "");
+    return slot;
+}
+
+static void gamepad_remove_id(mq_platform* p, SDL_JoystickID id) {
+    if (!p) return;
+    for (int i = 0; i < 4; ++i)
+        if (p->pads[i] && p->pad_ids[i] == id) gamepad_clear_slot(p, i);
+}
+
+/* CI/无手柄环境：MAQUE_GAMEPAD="lx,ly,rx,ry,lt,rt[,buttons]" 覆盖 pad0（确定性）。 */
+static void gamepad_env_override(mq_platform* p) {
+    if (!p) return;
+    const char* env = std::getenv("MAQUE_GAMEPAD");
+    if (!env || !*env) return;
+    float ax[6] = {};
+    unsigned buttons = 0;
+    const int n = std::sscanf(env, "%f,%f,%f,%f,%f,%f,%i",
+                              &ax[0], &ax[1], &ax[2], &ax[3], &ax[4], &ax[5], &buttons);
+    if (n < 1) return;
+    for (int i = 0; i < 6; ++i) {
+        if (i >= n) ax[i] = 0.0F;
+        p->pad_axis[i] = std::clamp(ax[i], -1.0F, 1.0F);
+    }
+    p->pad_buttons[0] = (uint32_t)buttons;
+    p->pad_connected |= 1u;
+    if (!p->gamepad_env_applied) {
+        p->gamepad_env_applied = true;
+        std::print("platform: gamepad override pad0 axes=({:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}) buttons=0x{:x}\n",
+                   (double)ax[0], (double)ax[1], (double)ax[2], (double)ax[3],
+                   (double)ax[4], (double)ax[5], buttons);
+    }
+}
+
+static void gamepad_poll(mq_platform* p) {
+    if (!p) return;
+    for (int slot = 0; slot < 4; ++slot) {
+        SDL_GameController* gc = p->pads[slot];
+        if (!gc) continue;
+        auto axis = [&](SDL_GameControllerAxis a) {
+            const int raw = SDL_GameControllerGetAxis(gc, a);
+            if (a == SDL_CONTROLLER_AXIS_TRIGGERLEFT || a == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+                return raw <= 0 ? 0.0F : (float)raw / 32767.0F;
+            return std::clamp((float)raw / 32767.0F, -1.0F, 1.0F);
+        };
+        p->pad_axis[slot * 6 + 0] = axis(SDL_CONTROLLER_AXIS_LEFTX);
+        p->pad_axis[slot * 6 + 1] = axis(SDL_CONTROLLER_AXIS_LEFTY);
+        p->pad_axis[slot * 6 + 2] = axis(SDL_CONTROLLER_AXIS_RIGHTX);
+        p->pad_axis[slot * 6 + 3] = axis(SDL_CONTROLLER_AXIS_RIGHTY);
+        p->pad_axis[slot * 6 + 4] = axis(SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+        p->pad_axis[slot * 6 + 5] = axis(SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+        uint32_t mask = 0;
+        for (int b = 0; b < 16; ++b)
+            if (SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)b)) mask |= (1u << b);
+        p->pad_buttons[slot] = mask;
+    }
+    gamepad_env_override(p);
+}
+
 extern "C" {
 
 mq_platform* mq_platform_create(const char* title, int w, int h) {
@@ -473,6 +576,13 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
 #endif
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == 0) {
         p->sdl = true;
+        /* 手柄子系统失败不影响视频/输入：没有手柄就所有轴为 0。 */
+        if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0) {
+            p->gamepad_ok = true;
+            SDL_GameControllerEventState(SDL_ENABLE);
+            const int n = SDL_NumJoysticks();
+            for (int i = 0; i < n; ++i) gamepad_open(p, i);
+        }
         if (w > 0 && h > 0) {
             /* 强制软件帧缓冲：SDL 不初始化 GL/EGL（渲染插件 wgpu 自己用 EGL，
              * 二者争用会导致 EGL BadAccess —— 多实例时尤其明显） */
@@ -526,6 +636,8 @@ void mq_platform_destroy(mq_platform* p) {
     if (p->android_window) { ANativeWindow_release(p->android_window); p->android_window = nullptr; }
 #endif
     if (p->window) SDL_StopTextInput();
+    for (int i = 0; i < 4; ++i) gamepad_clear_slot(p, i);
+    if (p->gamepad_ok) SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
     if (p->win) SDL_DestroyWindow(p->win);
     if (p->sdl) SDL_Quit();
     delete p;
@@ -866,6 +978,12 @@ void mq_platform_pump(mq_platform* p) {
                 queue_key(p, ev);
                 break;
             }
+            case SDL_CONTROLLERDEVICEADDED:
+                gamepad_open(p, (int)e.cdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+                gamepad_remove_id(p, (SDL_JoystickID)e.cdevice.which);
+                break;
             default: break;
         }
     }
@@ -881,6 +999,15 @@ uint32_t mq_platform_poll(mq_platform* p, mq_input_frame* out) {
     out->pointers = pbuf; out->pointer_cap = pcap;
     out->keys = kbuf;     out->key_cap = kcap;
     if (!p) { out->quit = 1; return 0; }
+
+    /* 手柄：每帧采样连续量（与指针/键盘的事件流不同，模拟量是状态）。 */
+    gamepad_poll(p);
+    out->gamepad_connected = p->pad_connected;
+    uint32_t pad_count = 0;
+    for (uint32_t i = 0; i < 4; ++i) pad_count += (p->pad_connected >> i) & 1u;
+    out->gamepad_count = pad_count;
+    std::memcpy(out->gamepad_axis, p->pad_axis, sizeof p->pad_axis);
+    std::memcpy(out->gamepad_buttons, p->pad_buttons, sizeof p->pad_buttons);
 
     uint32_t total = 0;
     while (!p->queued_pointers.empty()) {

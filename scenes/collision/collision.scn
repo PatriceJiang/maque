@@ -1,0 +1,34 @@
+{
+  "title": "collision",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "script": "collision.js",
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 10.0 } } },
+        { "type": "render.Camera3D", "fov_y": 60.0, "near": 0.1, "far": 100.0 }
+      ]
+    },
+    {
+      "name": "box",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 2.0, "y": 2.0, "z": 2.0 } } },
+        { "type": "render.MeshRenderer" }
+      ]
+    },
+    {
+      "name": "far_box",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 5.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 2.0, "y": 2.0, "z": 2.0 } } },
+        { "type": "render.MeshRenderer" }
+      ]
+    }
+  ]
+}

@@ -1348,7 +1348,7 @@ role: `physics_body`
 | `layer_mask` | uint32_t | 4294967295 | bitmask |
 | `clear_color` | math.Color | — |  |
 
-### render.Camera3D — struct (72B)
+### render.Camera3D — struct (76B)
 
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
@@ -1364,6 +1364,7 @@ role: `physics_body`
 | `clear_mode` | ClearMode | ClearMode::Skybox |  |
 | `clear_color` | math.Color | — |  |
 | `exposure` | float | 1.0F |  |
+| `orbit_controls` | bool | true |  |
 
 ### render.CameraProjection — enum
 
@@ -1559,6 +1560,7 @@ role: `physics_body`
 | `geometry` | MeshGeometry | MeshGeometry::Cube |  |
 | `geometry_size` | math.Vec3 | {1.2F, 1.2F, 1.2F} | unit: m |
 | `geometry_segments` | math.Vec3 | {32.0F, 16.0F, 8.0F} |  |
+| `frustum_culled` | bool | true |  |
 
 ### render.MotionStreak — struct (变长（含动态成员）)
 

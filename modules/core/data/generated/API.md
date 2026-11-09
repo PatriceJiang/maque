@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **344** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
+统计：脚本 API **356** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -84,6 +84,11 @@
 | `input_target` | — | float | ctx |
 | `input_down` | — | float | ctx |
 | `input_key` | code: float | float | ctx |
+| `input_axis` | axis: float | float | ctx · pad0 的模拟轴（-1..1；扳机 0..1） |
+| `input_axis_pad` | pad: float, axis: float | float | ctx |
+| `input_gamepad_button` | button: float | float | ctx · pad0 是否按住该按钮位（值 = mq_gamepad_button，如 (1<<0)=A/South） |
+| `input_gamepad_buttons` | pad: float | float | ctx · pad 的按钮位掩码 |
+| `input_gamepad_connected` | — | float | ctx · 已连接手柄数（0 = 无） |
 | `input_focus` | — | float | ctx |
 | `input_set_focus` | id: float | void | ctx |
 | `ui_hit` | — | float | ctx |
@@ -190,6 +195,13 @@
 | `scene_path` | — | string | ctx · 当前场景路径（启动/切场景时给出的原始路径） |
 | `scene_pick` | x: float, y: float | float | ctx · 主 Camera3D 从**设计坐标** (x,y)（= input_x/input_y 同一套）发射线 → 最近命中的 3D 网格实体（最近成帧相机；无命中/首帧前 = -1） |
 | `scene_raycast` | ox: float, oy: float, oz: float, dx: float, dy: float, dz: float, max_distance: float | float | ctx · **世界坐标**射线 → 最近命中的 3D 网格实体（-1 = 未命中；dir 内部归一化，max_distance<=0 = 无限） |
+| `scene_sphere_overlap` | x: float, y: float, z: float, radius: float | float | ctx · 球与最近网格 OBB 重叠 → 实体 id（-1 = 未命中） |
+| `scene_sphere_cast` | ox: float, oy: float, oz: float, dx: float, dy: float, dz: float, radius: float, max_distance: float | float | ctx · **连续**扫掠球（沿世界方向）→ 最近命中的实体 id；命中距离写入 scene_cast_distance |
+| `scene_obb_overlap` | x: float, y: float, z: float, hx: float, hy: float, hz: float, yaw: float | float | ctx · 绕 Y 轴 yaw（弧度）的定向盒与网格 OBB 重叠（SAT）→ 实体 id（-1 = 未命中） |
+| `scene_cast_distance` | — | float | ctx · 最近一次 scene_sphere_cast/raycast 命中的世界距离（无 = -1） |
+| `scene_cast_point_x` | — | float | ctx |
+| `scene_cast_point_y` | — | float | ctx |
+| `scene_cast_point_z` | — | float | ctx |
 | `scene_instantiate` | parent: float, path: string, params: string | float | ctx · 实例化一个 .scn（parent=-1 挂到世界根；params=JSON 参数，可省略）；返回实例句柄（-1=失败） |
 | `scene_unload` | instance: float | float | ctx · 卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM） |
 | `scene_reload` | instance: float | float | ctx |
@@ -736,6 +748,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 枚举：
 
+- `mq_gamepad_axis`：MQ_GAMEPAD_AXIS_LEFT_X=0, MQ_GAMEPAD_AXIS_LEFT_Y=1, MQ_GAMEPAD_AXIS_RIGHT_X=2, MQ_GAMEPAD_AXIS_RIGHT_Y=3, MQ_GAMEPAD_AXIS_TRIGGER_LEFT=4, MQ_GAMEPAD_AXIS_TRIGGER_RIGHT=5
+- `mq_gamepad_button`：MQ_GAMEPAD_BUTTON_SOUTH=1, MQ_GAMEPAD_BUTTON_EAST=2, MQ_GAMEPAD_BUTTON_WEST=4, MQ_GAMEPAD_BUTTON_NORTH=8, MQ_GAMEPAD_BUTTON_BACK=16, MQ_GAMEPAD_BUTTON_GUIDE=32, MQ_GAMEPAD_BUTTON_START=64, MQ_GAMEPAD_BUTTON_LEFT_STICK=128, MQ_GAMEPAD_BUTTON_RIGHT_STICK=256, MQ_GAMEPAD_BUTTON_LEFT_SHOULDER=512, MQ_GAMEPAD_BUTTON_RIGHT_SHOULDER=1024, MQ_GAMEPAD_BUTTON_DPAD_UP=2048, MQ_GAMEPAD_BUTTON_DPAD_DOWN=4096, MQ_GAMEPAD_BUTTON_DPAD_LEFT=8192, MQ_GAMEPAD_BUTTON_DPAD_RIGHT=16384, MQ_GAMEPAD_BUTTON_MISC1=32768
 - `mq_platform_pointer_type`：MQ_PLATFORM_POINTER_MOUSE=0, MQ_PLATFORM_POINTER_TOUCH=1, MQ_PLATFORM_POINTER_PEN=2
 - `mq_platform_pointer_event_type`：MQ_PLATFORM_POINTER_DOWN=0, MQ_PLATFORM_POINTER_UP=1, MQ_PLATFORM_POINTER_MOVE=2, MQ_PLATFORM_POINTER_WHEEL=3, MQ_PLATFORM_POINTER_CANCEL=4
 - (匿名)：MQ_KEY_UNKNOWN=0, MQ_KEY_ESCAPE=1, MQ_KEY_SPACE=2, MQ_KEY_ENTER=3, MQ_KEY_TAB=4, MQ_KEY_BACKSPACE=5, MQ_KEY_LEFT=6, MQ_KEY_RIGHT=7, MQ_KEY_UP=8, MQ_KEY_DOWN=9, MQ_KEY_TEXT=10, MQ_KEY_F1=1001, MQ_KEY_F2=1002, MQ_KEY_F3=1003, MQ_KEY_F4=1004, MQ_KEY_F5=1005, MQ_KEY_F6=1006, MQ_KEY_F7=1007, MQ_KEY_F8=1008, MQ_KEY_F9=1009, MQ_KEY_F10=1010, MQ_KEY_F11=1011, MQ_KEY_F12=1012, MQ_KEY_A=32
@@ -744,7 +758,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 - `mq_platform_pointer_event`：pointer_id: uint32_t, type: uint32_t, pointer_type: uint32_t, button: uint32_t, x: float, y: float, dx: float, dy: float, pressure: float, scroll_x: float, scroll_y: float, modifiers: uint32_t
 - `mq_platform_key_event`：key: uint32_t, scancode: uint32_t, modifiers: uint32_t, repeat: uint32_t, down: uint32_t, text: char[16]
-- `mq_input_frame`：quit: int, focused: int, mouse_x: float, mouse_y: float, mouse_down: int, pointers: mq_platform_pointer_event*, pointer_count: uint32_t, pointer_cap: uint32_t, keys: mq_platform_key_event*, key_count: uint32_t, key_cap: uint32_t, resized: int, width: int, height: int
+- `mq_input_frame`：quit: int, focused: int, mouse_x: float, mouse_y: float, mouse_down: int, pointers: mq_platform_pointer_event*, pointer_count: uint32_t, pointer_cap: uint32_t, keys: mq_platform_key_event*, key_count: uint32_t, key_cap: uint32_t, resized: int, width: int, height: int, gamepad_count: uint32_t, gamepad_connected: uint32_t, gamepad_axis: float[24], gamepad_buttons: uint32_t[4]
 - `mq_platform_native_window`：kind: int32_t, display: void*, handle: void*, extra: void*
 
 | 函数 | 返回 | 参数 |
@@ -1073,7 +1087,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 
 - `mq_audio_desc`：struct_size: uint32_t, sample_rate: uint32_t, channels: uint32_t, buffer_frames: uint32_t, max_voices: uint32_t, backend: uint32_t, device: const char*
 - `mq_audio_voice_desc`：struct_size: uint32_t, clip: const mq_audio_clip*, volume: float, pitch: float, pan: float, loop: uint32_t, bus: const char*, x: float, y: float, z: float, panning: uint32_t, attenuation: uint32_t, min_distance: float, max_distance: float, doppler: float
-- `mq_audio_listener`：struct_size: uint32_t, x: float, y: float, z: float, dir_x: float, dir_y: float, dir_z: float
+- `mq_audio_listener`：struct_size: uint32_t, x: float, y: float, z: float, dir_x: float, dir_y: float, dir_z: float, up_x: float, up_y: float, up_z: float, vel_x: float, vel_y: float, vel_z: float
 - `mq_audio_stats`：struct_size: uint32_t, sample_rate: uint32_t, channels: uint32_t, voices: uint32_t, callbacks: uint64_t, dropped: uint64_t
 
 | 函数 | 返回 | 参数 |
@@ -1090,6 +1104,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_audio_set_volume` | int | a: mq_audio*, voice: uint64_t, volume: float |
 | `mq_audio_set_pitch` | int | a: mq_audio*, voice: uint64_t, pitch: float |
 | `mq_audio_set_spatial` | int | a: mq_audio*, voice: uint64_t, x: float, y: float, z: float, panning: uint32_t, attenuation: uint32_t, min_distance: float, max_distance: float |
+| `mq_audio_set_velocity` | int | a: mq_audio*, voice: uint64_t, vx: float, vy: float, vz: float, doppler: float |
 | `mq_audio_set_listener` | int | a: mq_audio*, l: const mq_audio_listener* |
 | `mq_audio_set_bus` | int | a: mq_audio*, bus: const char*, volume: float, mute: uint32_t |
 | `mq_audio_set_master` | int | a: mq_audio*, volume: float, mute: uint32_t |
@@ -1240,6 +1255,10 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_input_pointer_pos` | void | in: mq_input*, pointer_id: uint32_t, x: float*, y: float* |
 | `mq_input_pointer_down` | int | in: mq_input*, pointer_id: uint32_t |
 | `mq_input_key_down` | int | in: mq_input*, key: uint32_t |
+| `mq_input_gamepad_count` | int | in: mq_input* |
+| `mq_input_gamepad_connected` | int | in: mq_input*, pad: uint32_t |
+| `mq_input_axis` | float | in: mq_input*, pad: uint32_t, axis: uint32_t |
+| `mq_input_gamepad_buttons` | uint32_t | in: mq_input*, pad: uint32_t |
 | `mq_input_focus` | int | in: mq_input* |
 | `mq_input_set_focus` | void | in: mq_input*, entity: int |
 | `mq_input_set_capture` | void | in: mq_input*, pointer_id: uint32_t, entity: int |

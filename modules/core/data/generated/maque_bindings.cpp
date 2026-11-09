@@ -138,6 +138,21 @@ int b_host_input_down(void* user, int, const double* a, double* ret) {
 int b_host_input_key(void* user, int, const double* a, double* ret) {
   *ret = (double)host::input_key(user, (float)a[0]); return 0;
 }
+int b_host_input_axis(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::input_axis(user, (float)a[0]); return 0;
+}
+int b_host_input_axis_pad(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::input_axis_pad(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_input_gamepad_button(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::input_gamepad_button(user, (float)a[0]); return 0;
+}
+int b_host_input_gamepad_buttons(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::input_gamepad_buttons(user, (float)a[0]); return 0;
+}
+int b_host_input_gamepad_connected(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::input_gamepad_connected(user); return 0;
+}
 int b_host_input_focus(void* user, int, const double* a, double* ret) {
   *ret = (double)host::input_focus(user); return 0;
 }
@@ -483,6 +498,27 @@ int b_host_scene_pick(void* user, int, const double* a, double* ret) {
 }
 int b_host_scene_raycast(void* user, int, const double* a, double* ret) {
   *ret = (double)host::scene_raycast(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3], (float)a[4], (float)a[5], (float)a[6]); return 0;
+}
+int b_host_scene_sphere_overlap(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_sphere_overlap(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_scene_sphere_cast(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_sphere_cast(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3], (float)a[4], (float)a[5], (float)a[6], (float)a[7]); return 0;
+}
+int b_host_scene_obb_overlap(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_obb_overlap(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3], (float)a[4], (float)a[5], (float)a[6]); return 0;
+}
+int b_host_scene_cast_distance(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_cast_distance(user); return 0;
+}
+int b_host_scene_cast_point_x(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_cast_point_x(user); return 0;
+}
+int b_host_scene_cast_point_y(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_cast_point_y(user); return 0;
+}
+int b_host_scene_cast_point_z(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_cast_point_z(user); return 0;
 }
 int b_host_scene_instantiate(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::scene_instantiate(user, (float)a[0], s[0], s[1]); return 0;
@@ -1121,6 +1157,11 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "input_target", b_host_input_target, ctx);
   mq_script_register_num(vm, "input_down", b_host_input_down, ctx);
   mq_script_register_num(vm, "input_key", b_host_input_key, ctx);
+  mq_script_register_num(vm, "input_axis", b_host_input_axis, ctx);
+  mq_script_register_num(vm, "input_axis_pad", b_host_input_axis_pad, ctx);
+  mq_script_register_num(vm, "input_gamepad_button", b_host_input_gamepad_button, ctx);
+  mq_script_register_num(vm, "input_gamepad_buttons", b_host_input_gamepad_buttons, ctx);
+  mq_script_register_num(vm, "input_gamepad_connected", b_host_input_gamepad_connected, ctx);
   mq_script_register_num(vm, "input_focus", b_host_input_focus, ctx);
   mq_script_register_num(vm, "input_set_focus", b_host_input_set_focus, ctx);
   mq_script_register_num(vm, "ui_hit", b_host_ui_hit, ctx);
@@ -1227,6 +1268,13 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_ret_str(vm, "scene_path", b_host_scene_path, ctx);
   mq_script_register_num(vm, "scene_pick", b_host_scene_pick, ctx);
   mq_script_register_num(vm, "scene_raycast", b_host_scene_raycast, ctx);
+  mq_script_register_num(vm, "scene_sphere_overlap", b_host_scene_sphere_overlap, ctx);
+  mq_script_register_num(vm, "scene_sphere_cast", b_host_scene_sphere_cast, ctx);
+  mq_script_register_num(vm, "scene_obb_overlap", b_host_scene_obb_overlap, ctx);
+  mq_script_register_num(vm, "scene_cast_distance", b_host_scene_cast_distance, ctx);
+  mq_script_register_num(vm, "scene_cast_point_x", b_host_scene_cast_point_x, ctx);
+  mq_script_register_num(vm, "scene_cast_point_y", b_host_scene_cast_point_y, ctx);
+  mq_script_register_num(vm, "scene_cast_point_z", b_host_scene_cast_point_z, ctx);
   mq_script_register_multi(vm, "scene_instantiate", "nss", b_host_scene_instantiate, ctx);
   mq_script_register_num(vm, "scene_unload", b_host_scene_unload, ctx);
   mq_script_register_num(vm, "scene_reload", b_host_scene_reload, ctx);

@@ -6,6 +6,13 @@
   "script": "transform_api.js",
   "entities": [
     {
+      "name": "flat_fwd",
+      "parent": "root",
+      "components": [
+        { "type": "scene.Transform3D" }
+      ]
+    },
+    {
       "name": "root",
       "components": [
         { "type": "scene.Transform3D", "local": {
@@ -27,6 +34,20 @@
       "name": "looker",
       "components": [
         { "type": "scene.Transform3D" }
+      ]
+    },
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 5.0 } } },
+        { "type": "render.Camera3D", "fov_y": 50.0, "orbit_controls": false }
+      ]
+    },
+    {
+      "name": "flat_child",
+      "parent": "root",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } }
       ]
     },
     {

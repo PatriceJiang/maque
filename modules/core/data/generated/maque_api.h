@@ -62,6 +62,11 @@ namespace host {
   float input_target(void* ctx);
   float input_down(void* ctx);
   float input_key(void* ctx, float code);
+  float input_axis(void* ctx, float axis);
+  float input_axis_pad(void* ctx, float pad, float axis);
+  float input_gamepad_button(void* ctx, float button);
+  float input_gamepad_buttons(void* ctx, float pad);
+  float input_gamepad_connected(void* ctx);
   float input_focus(void* ctx);
   void input_set_focus(void* ctx, float id);
   float ui_hit(void* ctx);
@@ -168,6 +173,13 @@ namespace host {
   const char* scene_path(void* ctx);
   float scene_pick(void* ctx, float x, float y);
   float scene_raycast(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz, float max_distance);
+  float scene_sphere_overlap(void* ctx, float x, float y, float z, float radius);
+  float scene_sphere_cast(void* ctx, float ox, float oy, float oz, float dx, float dy, float dz, float radius, float max_distance);
+  float scene_obb_overlap(void* ctx, float x, float y, float z, float hx, float hy, float hz, float yaw);
+  float scene_cast_distance(void* ctx);
+  float scene_cast_point_x(void* ctx);
+  float scene_cast_point_y(void* ctx);
+  float scene_cast_point_z(void* ctx);
   float scene_instantiate(void* ctx, float parent, const char* path, const char* params);
   float scene_unload(void* ctx, float instance);
   float scene_reload(void* ctx, float instance);
