@@ -100,6 +100,29 @@ PY
 cmp -s "$WORK/a/triangle.mesh.json" "$WORK/b/triangle.mesh.json" || fail "两次导入结果不一致（违反确定性）"
 echo "gltf_import_e2e: 确定性 OK"
 
+# 非三角 primitive + NORMAL：点展开成小方块后顶点数变多，原始 NORMAL 不再等长；
+# 旧实现直接在展开后的顶点上索引 normals → IndexError（PrimitiveModeNormalsTest 踩到）。
+POINTS="$FIXDIR/points_normals.gltf"
+if [ -f "$POINTS" ]; then
+    "$PY" "$TOOL" "$POINTS" --out "$WORK/points" >"$WORK/points.log" 2>&1 \
+        || { cat "$WORK/points.log"; fail "非三角 + NORMAL 导入失败"; }
+    [ -f "$WORK/points/points_normals.mesh.json" ] || fail "缺 points_normals.mesh.json"
+    "$PY" - "$WORK/points/points_normals.mesh.json" <<'PY' || exit 1
+import json, math, sys
+m = json.load(open(sys.argv[1], encoding="utf-8"))
+# 3 个 POINTS → 每个展开成 1 个 quad（4 顶点 / 2 三角形）
+assert len(m["vertices"]) == 12, len(m["vertices"])
+assert len(m["indices"]) == 18, len(m["indices"])
+for v in m["vertices"]:
+    assert len(v) == 12, len(v)
+    assert all(math.isfinite(x) for x in v), v
+    n = v[3:6]
+    assert math.sqrt(sum(x * x for x in n)) > 0.5, n
+print("gltf_import_e2e: 非三角 + NORMAL 展开 OK")
+PY
+    [ $? -eq 0 ] || exit 1
+fi
+
 # --name 覆盖输出基名
 "$PY" "$TOOL" "$FIXTURE" --out "$WORK/c" --name hero >/dev/null 2>&1 || fail "--name 运行失败"
 [ -f "$WORK/c/hero.mesh.json" ] || fail "--name 未生效"

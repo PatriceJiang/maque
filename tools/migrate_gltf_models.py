@@ -1025,12 +1025,16 @@ def migrate_one(model, args, models_root, out_root, manifest):
     if need_import:
         os.makedirs(out_dir, exist_ok=True)
         if args.force:
-            # 只清派生资产/场景/预览，**保留 README.md**（其中手动笔记区要跨重生成保留）
+            # 只清派生资产/场景/预览，**保留 README.md**（其中手动笔记区要跨重生成保留）。
+            # --no-render 不会重新生成 preview.jpg / compare.json，删掉会丢已入库产物 → 保留。
             for sub in ("assets", "textures"):
                 p = os.path.join(out_dir, sub)
                 if os.path.isdir(p):
                     shutil.rmtree(p)
-            for fn in (model + ".scn", "preview.png", "preview.jpg", "compare.json"):
+            stale = [model + ".scn", "preview.png"]
+            if not args.no_render:
+                stale += ["preview.jpg", "compare.json"]
+            for fn in stale:
                 p = os.path.join(out_dir, fn)
                 if os.path.isfile(p):
                     os.remove(p)

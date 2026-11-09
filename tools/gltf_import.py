@@ -1632,19 +1632,29 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
             indices = (accessor_values(js, buffers, prim["indices"])
                        if "indices" in prim else [[i] for i in range(n)])
             indices = [int(r[0]) for r in indices]
+            normals = (accessor_values(js, buffers, attrs["NORMAL"])
+                       if "NORMAL" in attrs else None)
             if mode != MODE_TRIANGLES:
                 positions, uvs, colors, uvs1, indices = expand_primitive_mode(
                     positions, uvs, colors, uvs1, indices, mode)
                 n = len(positions)
                 print(f"gltf_import: mode={mode} primitive mesh={mi} prim={pi} → "
                       f"三角形展开（顶点 {n}）", file=sys.stderr)
-            # 缺 NORMAL：glTF 规范允许。**有索引时必须按真实 indices** 累积（旧实现传 range(n)
-            # 把顶点序号当三角形汤 → 法线随机错）；无索引时 range(n) 才等价于索引序列。
-            # 非三角 primitive 在上一步已展开成三角索引；这里始终用最终 indices 重算法线
-            # （旧写法在「无 indices 的线/点 primitive」上会退回 range(n)，法线随机错）。
-            normals = (accessor_values(js, buffers, attrs["NORMAL"])
-                       if "NORMAL" in attrs
-                       else compute_normals(positions, indices))
+                # 展开后的顶点是新建的四边面顶点，原始 NORMAL 不再一一对应 → 重新计算面法线。
+                if normals is None or len(normals) != n:
+                    normals = compute_normals(positions, indices)
+            elif normals is None or len(normals) != n:
+                # 缺 NORMAL 或 accessor 元素数与 POSITION 不一致：按最终 indices 重算。
+                normals = compute_normals(positions, indices)
+            # 防御：某些资产 TEXCOORD/COLOR 元素数小于 POSITION（glTF 规范要求相等，
+            # 但 PrimitiveModeNormalsTest 有这种数据）→ 用默认值补齐，避免 IndexError。
+            if len(uvs) != n:
+                uvs = [(uvs[i] if i < len(uvs) else [0.0, 0.0]) for i in range(n)]
+            if colors is not None and len(colors) != n:
+                colors = [(colors[i] if i < len(colors) else [1.0, 1.0, 1.0, 1.0])
+                          for i in range(n)]
+            if uvs1 is not None and len(uvs1) != n:
+                uvs1 = [(uvs1[i] if i < len(uvs1) else uvs[i]) for i in range(n)]
             mat_idx = prim.get("material", -1)
             mats = []
             if mat_idx >= 0:

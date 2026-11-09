@@ -456,7 +456,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | 特性 | 现状 | 影响 | 规避/后续 |
 |---|---|---|---|
 | 三角形 `mode=4`、缺省索引、u8/u16/u32、`byteStride` | ✅ 支持 | — | — |
-| 非三角 primitive（线/点/三角带） | ⚠️ 跳过 + warning（**22 个 primitive / 2 个模型**：MeshPrimitiveModes、PrimitiveModeNormalsTest） | 模型缺少线条/点装饰 | 后续补 topology 或明确标注 |
+| 非三角 primitive（线/点/三角带） | ✅ 展开为三角形（点=小方块、线=细四边面、strip/fan=索引展开）；`PrimitiveModeNormalsTest` 的 NORMAL 在展开后按最终 indices 重算 | 线宽/点径是固定比例近似，非精确屏幕尺寸 | 观感近似，已满足迁移预览 |
 | 缺 `NORMAL` | ✅ 按真实 indices 生成（45 个 primitive） | — | — |
 | `TANGENT` | ⚠️ 不读；shader 用屏幕空间切线基 | 极端 UV/法线贴图可能与官方略异 | 可接受（审计结论）；后续可加顶点切线 |
 | `TEXCOORD_1` | ✅ 支持（布局 v1：uv1 进顶点；材质 `uv1_mask` 逐槽选择；主变体约 50 处 textureInfo 用 texCoord>0） | — | `TEXCOORD_2+` 未导入但无使用者（唯一属性不在任何贴图上，见 §5.3 UV 行） |
@@ -807,10 +807,10 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | # | 现象 | 原因 | 解决/规避 |
 |---|---|---|---|
 | I1 | 某模型贴图大片缺失、只剩因子色 | 离线 importer 仍跳过 KTX2/BasisU（runtime 直读已支持）或其它未接扩展贴图 | 用 runtime 直读原模型；或换 `glTF/` 主变体；看 `manifest.json.issues`/README |
-| I2 | 模型明显缺件（线/点/三角带装饰） | importer 只导三角形，非三角 primitive 跳过 | 已知限制；记录在 README |
+| I2 | 模型线/点装饰形状与官方不同 | 非三角 primitive 已展开为三角形近似（点=小方块、线=细四边面，宽度按包围盒比例） | 几何语义非精确；如在意可后续补运行时线/点拓扑 |
 | I3 | 手调 `.scn` 被覆盖 | `gltf_import.py --scene` **无条件写 `<out>/<name>.scn`**；`migrate --force` 会重写它 | 手调模型加入 `--exclude`；刷新素材用不带 `--scene` 的导入（§3.4）；改动及时 `git commit` |
 | I4 | 想只重算指标/重写笔记，不想再渲染 148 次 | 每个模型渲染要 0.5–20s，全量重渲耗时 | `--reuse-preview`（复用 `preview.png` 只重算对比+笔记，秒级） |
-| I4b | 重跑后 README 手动笔记还在吗 | `--force` 只删派生资产（assets/textures/scn/preview/compare），**不动 README.md** | 手动笔记安全；仍建议提交（git 兜底） |
+| I4b | 重跑后 README 手动笔记还在吗 | `--force` 只删派生资产（assets/textures/scn/preview.png）；`--no-render` 不重生成 preview.jpg/compare.json，故现在会保留它们；**不动 README.md** | 手动笔记安全；仍建议提交（git 兜底） |
 | I5 | 同一 glTF 两次导入数值不同 | 混用了 `--compact` 与默认输出（6 位小数舍入差异） | 流水线固定 `--compact`（§4.7） |
 | I6 | 大模型导入/加载慢、`assets/*.mesh.json` 几十 MB | 文本 JSON 体量大（compact ≈53 B/顶点，默认 indent=2 ≈119 B/顶点） | 固定 `--compact`；单模型超 50 万顶点会在 `issues` 标记；长期需二进制网格格式 |
 | I7 | 参考图对比没生成（无 `compare.json`） | 缺 PIL/numpy，或模型无 `screenshot/` | `pip install pillow numpy`；无参考图的模型正常跳过 |
@@ -1203,7 +1203,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | `KHR_animation_pointer` 动画未导入 | **5** | 材质/贴图变换/可见性指针通道（节点 TRS/骨骼/morph 已支持；P3） |
 | morph targets 已应用（CPU 顶点变形） | **4** | 第 29 轮 S3：默认权重 + weights 动画；TANGENT 增量忽略（信息性） |
 | `KHR_node_visibility` 已支持 | **3** | 信息性 gap：隐藏节点已跳过 |
-| 非三角 primitive 被跳过 | **2** | 线/点装饰缺失 |
+| 非三角 primitive 已展开为三角形 | **2** | 点/线/带/扇；线宽/点径为包围盒比例近似 |
 | `EXT_mesh_gpu_instancing` 已导入展开 / quantization / meshopt / WebP | 各 1 | 个别模型（见 §5；instancing 为 CPU 展开，非 GPU 实例化） |
 
 > **blocked 为 0** 的原因：所有 149 个模型的 `glTF/` 主变体都**没有** `extensionsRequired` 含 Draco/KTX2/WebP；
