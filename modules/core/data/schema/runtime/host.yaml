@@ -128,6 +128,19 @@
     - { fn: node_off,            ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
     - { fn: node_emit,           ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
     - { fn: node_emit_number,    ctx: true, args: [ { name: id, type: float }, { name: event, type: string }, { name: value, type: float } ], returns: float }
+    # ---- 全局消息总线（跨节点 / 跨场景实例 / 跨 VM；docs/14 §全局消息）----
+    # 与 node 事件互补：node 事件绑定在节点上、沿父链冒泡；消息总线只按 (bus, subject, event)
+    # 匹配，与节点树/实例无关。callback 在 JS/Lua 里可直接传函数（运行时 shim 生成唯一
+    # handler 名），也可传全局函数名字符串；载荷最多 3 个数值（与事件总线一致）。
+    - { fn: msg_subscribe, ctx: true, args: [ { name: bus, type: string }, { name: subject, type: string },
+                                             { name: event, type: string }, { name: callback, type: string } ], returns: float,
+        doc: "订阅全局消息；返回 listener（>0）；callback 可传函数（JS/Lua shim）或全局函数名。bus/subject/event 支持 * 通配" }
+    - { fn: msg_unsubscribe, ctx: true, args: [ { name: listener, type: float } ], returns: float,
+        doc: "取消订阅；返回 1=删除了 listener、0=不存在" }
+    - { fn: msg_publish, ctx: true, args: [ { name: bus, type: string }, { name: subject, type: string },
+                                           { name: event, type: string }, { name: a0, type: float },
+                                           { name: b0, type: float }, { name: c0, type: float } ], returns: float,
+        doc: "发布消息（同步、按订阅顺序）；回调收到 (a0,b0,c0)；返回命中的 listener 数" }
     # UI 控件值（按 role 统一读写：ProgressBar / Slider / CheckBox）
     - { fn: ui_set_value,        ctx: true, args: [ { name: id, type: float }, { name: v, type: float } ], returns: float }
     - { fn: ui_get_value,        ctx: true, args: [ { name: id, type: float } ], returns: float }

@@ -8,7 +8,7 @@
 #include "abi/script.h"
 
 #define MQ_SCRIPT_API_VERSION 1u
-#define MQ_SCRIPT_API_HASH 0x0b477d1bu
+#define MQ_SCRIPT_API_HASH 0xec31fbdfu
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,6 +125,9 @@ typedef struct mq_script_api_v1 {
     float (*host_node_off)(void* ctx, float id, const char* event);
     float (*host_node_emit)(void* ctx, float id, const char* event);
     float (*host_node_emit_number)(void* ctx, float id, const char* event, float value);
+    float (*host_msg_subscribe)(void* ctx, const char* bus, const char* subject, const char* event, const char* callback);  /* 订阅全局消息；返回 listener（>0）；callback 可传函数（JS/Lua shim）或全局函数名。bus/subject/event 支持 * 通配 */
+    float (*host_msg_unsubscribe)(void* ctx, float listener);  /* 取消订阅；返回 1=删除了 listener、0=不存在 */
+    float (*host_msg_publish)(void* ctx, const char* bus, const char* subject, const char* event, float a0, float b0, float c0);  /* 发布消息（同步、按订阅顺序）；回调收到 (a0,b0,c0)；返回命中的 listener 数 */
     float (*host_ui_set_value)(void* ctx, float id, float v);
     float (*host_ui_get_value)(void* ctx, float id);
     float (*host_ui_set_checked)(void* ctx, float id, float on);

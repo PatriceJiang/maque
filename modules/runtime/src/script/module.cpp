@@ -202,6 +202,7 @@ bool Engine::ensure_module_vm() {
     mq_script_set_rng(module_vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
     mq_bind_generated(module_vm, this);
     mq_script_vm_set_module_loader(module_vm, module_resolve_cb, module_read_cb, this);
+    install_message_shim(module_vm, "js");
     std::print("runtime: package script VM ready (one js VM per engine)\n");
     return true;
 }

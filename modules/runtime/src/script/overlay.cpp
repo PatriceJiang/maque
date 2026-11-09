@@ -12,6 +12,7 @@ namespace maque::rt {
 void Engine::unload_overlay() {
     /* 覆盖层 VM 即将销毁：它注册的节点事件必须先摘掉（换覆盖层脚本/退出时不留陈旧处理器）。 */
     purge_node_handlers(-2, -1, nullptr, nullptr, true);
+    clear_msg_listeners(-2);
     if (overlay_script_instance) {
         mq_script_instance_destroy(overlay_script_instance);
         overlay_script_instance = nullptr;
@@ -113,6 +114,7 @@ bool Engine::reload_overlay_script() {
     }
     mq_script_bus_swap(overlay_bus, 0, fresh, overlay_rel.c_str());
     purge_node_handlers(-2, 0, fresh, overlay_bus, true);
+    clear_msg_listeners_slot(-2, 0);
     overlay_hash = h;
     /* 换入后只对新 VM 派发 on_start：重建 UI 并重新初始化。与常规派发一样标记
      * in_overlay 上下文 —— 否则 on_start 里的 node_on 会按根实例登记（归属/总线都错）。 */

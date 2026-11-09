@@ -13,6 +13,7 @@ namespace maque::rt {
 void Engine::unload_global() {
     /* 同 unload_overlay：全局脚本的节点事件随它的 VM 一起失效。 */
     purge_node_handlers(-3, -1, nullptr, nullptr, true);
+    clear_msg_listeners(-3);
     if (global_script_instance) {
         mq_script_instance_destroy(global_script_instance);
         global_script_instance = nullptr;
@@ -135,6 +136,7 @@ bool Engine::reload_global_script() {
     }
     mq_script_bus_swap(global_bus, 0, fresh, global_rel.c_str());
     purge_node_handlers(-3, 0, fresh, global_bus, true);
+    clear_msg_listeners_slot(-3, 0);
     global_hash = h;
     /* 换入后只对新 VM 派发 on_start（重建 HUD / 重新注册事件）；上下文标记为全局脚本，
      * 否则 on_start 里的 node_on/entity_spawn 会落到错误的作用域。 */

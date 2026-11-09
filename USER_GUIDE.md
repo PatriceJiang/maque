@@ -710,7 +710,19 @@ scene_emit(levelInstance, 'enemy_dead', uid);
 
 // 全局脚本：调用 global_script 中名为 level_finished 的 handler，收 (0, value)
 global_emit('level_finished', 1);
+
+// 跨节点/跨子场景：全局消息总线（不绑节点，按 bus/subject/event 匹配）
+const listener = msg_subscribe('game', 'player', 'damaged', (amount, source, flags) => {
+  // ...
+});
+msg_publish('game', 'player', 'damaged', 12, 3, 0);   // 回调收到 (12, 3, 0)
+msg_unsubscribe(listener);
 ```
+
+- 全局消息的 `callback` 可以传函数（JS/Lua 内部转成唯一 handler 名），也可以传全局函数名字符串；
+  载荷最多 3 个数值；需要字符串时用 `global_set_text` / `storage` 附带。
+- `bus/subject/event` 可用 `"*"` 通配；订阅顺序 = 派发顺序；取消订阅或所属场景实例卸载时移除。
+- 事件（node/场景实例）与全局消息是两条通道：前者带节点/实例作用域，后者不随节点树变化。
 
 - 载荷只有标量/字符串；不要试图跨 VM 传对象/表。
 - 同名 handler 分属不同实例时互不串扰（记录带 `owner_instance`）。

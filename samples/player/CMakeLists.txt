@@ -840,6 +840,19 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/multilang_e2e")
 endif()
 
+# 跨脚本消息（不同节点 + 嵌套子场景 + 全局消息总线，docs/14 §多 VM/§全局消息、docs/19 §3.1、docs/32 §5）：
+#   根场景 3 个脚本各自负责不同节点；Responder 用 scn.SceneInstance 加载子场景 responder.scn（独立 VM）。
+#   同一事件名 ping → 不同节点由不同脚本处理；A → B → 汇总方；子场景 ↔ 父场景双向消息；
+#   子节点事件冒泡；全局 msg_subscribe/msg_publish（根 + 子场景同一消息、取消订阅、字符串 handler）；
+#   node_off 只摘目标节点的注册；两跑日志/world_trail 一致。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME node_message_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/node_message_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/messages/message_nodes.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/node_message_e2e")
+    set_tests_properties(node_message_e2e PROPERTIES TIMEOUT 60)
+endif()
+
 # 混合语言通信（docs/34 P0）：JS 根（包内单 VM 模块/实例）↔ Lua 子实例（旧路径）双向 scene_emit，
 # 两个 Lua 实例闭包状态独立 + 同 seed 两跑确定性。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)

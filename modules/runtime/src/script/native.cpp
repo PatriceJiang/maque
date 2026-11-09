@@ -64,6 +64,7 @@ mq_script_vm* Engine::make_script_vm(const char* lang, const std::string& source
     }
     mq_script_set_rng(vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
     mq_bind_generated(vm, this);   // native 的 register_* 是 no-op
+    install_message_shim(vm, lang);
     return vm;
 }
 

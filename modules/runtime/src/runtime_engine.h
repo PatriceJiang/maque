@@ -225,6 +225,28 @@ struct Engine {
     int  script_slot_for_handler(const char* handler) const;
     void purge_node_handlers(int instance, int slot, mq_script_vm* fresh, mq_script_bus* bus,
                              bool single_vm);
+    /* ---- 全局消息总线（msg_subscribe / msg_publish；docs/14 §全局消息）----
+     * 与 node_events 不同：不绑定节点，按 (bus, subject, event) 精确匹配（'*' 通配），
+     * 跨场景实例/VM。listener 记录注册时的脚本上下文（实例 -3 全局 / -2 覆盖层 / >=0），
+     * 发布时在该上下文里调用 handler（错误隔离沿用总线）。 */
+    struct MsgListener {
+        int id = 0;
+        std::string bus, subject, event, handler;
+        int instance = 0;                         // -3=global, -2=overlay, >=0=scene instance
+        int slot = -1;                            // 旧路径脚本槽位（热重载时按槽位清订阅）
+        bool module = false;                      // docs/34 模块路径（handler 是 VM 全局函数）
+        mq_script_instance* module_inst = nullptr;
+        mq_script_vm* module_vm = nullptr;
+    };
+    std::vector<MsgListener> msg_listeners;
+    int msg_next_id = 1;
+    int msg_depth = 0;                            // 发布嵌套深度上限（防脚本递归打爆栈）
+    int next_vm_id = 1;                           // 给 JS/Lua shim 生成跨 VM 唯一的 handler 名
+    int install_message_shim(mq_script_vm* vm, const char* lang);
+    void clear_msg_listeners(int instance);
+    void clear_msg_listeners_slot(int instance, int slot);
+    int  msg_publish_internal(const std::string& bus, const std::string& subject,
+                              const std::string& event, double a, double b, double c);
     bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
     uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
     /* Tween（补间）：确定性固定步长推进；写入反射字段路径（与动画同一机制） */

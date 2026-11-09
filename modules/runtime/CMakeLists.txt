@@ -15,7 +15,7 @@ add_library(maque_runtime STATIC
     # 宿主 API（schema api_list 的 310 个实现）按前缀分域
     src/api/system.cpp src/api/node.cpp src/api/ui.cpp src/api/scene.cpp
     src/api/spine.cpp src/api/imgui.cpp src/api/physics.cpp src/api/nav.cpp
-    src/api/audio.cpp src/api/storage.cpp
+    src/api/audio.cpp src/api/storage.cpp src/api/message.cpp
     # 控制面（schema control_list 的 57 个方法）按域
     src/control/system.cpp src/control/scene.cpp src/control/world.cpp
     src/control/render.cpp src/control/storage.cpp src/control/audio.cpp

@@ -448,6 +448,22 @@ public:
             const std::string _s0(event);
             return c.api_ptr()->host_node_emit_number(c.host_ctx(), id, _s0.c_str(), value);
         }
+        float msg_subscribe(std::string_view bus, std::string_view subject, std::string_view event, std::string_view callback) const {
+            const std::string _s0(bus);
+            const std::string _s1(subject);
+            const std::string _s2(event);
+            const std::string _s3(callback);
+            return c.api_ptr()->host_msg_subscribe(c.host_ctx(), _s0.c_str(), _s1.c_str(), _s2.c_str(), _s3.c_str());
+        }
+        float msg_unsubscribe(float listener) const {
+            return c.api_ptr()->host_msg_unsubscribe(c.host_ctx(), listener);
+        }
+        float msg_publish(std::string_view bus, std::string_view subject, std::string_view event, float a0, float b0, float c0) const {
+            const std::string _s0(bus);
+            const std::string _s1(subject);
+            const std::string _s2(event);
+            return c.api_ptr()->host_msg_publish(c.host_ctx(), _s0.c_str(), _s1.c_str(), _s2.c_str(), a0, b0, c0);
+        }
         float ui_set_value(float id, float v) const {
             return c.api_ptr()->host_ui_set_value(c.host_ctx(), id, v);
         }

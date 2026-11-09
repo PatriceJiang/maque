@@ -124,6 +124,9 @@ namespace host {
   float node_off(void* ctx, float id, const char* event);
   float node_emit(void* ctx, float id, const char* event);
   float node_emit_number(void* ctx, float id, const char* event, float value);
+  float msg_subscribe(void* ctx, const char* bus, const char* subject, const char* event, const char* callback);
+  float msg_unsubscribe(void* ctx, float listener);
+  float msg_publish(void* ctx, const char* bus, const char* subject, const char* event, float a0, float b0, float c0);
   float ui_set_value(void* ctx, float id, float v);
   float ui_get_value(void* ctx, float id);
   float ui_set_checked(void* ctx, float id, float on);

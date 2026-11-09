@@ -1,0 +1,32 @@
+{
+  "title": "Cross-script messages (node routing + sub scene)",
+  "scripts": ["orchestrator.js", "alpha.js", "beta.js"],
+  "width": 480,
+  "height": 270,
+  "seed": 20261109,
+  "entities": [
+    { "name": "Root", "components": [], "children": [
+      { "name": "Title", "components": [
+          { "type": "scn.Label", "x": 12.0, "y": 252.0, "text": "Cross-script messages: parent nodes + nested sub scene",
+            "font_size": 14.0, "r": 0.95, "g": 0.85, "b": 0.45, "a": 1.0 } ] },
+      { "name": "Status", "components": [
+          { "type": "scn.Label", "x": 12.0, "y": 232.0, "text": "waiting for messages", "font_size": 12.0,
+            "r": 0.75, "g": 0.85, "b": 1.0, "a": 1.0 } ] },
+      { "name": "Alpha", "components": [
+          { "type": "scn.Transform2D", "x": 100.0, "y": 140.0 },
+          { "type": "scn.Sprite", "radius": 28.0, "r": 0.30, "g": 0.55, "b": 1.0 } ], "children": [
+        { "name": "AlphaSensor", "components": [
+            { "type": "scn.Transform2D", "x": 100.0, "y": 92.0 },
+            { "type": "scn.Sprite", "radius": 8.0, "r": 0.60, "g": 0.85, "b": 1.0 } ] } ] },
+      { "name": "Beta", "components": [
+          { "type": "scn.Transform2D", "x": 380.0, "y": 140.0 },
+          { "type": "scn.Sprite", "radius": 28.0, "r": 1.0, "g": 0.60, "b": 0.25 } ] },
+      { "name": "Responder", "components": [
+          { "type": "scn.Transform2D", "x": 240.0, "y": 74.0 },
+          { "type": "scn.SceneInstance", "source": "responder.scn" } ] },
+      { "name": "Hint", "components": [
+          { "type": "scn.Label", "x": 12.0, "y": 16.0, "text": "hub -> Alpha/Beta  |  Alpha -> Beta  |  sub scene <-> hub  |  node_off",
+            "font_size": 11.0, "r": 0.65, "g": 0.65, "b": 0.65, "a": 1.0 } ] }
+    ] }
+  ]
+}

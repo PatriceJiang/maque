@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 256,
-  "api_count": 328,
+  "api_count": 331,
   "control_count": 64,
   "callback_count": 11,
   "module_count": 27,
@@ -19154,6 +19154,86 @@
       "returns": "float",
       "ctx": true,
       "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.msg_subscribe",
+      "namespace": "host",
+      "fn": "msg_subscribe",
+      "global": true,
+      "args": [
+        {
+          "name": "bus",
+          "type": "string"
+        },
+        {
+          "name": "subject",
+          "type": "string"
+        },
+        {
+          "name": "event",
+          "type": "string"
+        },
+        {
+          "name": "callback",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "订阅全局消息；返回 listener（>0）；callback 可传函数（JS/Lua shim）或全局函数名。bus/subject/event 支持 * 通配",
+      "manual": null
+    },
+    {
+      "name": "host.msg_unsubscribe",
+      "namespace": "host",
+      "fn": "msg_unsubscribe",
+      "global": true,
+      "args": [
+        {
+          "name": "listener",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "取消订阅；返回 1=删除了 listener、0=不存在",
+      "manual": null
+    },
+    {
+      "name": "host.msg_publish",
+      "namespace": "host",
+      "fn": "msg_publish",
+      "global": true,
+      "args": [
+        {
+          "name": "bus",
+          "type": "string"
+        },
+        {
+          "name": "subject",
+          "type": "string"
+        },
+        {
+          "name": "event",
+          "type": "string"
+        },
+        {
+          "name": "a0",
+          "type": "float"
+        },
+        {
+          "name": "b0",
+          "type": "float"
+        },
+        {
+          "name": "c0",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "发布消息（同步、按订阅顺序）；回调收到 (a0,b0,c0)；返回命中的 listener 数",
       "manual": null
     },
     {

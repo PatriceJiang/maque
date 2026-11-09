@@ -330,6 +330,15 @@ int b_host_node_emit(void* user, int, const double* a, const char* s, double* re
 int b_host_node_emit_number(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::node_emit_number(user, (float)a[0], s[0], (float)a[1]); return 0;
 }  /* kinds=nsn */
+int b_host_msg_subscribe(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::msg_subscribe(user, s[0], s[1], s[2], s[3]); return 0;
+}  /* kinds=ssss */
+int b_host_msg_unsubscribe(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::msg_unsubscribe(user, (float)a[0]); return 0;
+}
+int b_host_msg_publish(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::msg_publish(user, s[0], s[1], s[2], (float)a[0], (float)a[1], (float)a[2]); return 0;
+}  /* kinds=sssnnn */
 int b_host_ui_set_value(void* user, int, const double* a, double* ret) {
   *ret = (double)host::ui_set_value(user, (float)a[0], (float)a[1]); return 0;
 }
@@ -1107,6 +1116,9 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_mixed(vm, "node_off", b_host_node_off, ctx);
   mq_script_register_mixed(vm, "node_emit", b_host_node_emit, ctx);
   mq_script_register_multi(vm, "node_emit_number", "nsn", b_host_node_emit_number, ctx);
+  mq_script_register_multi(vm, "msg_subscribe", "ssss", b_host_msg_subscribe, ctx);
+  mq_script_register_num(vm, "msg_unsubscribe", b_host_msg_unsubscribe, ctx);
+  mq_script_register_multi(vm, "msg_publish", "sssnnn", b_host_msg_publish, ctx);
   mq_script_register_num(vm, "ui_set_value", b_host_ui_set_value, ctx);
   mq_script_register_num(vm, "ui_get_value", b_host_ui_get_value, ctx);
   mq_script_register_num(vm, "ui_set_checked", b_host_ui_set_checked, ctx);

@@ -371,6 +371,7 @@ void Engine::destroy_instance_content(SceneInstanceRuntime& inst, bool fire_dest
         if (SceneInstanceRuntime* ci = instance_at(c)) destroy_instance_content(*ci, fire_destroy);
     }
     if (fire_destroy && (inst.state == 1 || inst.state == 4)) (void)dispatch_instance_on_destroy(inst.id);
+    clear_msg_listeners(inst.id);
     destroy_module_instances(inst);
     if (inst.bus) {
         if (inst.bus == bus) { bus = nullptr; vm = nullptr; }
@@ -429,6 +430,7 @@ void Engine::reset_instances() {
     instances.clear();
     entity_instance.clear();
     node_events.clear();                 // 处理器记录带实例 id，重建实例后必须重注册
+    std::erase_if(msg_listeners, [](const MsgListener& l) { return l.instance >= 0; });
     scene_chain.clear();
     instance_ops.clear();
     instance_warned.clear();
@@ -636,6 +638,7 @@ bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
     mq_script_bus_swap(inst->bus, (uint32_t)slot, fresh, rel.c_str());
     /* 同上：先摘掉该脚本槽位的旧注册，再让新 VM 的 on_start 重新注册一份。 */
     purge_node_handlers(inst->id, slot, fresh, inst->bus, mq_script_bus_count(inst->bus) == 1);
+    clear_msg_listeners_slot(inst->id, slot);   // 旧 VM 的全局消息订阅也随槽位失效
     while (inst->script_hashes.size() <= (size_t)slot) inst->script_hashes.push_back(0);
     inst->script_hashes[(size_t)slot] = h;
     if (inst->id == 0) {

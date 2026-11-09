@@ -1,0 +1,14 @@
+{
+  "title": "message responder",
+  "script": "responder.js",
+  "width": 200,
+  "height": 200,
+  "entities": [
+    { "name": "ResponderBody", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+        { "type": "scn.Sprite", "radius": 18.0, "r": 0.35, "g": 0.90, "b": 0.55 } ] },
+    { "name": "ResponderLabel", "components": [
+        { "type": "scn.Label", "x": -32.0, "y": -30.0, "text": "sub scene", "font_size": 10.0,
+          "r": 0.65, "g": 1.0, "b": 0.75, "a": 1.0 } ] }
+  ]
+}

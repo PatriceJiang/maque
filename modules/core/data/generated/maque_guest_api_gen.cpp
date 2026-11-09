@@ -118,6 +118,9 @@ constexpr bool api_all_set(const mq_script_api_v1& a) {
         && a.host_node_off
         && a.host_node_emit
         && a.host_node_emit_number
+        && a.host_msg_subscribe
+        && a.host_msg_unsubscribe
+        && a.host_msg_publish
         && a.host_ui_set_value
         && a.host_ui_get_value
         && a.host_ui_set_checked
@@ -453,6 +456,9 @@ constexpr mq_script_api_v1 kApi = {
     &host::node_off,
     &host::node_emit,
     &host::node_emit_number,
+    &host::msg_subscribe,
+    &host::msg_unsubscribe,
+    &host::msg_publish,
     &host::ui_set_value,
     &host::ui_get_value,
     &host::ui_set_checked,

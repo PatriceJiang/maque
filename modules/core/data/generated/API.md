@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **328** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
+统计：脚本 API **331** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -148,6 +148,9 @@
 | `node_off` | id: float, event: string | float | ctx |
 | `node_emit` | id: float, event: string | float | ctx |
 | `node_emit_number` | id: float, event: string, value: float | float | ctx |
+| `msg_subscribe` | bus: string, subject: string, event: string, callback: string | float | ctx · 订阅全局消息；返回 listener（>0）；callback 可传函数（JS/Lua shim）或全局函数名。bus/subject/event 支持 * 通配 |
+| `msg_unsubscribe` | listener: float | float | ctx · 取消订阅；返回 1=删除了 listener、0=不存在 |
+| `msg_publish` | bus: string, subject: string, event: string, a0: float, b0: float, c0: float | float | ctx · 发布消息（同步、按订阅顺序）；回调收到 (a0,b0,c0)；返回命中的 listener 数 |
 | `ui_set_value` | id: float, v: float | float | ctx |
 | `ui_get_value` | id: float | float | ctx |
 | `ui_set_checked` | id: float, on: float | float | ctx |
