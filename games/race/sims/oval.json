@@ -1,0 +1,13 @@
+{
+  "name": "oval-left",
+  "space": "window",
+  "events": [
+    { "frame": 2, "type": "key_down", "key": 87 },
+    { "frame": 60, "type": "key_down", "key": 65 },
+    { "frame": 200, "type": "key_up", "key": 65 },
+    { "frame": 260, "type": "key_down", "key": 65 },
+    { "frame": 420, "type": "key_up", "key": 65 },
+    { "frame": 470, "type": "key_down", "key": 65 },
+    { "frame": 640, "type": "key_up", "key": 65 }
+  ]
+}

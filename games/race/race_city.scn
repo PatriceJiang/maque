@@ -1,0 +1,120 @@
+{
+  "title": "race_city",
+  "script": "themes/city.js",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "seed": 4441,
+  "env_intensity": 0.75,
+  "env_color": { "r": 0.033, "g": 0.022, "b": 0.055, "a": 1.0 },
+  "env_sky_color": { "r": 0.093, "g": 0.133, "b": 0.474, "a": 1.0 },
+  "env_ground_color": { "r": 0.003, "g": 0.003, "b": 0.006, "a": 1.0 },
+  "env_highlight": 0.95,
+  "fog_mode": 1,
+  "fog_color": { "r": 0.009, "g": 0.007, "b": 0.024, "a": 1.0 },
+  "fog_near": 55,
+  "fog_far": 390,
+  "fog_density": 0,
+  "env_texture": "assets/sky/city.png",
+  "env_background": true,
+  "msaa_samples": 4,
+  "entities": [
+    { "name": "cam", "components": [
+      { "type": "scene.Transform3D", "local": {
+          "position": { "x": -0.785, "y": 3.6, "z": -9.467 },
+          "rotation": { "x": -0.14, "y": -0.083, "z": 0.0 } } },
+      { "type": "render.Camera3D", "fov_y": 62.0, "near": 0.3, "far": 700.0,
+        "exposure": 1.12,
+        "orbit_controls": false, "clear_mode": 0,
+        "clear_color": { "r": 0.009, "g": 0.007, "b": 0.025, "a": 1.0 } }
+    ]},
+    { "name": "sun", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.3, "y": 2.2, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 0.75,
+        "color": { "r": 0.271, "g": 0.381, "b": 1, "a": 1.0 },
+        "cast_shadow": true, "shadow_mode": 2, "shadow_distance": 90.0 }
+    ]},
+    { "name": "fill", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": 0.5, "y": -2.2, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 1,
+        "color": { "r": 0.7, "g": 0.78, "b": 0.95, "a": 1.0 }, "cast_shadow": false }
+    ]},
+    { "name": "trk_road", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/road.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.72, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/asphalt.png",
+        "base_color": { "r": 0.147, "g": 0.155, "b": 0.179, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_ground", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/ground.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.94, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_city.png",
+        "base_color": { "r": 0.073, "g": 0.073, "b": 0.095, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_kerb", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/kerb.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.55, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_city.png",
+        "base_color": { "r": 0.073, "g": 0.078, "b": 0.095, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_line", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/line.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 0.6, "env_intensity": 1.0,
+        "base_color": { "r": 0.692, "g": 0.692, "b": 0.604, "a": 1.0 },
+        "emissive": { "x": 1, "y": 0.342, "z": 0.073 } } ] },
+    { "name": "trk_rail", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/rail.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.75, "roughness": 0.28, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.095, "g": 0.107, "b": 0.133, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_a", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/props_a.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.78, "side": 0,
+        "emissive_intensity": 1.6, "env_intensity": 1.0, "base_color_texture": "assets/tex/facade.png",
+        "base_color": { "r": 0.179, "g": 0.179, "b": 0.233, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 }, "emissive_texture": "assets/tex/facade_lit.png" } ] },
+    { "name": "trk_props_b", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/props_b.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.25, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 2, "env_intensity": 1.0,
+        "base_color": { "r": 1, "g": 0.711, "b": 0.342, "a": 1.0 },
+        "emissive": { "x": 1, "y": 0.342, "z": 0.073 } } ] },
+    { "name": "trk_ao", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/ao.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.029, "g": 0.029, "b": 0.037, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_pole", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/pole.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.65, "roughness": 0.35, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.033, "g": 0.036, "b": 0.047, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_pool", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/pool.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "alpha_mode": 2, "opacity": 0.3,
+        "base_color": { "r": 1, "g": 0.604, "b": 0.179, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_far", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/city/far.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_city.png",
+        "base_color": { "r": 0.073, "g": 0.073, "b": 0.095, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] }
+  ]
+}

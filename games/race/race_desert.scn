@@ -1,0 +1,106 @@
+{
+  "title": "race_desert",
+  "script": "themes/desert.js",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "seed": 1337,
+  "env_intensity": 0.9,
+  "env_color": { "r": 0.073, "g": 0.064, "b": 0.047, "a": 1.0 },
+  "env_sky_color": { "r": 1, "g": 0.553, "b": 0.275, "a": 1.0 },
+  "env_ground_color": { "r": 0.102, "g": 0.034, "b": 0.02, "a": 1.0 },
+  "env_highlight": 0.5,
+  "fog_mode": 1,
+  "fog_color": { "r": 0.694, "g": 0.238, "b": 0.112, "a": 1.0 },
+  "fog_near": 95,
+  "fog_far": 470,
+  "fog_density": 0,
+  "env_texture": "assets/sky/desert.png",
+  "env_background": true,
+  "msaa_samples": 4,
+  "entities": [
+    { "name": "cam", "components": [
+      { "type": "scene.Transform3D", "local": {
+          "position": { "x": 134.535, "y": 3.6, "z": -9.489 },
+          "rotation": { "x": -0.14, "y": -0.049, "z": 0.0 } } },
+      { "type": "render.Camera3D", "fov_y": 62.0, "near": 0.3, "far": 700.0,
+        "exposure": 1,
+        "orbit_controls": false, "clear_mode": 0,
+        "clear_color": { "r": 0.848, "g": 0.477, "b": 0.214, "a": 1.0 } }
+    ]},
+    { "name": "sun", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.55, "y": 0.85, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 1.35,
+        "color": { "r": 1, "g": 0.645, "b": 0.356, "a": 1.0 },
+        "cast_shadow": true, "shadow_mode": 2, "shadow_distance": 90.0 }
+    ]},
+    { "name": "fill", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": 0.5, "y": -2.2, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 0.25,
+        "color": { "r": 0.7, "g": 0.78, "b": 0.95, "a": 1.0 }, "cast_shadow": false }
+    ]},
+    { "name": "trk_road", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/road.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.72, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/asphalt.png",
+        "base_color": { "r": 0.147, "g": 0.133, "b": 0.107, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_ground", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/ground.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.94, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_desert.png",
+        "base_color": { "r": 0.737, "g": 0.484, "b": 0.179, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_kerb", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/kerb.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.55, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_desert.png",
+        "base_color": { "r": 0.342, "g": 0.233, "b": 0.095, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_line", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/line.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 0.6, "env_intensity": 1.0,
+        "base_color": { "r": 0.848, "g": 0.748, "b": 0.448, "a": 1.0 },
+        "emissive": { "x": 0.005, "y": 0.004, "z": 0.002 } } ] },
+    { "name": "trk_rail", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/rail.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.75, "roughness": 0.28, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.319, "g": 0.274, "b": 0.205, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_a", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/props_a.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.78, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.068, "g": 0.147, "b": 0.043, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_b", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/props_b.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.25, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 1.8, "env_intensity": 1.0,
+        "base_color": { "r": 0.253, "g": 0.196, "b": 0.119, "a": 1.0 },
+        "emissive": { "x": 0.005, "y": 0.004, "z": 0.002 } } ] },
+    { "name": "trk_ao", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/ao.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.255, "g": 0.17, "b": 0.066, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_far", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/desert/far.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_desert.png",
+        "base_color": { "r": 0.737, "g": 0.484, "b": 0.179, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] }
+  ]
+}

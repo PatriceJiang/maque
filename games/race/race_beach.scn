@@ -1,0 +1,120 @@
+{
+  "title": "race_beach",
+  "script": "themes/beach.js",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "seed": 2027,
+  "env_intensity": 1,
+  "env_color": { "r": 0.095, "g": 0.133, "b": 0.163, "a": 1.0 },
+  "env_sky_color": { "r": 0.665, "g": 0.964, "b": 1, "a": 1.0 },
+  "env_ground_color": { "r": 0.333, "g": 0.216, "b": 0.105, "a": 1.0 },
+  "env_highlight": 0.6,
+  "fog_mode": 1,
+  "fog_color": { "r": 0.392, "g": 0.776, "b": 0.815, "a": 1.0 },
+  "fog_near": 120,
+  "fog_far": 580,
+  "fog_density": 0,
+  "env_texture": "assets/sky/beach.png",
+  "env_background": true,
+  "msaa_samples": 4,
+  "entities": [
+    { "name": "cam", "components": [
+      { "type": "scene.Transform3D", "local": {
+          "position": { "x": 118.354, "y": 3.6, "z": -9.356 },
+          "rotation": { "x": -0.14, "y": -0.174, "z": 0.0 } } },
+      { "type": "render.Camera3D", "fov_y": 62.0, "near": 0.3, "far": 700.0,
+        "exposure": 1.02,
+        "orbit_controls": false, "clear_mode": 0,
+        "clear_color": { "r": 0.477, "g": 0.711, "b": 0.787, "a": 1.0 } }
+    ]},
+    { "name": "sun", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.45, "y": 0.9, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 1.5,
+        "color": { "r": 1, "g": 0.896, "b": 0.679, "a": 1.0 },
+        "cast_shadow": true, "shadow_mode": 2, "shadow_distance": 90.0 }
+    ]},
+    { "name": "fill", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": 0.5, "y": -2.2, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 0.25,
+        "color": { "r": 0.7, "g": 0.78, "b": 0.95, "a": 1.0 }, "cast_shadow": false }
+    ]},
+    { "name": "trk_road", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/road.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.72, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/asphalt.png",
+        "base_color": { "r": 0.163, "g": 0.155, "b": 0.14, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_ground", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/ground.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.94, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_beach.png",
+        "base_color": { "r": 1, "g": 0.924, "b": 0.652, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_kerb", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/kerb.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.55, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_beach.png",
+        "base_color": { "r": 0.692, "g": 0.587, "b": 0.393, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_line", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/line.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 0.6, "env_intensity": 1.0,
+        "base_color": { "r": 0.89, "g": 0.89, "b": 0.828, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_rail", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/rail.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.75, "roughness": 0.28, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.477, "g": 0.448, "b": 0.38, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_a", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/props_a.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.78, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.033, "g": 0.171, "b": 0.051, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_b", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/props_b.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.25, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 1.8, "env_intensity": 1.0,
+        "base_color": { "r": 0.263, "g": 0.233, "b": 0.196, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_ao", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/ao.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.342, "g": 0.317, "b": 0.227, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_water", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/water.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.15, "roughness": 0.06, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.006, "g": 0.089, "b": 0.179, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_foam", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/foam.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.5, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.828, "g": 0.911, "b": 0.933, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_far", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/beach/far.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_beach.png",
+        "base_color": { "r": 1, "g": 0.924, "b": 0.652, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] }
+  ]
+}

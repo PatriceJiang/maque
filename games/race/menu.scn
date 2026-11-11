@@ -1,0 +1,19 @@
+{
+  "title": "maque racing ? menu",
+  "script": "scripts/menu.js",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "seed": 7,
+  "entities": [
+    { "name": "bg", "components": [
+      { "type": "scn.Transform2D", "x": 640.0, "y": 360.0 },
+      { "type": "scn.Sprite", "width": 1280.0, "height": 720.0,
+        "r": 0.020, "g": 0.024, "b": 0.034, "a": 1.0 } ] },
+    { "name": "band", "components": [
+      { "type": "scn.Transform2D", "x": 640.0, "y": 690.0 },
+      { "type": "scn.Sprite", "width": 1280.0, "height": 4.0,
+        "r": 0.95, "g": 0.62, "b": 0.12, "a": 1.0 } ] }
+  ]
+}
+

@@ -1,0 +1,23 @@
+{
+  "title": "lightprobe",
+  "width": 640,
+  "height": 360,
+  "script": "probe.js",
+  "env_intensity": 0.02,
+  "env_color": { "r": 0.05, "g": 0.05, "b": 0.06, "a": 1.0 },
+  "entities": [
+    { "name": "cam", "components": [
+      { "type": "scene.Transform3D", "local": {
+          "position": { "x": 0.0, "y": 9.0, "z": 16.0 },
+          "rotation": { "x": -0.62, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.Camera3D", "fov_y": 55.0, "near": 0.1, "far": 200.0,
+        "orbit_controls": false, "clear_color": { "r": 0.02, "g": 0.02, "b": 0.03, "a": 1.0 } }
+    ]},
+    { "name": "ground", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "geometry": 2, "geometry_size": { "x": 60.0, "y": 60.0, "z": 1.0 }, "cast_shadow": 0 },
+      { "type": "asset.PbrMaterial", "base_color": { "r": 0.35, "g": 0.35, "b": 0.35, "a": 1.0 },
+        "metallic": 0.0, "roughness": 0.8, "side": 2 }
+    ]}
+  ]
+}

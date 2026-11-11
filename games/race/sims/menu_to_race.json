@@ -1,0 +1,11 @@
+{
+  "name": "menu-to-race",
+  "space": "window",
+  "events": [
+    { "frame": 10, "type": "key_down", "key": 3 },
+    { "frame": 12, "type": "key_up", "key": 3 },
+    { "frame": 300, "type": "key_down", "key": 87 },
+    { "frame": 520, "type": "key_down", "key": 68 },
+    { "frame": 640, "type": "key_up", "key": 68 }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "title": "race_forest",
+  "script": "themes/forest.js",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "seed": 9137,
+  "env_intensity": 0.95,
+  "env_color": { "r": 0.033, "g": 0.047, "b": 0.033, "a": 1.0 },
+  "env_sky_color": { "r": 0.577, "g": 0.672, "b": 0.496, "a": 1.0 },
+  "env_ground_color": { "r": 0.02, "g": 0.036, "b": 0.016, "a": 1.0 },
+  "env_highlight": 0.5,
+  "fog_mode": 1,
+  "fog_color": { "r": 0.397, "g": 0.509, "b": 0.376, "a": 1.0 },
+  "fog_near": 34,
+  "fog_far": 250,
+  "fog_density": 0,
+  "env_texture": "assets/sky/forest.png",
+  "env_background": true,
+  "msaa_samples": 4,
+  "entities": [
+    { "name": "cam", "components": [
+      { "type": "scene.Transform3D", "local": {
+          "position": { "x": 99.242, "y": 3.6, "z": -9.47 },
+          "rotation": { "x": -0.14, "y": -0.08, "z": 0.0 } } },
+      { "type": "render.Camera3D", "fov_y": 62.0, "near": 0.3, "far": 700.0,
+        "exposure": 1.05,
+        "orbit_controls": false, "clear_mode": 0,
+        "clear_color": { "r": 0.477, "g": 0.57, "b": 0.448, "a": 1.0 } }
+    ]},
+    { "name": "sun", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": -0.62, "y": 1.5, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 1.15,
+        "color": { "r": 0.94, "g": 0.863, "b": 0.577, "a": 1.0 },
+        "cast_shadow": true, "shadow_mode": 2, "shadow_distance": 90.0 }
+    ]},
+    { "name": "fill", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": 0.5, "y": -2.2, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 0.4,
+        "color": { "r": 0.7, "g": 0.78, "b": 0.95, "a": 1.0 }, "cast_shadow": false }
+    ]},
+    { "name": "trk_road", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/road.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.72, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/asphalt.png",
+        "base_color": { "r": 0.133, "g": 0.123, "b": 0.1, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_ground", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/ground.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.94, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_forest.png",
+        "base_color": { "r": 0.067, "g": 0.151, "b": 0.057, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_kerb", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/kerb.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.55, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_forest.png",
+        "base_color": { "r": 0.147, "g": 0.1, "b": 0.04, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_line", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/line.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 0.6, "env_intensity": 1.0,
+        "base_color": { "r": 0.674, "g": 0.674, "b": 0.57, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_rail", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/rail.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.75, "roughness": 0.28, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.196, "g": 0.133, "b": 0.059, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_a", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/props_a.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 0.78, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.022, "g": 0.073, "b": 0.027, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_props_b", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/props_b.mesh.json", "cast_shadow": 1, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0.25, "roughness": 0.45, "side": 0,
+        "emissive_intensity": 1.8, "env_intensity": 1.0,
+        "base_color": { "r": 0.04, "g": 0.107, "b": 0.033, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_ao", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/ao.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0,
+        "base_color": { "r": 0.027, "g": 0.057, "b": 0.023, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] },
+    { "name": "trk_far", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.MeshRenderer", "mesh_path": "assets/tracks/forest/far.mesh.json", "cast_shadow": 0, "receive_shadow": true },
+      { "type": "asset.PbrMaterial", "metallic": 0, "roughness": 1, "side": 0,
+        "emissive_intensity": 1, "env_intensity": 1.0, "base_color_texture": "assets/tex/ground_forest.png",
+        "base_color": { "r": 0.067, "g": 0.151, "b": 0.057, "a": 1.0 },
+        "emissive": { "x": 0, "y": 0, "z": 0 } } ] }
+  ]
+}
