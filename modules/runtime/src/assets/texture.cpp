@@ -63,8 +63,8 @@ std::string Engine::scoped_texture_ref(int entity, const std::string& ref) const
 int Engine::load_texture(const std::string& path, int* out_w, int* out_h) {
     return load_texture_impl(path, true, out_w, out_h);
 }
-int Engine::load_texture_raw(const std::string& path) {
-    return load_texture_impl(path, false, nullptr, nullptr);
+int Engine::load_texture_raw(const std::string& path, int* out_w, int* out_h) {
+    return load_texture_impl(path, false, out_w, out_h);
 }
 
 /* 2D 贴图通用实现。atlas_ok=false → 走旧 create_texture（gfx 不标记 ui_atlas_src，

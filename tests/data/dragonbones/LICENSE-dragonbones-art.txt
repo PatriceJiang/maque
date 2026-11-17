@@ -1,0 +1,13 @@
+本目录的 DragonBones 演示素材来自 DragonBones 官方 demo 资源（DragonBonesJS 的
+`Cocos/Demos/assets/resources/mecha_1004d/`），**版权归 DragonBones 团队**，与本仓库代码
+（MIT）**不同许可**：
+
+- 运行时/工具代码：MIT（DragonBonesCPP / DragonBonesJS 的 LICENSE）。
+- **本目录的演示美术资源（*_ske.json / *_tex.json / *_tex.png）：CC BY-NC-SA 4.0**
+  （Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International），
+  来自 <https://github.com/DragonBones/Demos>，经 DragonBonesJS 导出：
+
+  > Copyright (c) 2012-2018 The DragonBones team and other contributors.
+
+仅用于**非商业**的引擎示例/测试；如需商用请自行替换素材（或取得 DragonBones 团队授权）。
+替换后请同步更新 `samples/dragonbones/mecha.scn` 与 `tests/data/dragonbones/`。

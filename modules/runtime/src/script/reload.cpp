@@ -67,6 +67,7 @@ bool Engine::reload_scene() {
     mq_vfs_free(d);
     /* 场景文件热重载：Spine/资源缓存按旧世界释放（相对路径缓存键在新挂载点下会串场景）。 */
     spine_release();
+    dragonbones_release();               // DragonBones 派生数据同理（docs/36）
     clear_asset_caches();
     /* 场景文件热重载（docs/32 §5.3）：根实例的 VM 保留（与旧行为一致），
      * 子实例随旧世界销毁并在装配时按新文件重建；实体归属/节点事件重新登记。 */

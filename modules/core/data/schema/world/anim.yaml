@@ -130,6 +130,13 @@
         - { name: time, type: float, default: 0.0F, attrs: { unit: s } }
         - { name: track, type: int32_t, default: 0 }
         - { name: loop, type: bool, default: false }
+    - struct: DbAnimState
+      fields:
+        - { name: time, type: float, default: 0.0F, attrs: { unit: s } }
+        - { name: duration, type: float, default: 0.0F, attrs: { unit: s } }
+        - { name: play_times, type: int32_t, default: 0, doc: "已播完的轮数（循环动画持续增长；非循环到 1 即停）" }
+        - { name: loop, type: bool, default: false }
+        - { name: complete, type: bool, default: false }
     - struct: AnimationPlayer
       fields:
         - { name: clip, type: "asset_ref<AnimationClip>", attrs: { ref: AnimationClip } }
@@ -234,6 +241,24 @@
         # 素材无 dark 时 = (0,0,0,1) → 与关闭逐字节等价），故这只是"如实记录调用"，不改输出。
         - { name: two_color, type: bool, default: false }
         - { name: state, type: SpineAnimState, attrs: { transient: true, readonly: true } }
+        - { name: instance, type: uint64_t, default: 0, attrs: { transient: true, readonly: true } }
+    # DragonBones 2D（docs/36）：与 SpineSkeleton **同构但不合并**（单一职责，见 docs/components/09 §4）。
+    # 资源用稳定路径字符串（与 SpineSkeleton 同一约定）：骨架 *_ske.json + 图集 *_tex.json + 图集 *_tex.png。
+    - struct: DragonBonesSkeleton
+      roles: [dragonbones_skeleton]   # 引擎按 role 定位（docs/12 §7：不硬编码组件类型）
+      fields:
+        - { name: skeleton, type: string, default: "" }     # 骨架数据：*_ske.json（DragonBones 5.x JSON）
+        - { name: atlas, type: string, default: "" }        # 图集描述：*_tex.json；空 → 与骨架同名前缀 + _tex.json
+        - { name: armature, type: string, default: "" }     # 骨架名（一个 *_ske.json 可含多个）；空 → 第 0 个
+        - { name: skin, type: uint32_t, default: 0 }        # 皮肤下标（声明序）
+        - { name: animation, type: uint32_t, default: 0 }   # 动画下标（声明序；脚本可改，改了就真的切）
+        - { name: autoplay, type: bool, default: true }
+        - { name: play_mode, type: PlayMode, default: "PlayMode::Loop" }
+        - { name: speed, type: float, default: 1.0F, attrs: { range: [0, 100] } }
+        - { name: flip, type: FlipMode, default: "FlipMode::None" }
+        - { name: color, type: math.Color }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: state, type: DbAnimState, attrs: { transient: true, readonly: true } }
         - { name: instance, type: uint64_t, default: 0, attrs: { transient: true, readonly: true } }
 
   # Spine 2D 官方运行时接入（docs/assets/06 §2、docs/15 §2）。

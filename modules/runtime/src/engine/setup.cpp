@@ -373,6 +373,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
     reset_instances();                   // 实例树/全部实例 VM（覆盖层是独立总线，不在此列）
     spine_release();                     // Spine 实例随世界一起释放（派生数据，重建即可）
+    dragonbones_release();               // DragonBones 同理（docs/36）
     clear_asset_caches();                // ⚠️ 纹理/网格缓存键是相对路径，换场景挂载点后必须清空
     systems.agent_paths.clear();
     node_events.clear();
@@ -541,6 +542,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     setup_shader_passes();                      /* 场景资源全屏 shader（.wgsl，相对场景目录；docs/13） */
     setup_shader_graphs();                      /* 多通道 shader 图（program JSON，相对场景目录；docs/13） */
     spine_setup();                              // Spine：骨架/图集/页纹理装配（装配期做 IO，不在模拟帧内）
+    dragonbones_setup();                        // DragonBones：骨架/图集/页纹理装配（docs/36）
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
     sim_setup();                                // 输入模拟器（MAQUE_SIM / MAQUE_SIM_CLICK）
     storage_setup();                            // 键值存储（docs/25：默认 <场景目录>/.maque）
@@ -626,6 +628,7 @@ void Engine::teardown() {
     mq_nav_destroy(nav); nav = nullptr;
     mq_physics_destroy(physics); physics = nullptr;
     spine_release();                     // Spine 实例/骨架数据（纹理归 tex_cache → 随渲染器销毁）
+    dragonbones_release();               // DragonBones 实例/骨架数据（docs/36）
     mq_input_destroy(input); input = nullptr;
     destroy_render_textures();           // 相机离屏目标（公共纹理句柄）
     destroy_shader_passes();             // 场景资源 shader pass（句柄归渲染器，先于销毁渲染器释放）

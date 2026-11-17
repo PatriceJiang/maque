@@ -331,6 +331,39 @@ constexpr bool api_all_set(const mq_script_api_v1& a) {
         && a.host_spine_sequence_path
         && a.host_spine_sequence_value
         && a.host_spine_set_sequence_index
+        && a.host_dragonbones_animation_count
+        && a.host_dragonbones_animation_name
+        && a.host_dragonbones_animation_index
+        && a.host_dragonbones_play
+        && a.host_dragonbones_stop
+        && a.host_dragonbones_current_animation
+        && a.host_dragonbones_time
+        && a.host_dragonbones_set_time
+        && a.host_dragonbones_duration
+        && a.host_dragonbones_play_times
+        && a.host_dragonbones_complete
+        && a.host_dragonbones_armature
+        && a.host_dragonbones_skin_count
+        && a.host_dragonbones_skin_name
+        && a.host_dragonbones_set_skin
+        && a.host_dragonbones_current_skin
+        && a.host_dragonbones_bone_count
+        && a.host_dragonbones_bone_name
+        && a.host_dragonbones_bone_find
+        && a.host_dragonbones_bone_x
+        && a.host_dragonbones_bone_y
+        && a.host_dragonbones_slot_count
+        && a.host_dragonbones_slot_name
+        && a.host_dragonbones_slot_index
+        && a.host_dragonbones_slot_display
+        && a.host_dragonbones_set_slot_display
+        && a.host_dragonbones_pages
+        && a.host_dragonbones_page_texture
+        && a.host_dragonbones_page_width
+        && a.host_dragonbones_page_height
+        && a.host_dragonbones_vertex_count
+        && a.host_dragonbones_batch_count
+        && a.host_dragonbones_bounds
         && a.host_imgui_ready
         && a.host_imgui_enabled
         && a.host_imgui_set_enabled
@@ -694,6 +727,39 @@ constexpr mq_script_api_v1 kApi = {
     &host::spine_sequence_path,
     &host::spine_sequence_value,
     &host::spine_set_sequence_index,
+    &host::dragonbones_animation_count,
+    &host::dragonbones_animation_name,
+    &host::dragonbones_animation_index,
+    &host::dragonbones_play,
+    &host::dragonbones_stop,
+    &host::dragonbones_current_animation,
+    &host::dragonbones_time,
+    &host::dragonbones_set_time,
+    &host::dragonbones_duration,
+    &host::dragonbones_play_times,
+    &host::dragonbones_complete,
+    &host::dragonbones_armature,
+    &host::dragonbones_skin_count,
+    &host::dragonbones_skin_name,
+    &host::dragonbones_set_skin,
+    &host::dragonbones_current_skin,
+    &host::dragonbones_bone_count,
+    &host::dragonbones_bone_name,
+    &host::dragonbones_bone_find,
+    &host::dragonbones_bone_x,
+    &host::dragonbones_bone_y,
+    &host::dragonbones_slot_count,
+    &host::dragonbones_slot_name,
+    &host::dragonbones_slot_index,
+    &host::dragonbones_slot_display,
+    &host::dragonbones_set_slot_display,
+    &host::dragonbones_pages,
+    &host::dragonbones_page_texture,
+    &host::dragonbones_page_width,
+    &host::dragonbones_page_height,
+    &host::dragonbones_vertex_count,
+    &host::dragonbones_batch_count,
+    &host::dragonbones_bounds,
     &host::imgui_ready,
     &host::imgui_enabled,
     &host::imgui_set_enabled,

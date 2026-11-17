@@ -14,7 +14,7 @@ add_library(maque_runtime STATIC
     src/runtime_common.h src/runtime_scene.h src/runtime_engine.h src/runtime_math3d.h
     # 宿主 API（schema api_list 的 310 个实现）按前缀分域
     src/api/system.cpp src/api/node.cpp src/api/ui.cpp src/api/scene.cpp
-    src/api/spine.cpp src/api/imgui.cpp src/api/physics.cpp src/api/nav.cpp
+    src/api/spine.cpp src/api/dragonbones.cpp src/api/imgui.cpp src/api/physics.cpp src/api/nav.cpp
     src/api/audio.cpp src/api/storage.cpp src/api/message.cpp src/api/particles.cpp
     # 控制面（schema control_list 的 57 个方法）按域
     src/control/system.cpp src/control/scene.cpp src/control/world.cpp
@@ -22,8 +22,8 @@ add_library(maque_runtime STATIC
     src/control/input.cpp
     # 资源（纹理/环境/glTF 装配与动画采样）
     src/assets/texture.cpp src/assets/env.cpp src/assets/gltf.cpp src/assets/gltf_anim.cpp
-    # 特性层（Spine / 引擎侧 ImGui 面板 / F4 选项）
-    src/anim/spine.cpp
+    # 特性层（Spine / DragonBones / 引擎侧 ImGui 面板 / F4 选项）
+    src/anim/spine.cpp src/anim/dragonbones.cpp
     src/ui/debug_panel.cpp src/ui/engine_options.cpp
     # 渲染（3D 数学 / 渲染目标与相机 / 场景 shader / 3D 提取）
     src/render/math3d.cpp src/render/targets.cpp src/render/shader_passes.cpp
@@ -47,7 +47,7 @@ set(MAQUE_RUNTIME_DEPS
     maque::handle maque::vfs maque::storage maque::image maque::genbind maque::api
     maque::gencontrol maque::genevents maque::observability maque::control
     maque::platform maque::input maque::watcher maque::physics maque::nav
-    maque::spine2d maque::imgui maque::tracy maque::profile maque::audio)
+    maque::spine2d maque::dragonbones maque::imgui maque::tracy maque::profile maque::audio)
 if(MAQUE_WASM OR EMSCRIPTEN OR MAQUE_HEADLESS_STUBS)
     list(APPEND MAQUE_RUNTIME_DEPS maque::renderer_null)
     target_compile_definitions(maque_runtime PRIVATE MQ_RENDERER_STATIC_NULL=1)

@@ -850,6 +850,105 @@ int b_host_spine_sequence_value(void* user, int, const double* a, double* ret) {
 int b_host_spine_set_sequence_index(void* user, int, const double* a, double* ret) {
   *ret = (double)host::spine_set_sequence_index(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
 }
+int b_host_dragonbones_animation_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_animation_count(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_animation_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_animation_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_dragonbones_animation_index(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::dragonbones_animation_index(user, (float)a[0], s); return 0;
+}
+int b_host_dragonbones_play(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::dragonbones_play(user, (float)a[0], s[0], (float)a[1]); return 0;
+}  /* kinds=nsn */
+int b_host_dragonbones_stop(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_stop(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_current_animation(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_current_animation(user, (float)a[0])); return 0;
+}
+int b_host_dragonbones_time(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_time(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_set_time(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_set_time(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_dragonbones_duration(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_duration(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_play_times(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_play_times(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_complete(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_complete(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_armature(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_armature(user, (float)a[0])); return 0;
+}
+int b_host_dragonbones_skin_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_skin_count(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_skin_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_skin_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_dragonbones_set_skin(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::dragonbones_set_skin(user, (float)a[0], s); return 0;
+}
+int b_host_dragonbones_current_skin(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_current_skin(user, (float)a[0])); return 0;
+}
+int b_host_dragonbones_bone_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_bone_count(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_bone_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_bone_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_dragonbones_bone_find(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::dragonbones_bone_find(user, (float)a[0], s); return 0;
+}
+int b_host_dragonbones_bone_x(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::dragonbones_bone_x(user, (float)a[0], s); return 0;
+}
+int b_host_dragonbones_bone_y(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::dragonbones_bone_y(user, (float)a[0], s); return 0;
+}
+int b_host_dragonbones_slot_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_slot_count(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_slot_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::dragonbones_slot_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_dragonbones_slot_index(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::dragonbones_slot_index(user, (float)a[0], s); return 0;
+}
+int b_host_dragonbones_slot_display(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_slot_display(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_dragonbones_set_slot_display(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_set_slot_display(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_dragonbones_pages(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_pages(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_page_texture(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_page_texture(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_dragonbones_page_width(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_page_width(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_dragonbones_page_height(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_page_height(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_dragonbones_vertex_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_vertex_count(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_batch_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_batch_count(user, (float)a[0]); return 0;
+}
+int b_host_dragonbones_bounds(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::dragonbones_bounds(user, (float)a[0], (float)a[1]); return 0;
+}
 int b_host_imgui_ready(void* user, int, const double* a, double* ret) {
   *ret = (double)host::imgui_ready(user); return 0;
 }
@@ -1385,6 +1484,39 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_ret_str(vm, "spine_sequence_path", b_host_spine_sequence_path, ctx);
   mq_script_register_num(vm, "spine_sequence_value", b_host_spine_sequence_value, ctx);
   mq_script_register_num(vm, "spine_set_sequence_index", b_host_spine_set_sequence_index, ctx);
+  mq_script_register_num(vm, "dragonbones_animation_count", b_host_dragonbones_animation_count, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_animation_name", b_host_dragonbones_animation_name, ctx);
+  mq_script_register_mixed(vm, "dragonbones_animation_index", b_host_dragonbones_animation_index, ctx);
+  mq_script_register_multi(vm, "dragonbones_play", "nsn", b_host_dragonbones_play, ctx);
+  mq_script_register_num(vm, "dragonbones_stop", b_host_dragonbones_stop, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_current_animation", b_host_dragonbones_current_animation, ctx);
+  mq_script_register_num(vm, "dragonbones_time", b_host_dragonbones_time, ctx);
+  mq_script_register_num(vm, "dragonbones_set_time", b_host_dragonbones_set_time, ctx);
+  mq_script_register_num(vm, "dragonbones_duration", b_host_dragonbones_duration, ctx);
+  mq_script_register_num(vm, "dragonbones_play_times", b_host_dragonbones_play_times, ctx);
+  mq_script_register_num(vm, "dragonbones_complete", b_host_dragonbones_complete, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_armature", b_host_dragonbones_armature, ctx);
+  mq_script_register_num(vm, "dragonbones_skin_count", b_host_dragonbones_skin_count, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_skin_name", b_host_dragonbones_skin_name, ctx);
+  mq_script_register_mixed(vm, "dragonbones_set_skin", b_host_dragonbones_set_skin, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_current_skin", b_host_dragonbones_current_skin, ctx);
+  mq_script_register_num(vm, "dragonbones_bone_count", b_host_dragonbones_bone_count, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_bone_name", b_host_dragonbones_bone_name, ctx);
+  mq_script_register_mixed(vm, "dragonbones_bone_find", b_host_dragonbones_bone_find, ctx);
+  mq_script_register_mixed(vm, "dragonbones_bone_x", b_host_dragonbones_bone_x, ctx);
+  mq_script_register_mixed(vm, "dragonbones_bone_y", b_host_dragonbones_bone_y, ctx);
+  mq_script_register_num(vm, "dragonbones_slot_count", b_host_dragonbones_slot_count, ctx);
+  mq_script_register_ret_str(vm, "dragonbones_slot_name", b_host_dragonbones_slot_name, ctx);
+  mq_script_register_mixed(vm, "dragonbones_slot_index", b_host_dragonbones_slot_index, ctx);
+  mq_script_register_num(vm, "dragonbones_slot_display", b_host_dragonbones_slot_display, ctx);
+  mq_script_register_num(vm, "dragonbones_set_slot_display", b_host_dragonbones_set_slot_display, ctx);
+  mq_script_register_num(vm, "dragonbones_pages", b_host_dragonbones_pages, ctx);
+  mq_script_register_num(vm, "dragonbones_page_texture", b_host_dragonbones_page_texture, ctx);
+  mq_script_register_num(vm, "dragonbones_page_width", b_host_dragonbones_page_width, ctx);
+  mq_script_register_num(vm, "dragonbones_page_height", b_host_dragonbones_page_height, ctx);
+  mq_script_register_num(vm, "dragonbones_vertex_count", b_host_dragonbones_vertex_count, ctx);
+  mq_script_register_num(vm, "dragonbones_batch_count", b_host_dragonbones_batch_count, ctx);
+  mq_script_register_num(vm, "dragonbones_bounds", b_host_dragonbones_bounds, ctx);
   mq_script_register_num(vm, "imgui_ready", b_host_imgui_ready, ctx);
   mq_script_register_num(vm, "imgui_enabled", b_host_imgui_enabled, ctx);
   mq_script_register_num(vm, "imgui_set_enabled", b_host_imgui_set_enabled, ctx);

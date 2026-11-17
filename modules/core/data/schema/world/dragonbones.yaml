@@ -1,0 +1,127 @@
+# dragonbones —— DragonBones 2D 运行时接入（docs/36）
+#
+# 组件 DragonBonesSkeleton 与 DbAnimState 声明在 anim.yaml（同一命名空间 anim 的合并），
+# 本文件只放模块 C ABI（schema 规则：一个文件一个 module_abi）。
+- imports: [anim.yaml]
+
+- namespace: dragonbones
+  version: 1
+  # DragonBones 2D 接入（docs/36）。
+  # 与 spine2d 同一条分层原则：本模块**只解析数据 + 求值 + 产出绘制数据**（顶点/UV/颜色/索引/批次），
+  # 不碰 GPU、不解码纹理；图集页由引擎侧读文件/解码/上传后经回调回填句柄与尺寸。
+  #
+  # 坐标系（重要）：DragonBones 是 flash 系 **y 向下**坐标系（与引擎 2D 渲染目标一致），
+  # 故本模块导出的顶点是 **armature 空间、y 向下**，runtime 直接 `screen = origin + local`，
+  # **不要**像 spine 那样翻 y（spine 是 y 向上）。
+  module_abi:
+    module: dragonbones
+    abi_name: "maque.dragonbones"
+    summary: "DragonBones 5.x（*_ske.json + *_tex.json）解析/动画求值/绘制数据导出（docs/36）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_db_data, mq_db_instance ]
+    enums:
+      - doc: "错误码（结构化；docs/11 §4）"
+        values:
+          - { name: MQ_DB_OK,           value: 0 }
+          - { name: MQ_DB_ERR_ARG,      value: 1, doc: "空指针/非法数值" }
+          - { name: MQ_DB_ERR_FORMAT,   value: 2, doc: "骨架/图集 JSON 解析失败（格式/版本不匹配）" }
+          - { name: MQ_DB_ERR_NOTFOUND, value: 3, doc: "骨架/皮肤/动画名不存在" }
+          - { name: MQ_DB_ERR_PAGE,     value: 4, doc: "图集页纹理未回填" }
+          - { name: MQ_DB_ERR_NOMEM,    value: 5 }
+      - doc: "槽混合模式（与 mq_renderer_mesh.blend 同值：0=normal 1=additive 2=multiply 3=screen）"
+        values:
+          - { name: MQ_DB_BLEND_NORMAL,   value: 0 }
+          - { name: MQ_DB_BLEND_ADD,      value: 1 }
+          - { name: MQ_DB_BLEND_MULTIPLY, value: 2 }
+          - { name: MQ_DB_BLEND_SCREEN,   value: 3 }
+    structs:
+      - doc: "图集页（一个 *_tex.json = 一页 = 一张纹理）"
+        name: mq_db_page
+        fields:
+          - { name: name, type: "const char*", doc: "页名（图集 imagePath，如 mecha_1004d_tex.png）" }
+          - { name: width, type: int, doc: "像素宽（回填后有效；JSON 没写 width/height 时来自图片）" }
+          - { name: height, type: int }
+          - { name: texture, type: "uint64_t", doc: "引擎侧纹理句柄（回填；0 = 未回填）" }
+      - doc: "绘制批次：同一图集页 + 同一混合模式的一段连续索引"
+        name: mq_db_batch
+        fields:
+          - { name: page, type: int, doc: "mq_db_page 下标；-1 = 无纹理" }
+          - { name: blend, type: int, doc: "mq_db_blend" }
+          - { name: first_index, type: uint32_t }
+          - { name: index_count, type: uint32_t }
+      - doc: "一帧绘制数据。顶点 2 分量（x,y，**armature 空间、y 向下**，已按实例 scale/flip 变换）；uv 2 分量归一化到整张图集页。"
+        name: mq_db_draw
+        fields:
+          - { name: vertex_count, type: int }
+          - { name: index_count, type: int }
+          - { name: batch_count, type: int }
+          - { name: bounds_x, type: float, doc: "姿势包围盒（绘制数据空间）" }
+          - { name: bounds_y, type: float }
+          - { name: bounds_w, type: float }
+          - { name: bounds_h, type: float }
+          - { name: slot_count, type: int, doc: "实际画出几何的槽数（诊断：0 = 一个附件都没有）" }
+      - doc: "动画条目（时长已从**帧**换算成秒：duration / frameRate）"
+        name: mq_db_anim
+        fields:
+          - { name: name, type: "const char*", doc: "动画名（指向骨架数据内部，随 data 存活）" }
+          - { name: duration, type: float, doc: "秒" }
+          - { name: play_times, type: int, doc: "原始 playTimes（0 = 循环）" }
+          - { name: frame_count, type: int, doc: "关键帧总数（全部时间轴求和；诊断/断言用）" }
+    typedefs:
+      - { name: mq_db_texture_cb, type: "int (*)(void* user, const char* page_name, uint64_t* out_texture, int* out_width, int* out_height)" }
+    fns:
+      - { fn: mq_db_abi_version, returns: uint32_t, args: [] }
+      # ---- 数据（装配期）----
+      - { fn: mq_db_data_create, returns: "mq_db_data*", doc: "解析骨架 + 图集，并按页调回调取纹理。texture_json 可为 NULL（无图集 → 骨架能解析但画不出东西）。", args: [ { name: skeleton_json, type: "const void*" }, { name: skeleton_size, type: "size_t" }, { name: texture_json, type: "const char*" }, { name: dir_hint, type: "const char*" }, { name: load_texture, type: "mq_db_texture_cb" }, { name: user, type: "void*" } ] }
+      - { fn: mq_db_data_destroy, returns: void, args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_name, returns: "const char*", args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_frame_rate, returns: float, args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_armature_count, returns: int, args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_armature_name, returns: "const char*", args: [ { name: data, type: "mq_db_data*" }, { name: index, type: int } ] }
+      - { fn: mq_db_data_armature_index, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_db_data_animation_count, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int } ] }
+      - { fn: mq_db_data_animation, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int }, { name: index, type: int }, { name: out, type: "mq_db_anim*" } ] }
+      - { fn: mq_db_data_animation_index, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int }, { name: name, type: "const char*" } ] }
+      - { fn: mq_db_data_skin_count, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int } ] }
+      - { fn: mq_db_data_skin_name, returns: "const char*", args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int }, { name: index, type: int } ] }
+      - { fn: mq_db_data_skin_index, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int }, { name: name, type: "const char*" } ] }
+      - { fn: mq_db_data_bone_count, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int } ] }
+      - { fn: mq_db_data_bone_name, returns: "const char*", args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int }, { name: index, type: int } ] }
+      - { fn: mq_db_data_slot_count, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int } ] }
+      - { fn: mq_db_data_slot_name, returns: "const char*", args: [ { name: data, type: "mq_db_data*" }, { name: armature, type: int }, { name: index, type: int } ] }
+      - { fn: mq_db_data_page_count, returns: int, args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_page, returns: int, args: [ { name: data, type: "mq_db_data*" }, { name: index, type: int }, { name: out, type: "mq_db_page*" } ] }
+      - { fn: mq_db_data_set_page_texture, returns: int, doc: "回填页纹理句柄 + 尺寸（回调之外的重试路径；0 = 未回填）", args: [ { name: data, type: "mq_db_data*" }, { name: index, type: int }, { name: texture, type: "uint64_t" }, { name: width, type: int }, { name: height, type: int } ] }
+      - { fn: mq_db_data_texture_count, returns: int, doc: "图集子纹理（SubTexture）总数（诊断）", args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_mesh_count, returns: int, doc: "网格附件数（诊断：>0 说明素材用了 mesh）", args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_weighted_count, returns: int, doc: "**带权重**的网格附件数（P0 未支持 → 这些附件会被跳过并计入诊断）", args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_nested_count, returns: int, doc: "嵌套子骨架显示数（display type=armature；P0 未支持 → 跳过并计入诊断）", args: [ { name: data, type: "mq_db_data*" } ] }
+      - { fn: mq_db_data_missing_texture_count, returns: int, doc: "在图集里找不到子纹理的 image 显示数（诊断：>0 通常是图集/骨架不配套）", args: [ { name: data, type: "mq_db_data*" } ] }
+      # ---- 实例（帧内）----
+      - { fn: mq_db_instance_create, returns: "mq_db_instance*", doc: "armature_index 越界 → NULL；-1 = 第 0 个", args: [ { name: data, type: "mq_db_data*" }, { name: armature_index, type: int } ] }
+      - { fn: mq_db_instance_destroy, returns: void, args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_set_skin, returns: int, args: [ { name: inst, type: "mq_db_instance*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_db_instance_skin_name, returns: "const char*", args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_play, returns: int, doc: "从头播（同一动画重播也会回到 0）", args: [ { name: inst, type: "mq_db_instance*" }, { name: animation, type: "const char*" }, { name: loop, type: int } ] }
+      - { fn: mq_db_instance_stop, returns: void, args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_set_time, returns: int, doc: "设播放头（秒；负值/超长按循环语义夹回），并**立刻重算姿势**", args: [ { name: inst, type: "mq_db_instance*" }, { name: time, type: "float" } ] }
+      - { fn: mq_db_instance_time, returns: float, args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_duration, returns: float, args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_animation_name, returns: "const char*", args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_play_times, returns: int, doc: "已播完轮数（循环动画持续增长）", args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_complete, returns: int, doc: "非循环动画是否已播完（loop=1 时恒 0）", args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_set_playing, returns: void, args: [ { name: inst, type: "mq_db_instance*" }, { name: playing, type: int } ] }
+      - { fn: mq_db_instance_step, returns: int, doc: "推进 dt 秒（固定步长；loop 按 duration 回绕），然后重算姿势", args: [ { name: inst, type: "mq_db_instance*" }, { name: dt, type: float } ] }
+      - { fn: mq_db_instance_set_transform, returns: void, doc: "骨架单位 → 设计像素：统一缩放 + 水平/垂直翻转（绕 armature 原点）", args: [ { name: inst, type: "mq_db_instance*" }, { name: scale, type: float }, { name: flip_x, type: int }, { name: flip_y, type: int } ] }
+      - { fn: mq_db_instance_set_color, returns: void, doc: "实例 tint（与槽色相乘）", args: [ { name: inst, type: "mq_db_instance*" }, { name: r, type: float }, { name: g, type: float }, { name: b, type: float }, { name: a, type: float } ] }
+      - { fn: mq_db_instance_bone_count, returns: int, args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_bone_name, returns: "const char*", args: [ { name: inst, type: "mq_db_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_db_instance_bone_find, returns: int, args: [ { name: inst, type: "mq_db_instance*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_db_instance_bone_world_position, returns: int, doc: "骨骼世界位置（armature 空间，含实例 scale/flip；y 向下）", args: [ { name: inst, type: "mq_db_instance*" }, { name: index, type: int }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_db_instance_slot_count, returns: int, args: [ { name: inst, type: "mq_db_instance*" } ] }
+      - { fn: mq_db_instance_slot_name, returns: "const char*", args: [ { name: inst, type: "mq_db_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_db_instance_slot_index, returns: int, args: [ { name: inst, type: "mq_db_instance*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_db_instance_slot_display, returns: int, doc: "该槽当前显示下标（-1 = 空槽）", args: [ { name: inst, type: "mq_db_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_db_instance_set_slot_display, returns: int, doc: "手动换显示（-1 = 卸下）；动画下一帧会覆盖它", args: [ { name: inst, type: "mq_db_instance*" }, { name: index, type: int }, { name: display, type: int } ] }
+      - { fn: mq_db_instance_draw, returns: int, doc: "导出绘制数据（只读取当前姿势）。vertices/uvs 2 分量、colors 4 分量；缓冲不足 → 填 out 的实际规模并返回 ERR_NOMEM，调用方扩容重试。", args: [ { name: inst, type: "mq_db_instance*" }, { name: vertices, type: "float*" }, { name: uvs, type: "float*" }, { name: colors, type: "float*" }, { name: indices, type: "uint32_t*" }, { name: batches, type: "mq_db_batch*" }, { name: max_vertices, type: int }, { name: max_indices, type: int }, { name: max_batches, type: int }, { name: out, type: "mq_db_draw*" } ] }
+      - { fn: mq_db_instance_packed, returns: int, doc: "1 = 该实例数据带预乘 alpha 图集（DragonBones 通常 0）", args: [ { name: inst, type: "mq_db_instance*" } ] }

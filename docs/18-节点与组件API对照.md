@@ -52,7 +52,7 @@
 | ParticleSystem2D | **ParticleEmitter**(2D) | 🔶 需补 2D 模式 |
 | TiledMap | **TileMap** | ✅ |
 | Spine（sp.Skeleton） | **SpineSkeleton** | ✅ |
-| DragonBones | —（留扩展） | 🔶 见 components/09 |
+| DragonBones | **DragonBonesSkeleton** | ✅（docs/36：JSON 骨架 + 图集 + 动画/槽/皮肤 + 网格附件） |
 | LabelOutline / LabelShadow | **scn.Label 字段**（`outline_size`+`outline_r/g/b/a`、`shadow_x/y`+`shadow_r/g/b/a`） | ✅ 等价（内建 8 方向描边 / 先画阴影） |
 
 ### UI 交互控件

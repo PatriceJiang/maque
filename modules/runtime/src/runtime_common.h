@@ -30,6 +30,7 @@
 #include "sim/mq_sim.h"
 #include "canvas/mq_canvas.h"
 #include "anim/mq_spine2d.h"          // Spine 2D 官方运行时（docs/27）：骨架/实例/绘制数据
+#include "anim/mq_dragonbones.h"      // DragonBones 2D 运行时（docs/36）：骨架/实例/绘制数据
 #include "ui/mq_imgui.h"              // 引擎侧 ImGui 调试面板：帧管理/绘制数据导出
 #include "ui/mq_imgui_widgets.h"      // ImGui 控件 C ABI（runtime 不直接依赖 ImGui 头）
 #include "core/tracy/mq_tracy.h"      // Tracy 性能分析封装（docs/29；MAQUE_TRACY=OFF 时全部 no-op）
@@ -484,6 +485,13 @@ struct SnapshotWriter;
  * （只有它知道 VFS 挂载点与渲染器句柄）。生命周期：装配期创建骨架数据时使用，
  * 但 spine 会**保存**这个 user 指针 → 随实例一起活到数据销毁（见 Engine::spine_release）。 */
 struct SpineTexCtx {
+    Engine* eng = nullptr;
+    std::string dir;          // 页纹理所在 VFS 目录（含结尾 '/'）
+};
+
+/* DragonBones 图集页纹理回调的上下文（docs/36）：与 SpineTexCtx 同构，
+ * 生命周期随 mq_db_data（模块会保存 user 指针 → 必须在 Instance 里存活到 data 销毁）。 */
+struct DbTexCtx {
     Engine* eng = nullptr;
     std::string dir;          // 页纹理所在 VFS 目录（含结尾 '/'）
 };

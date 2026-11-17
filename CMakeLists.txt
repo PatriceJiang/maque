@@ -372,6 +372,8 @@ add_subdirectory(modules/world/audio)   # 音频：core（平台无关）+ 可�
 # Spine 2D 官方运行时接入（docs/assets/06 §2、docs/27）：vendored spine-cpp **4.2** + C ABI 封装。
 # 选 4.2 并**打开 C++ RTTI**（封装层用 dynamic_cast 判别附件类型）—— 见 third_party/spine-cpp/CMakeLists.txt。
 add_subdirectory(modules/anim/spine2d)
+# DragonBones 2D（docs/36）：自研 runtime（解析/求值/绘制数据）+ C ABI；不依赖 gfx/image。
+add_subdirectory(modules/anim/dragonbones)
 add_subdirectory(modules/ui/canvas)
 # 引擎侧 ImGui（即时模式调试/调参 UI）。**只有需要 UI 的宿主**链接它（spine sample / inspector），
 # 其它程序（tank、flappy）不链接 → 不引入 UI 依赖、二进制不变大。
@@ -398,4 +400,5 @@ else()
     add_subdirectory(samples/tank)
     add_subdirectory(samples/tank-native)
     add_subdirectory(samples/spine)
+    add_subdirectory(samples/dragonbones)
 endif()

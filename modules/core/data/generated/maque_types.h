@@ -74,6 +74,10 @@ namespace control {
 
 } // namespace control
 
+namespace dragonbones {
+
+} // namespace dragonbones
+
 namespace handle {
 
 } // namespace handle
@@ -311,6 +315,14 @@ struct CurveKey {
 };
 static_assert(sizeof(CurveKey) == 16, "CurveKey must be 16 bytes");
 
+struct DbAnimState {
+    float time = 0.0F;
+    float duration = 0.0F;
+    int32_t play_times = 0;
+    bool loop = false;
+    bool complete = false;
+};
+
 enum class FlipMode : int32_t {
     None       = 0,
     Horizontal = 1,
@@ -453,6 +465,22 @@ struct Curve {
     anim::InterpMode interp = InterpMode::Linear;
     uint8_t count = 0;
     anim::CurveKey keys[8];
+};
+
+struct DragonBonesSkeleton {
+    std::string skeleton = "";
+    std::string atlas = "";
+    std::string armature = "";
+    uint32_t skin = 0;
+    uint32_t animation = 0;
+    bool autoplay = true;
+    anim::PlayMode play_mode = PlayMode::Loop;
+    float speed = 1.0F;
+    anim::FlipMode flip = FlipMode::None;
+    math::Color color;
+    int32_t z_index = 0;
+    anim::DbAnimState state;
+    uint64_t instance = 0;
 };
 
 struct Gradient {
@@ -2702,12 +2730,14 @@ template <> inline constexpr uint32_t type_id_v<anim::Curve> = 14099437u;
 template <> inline constexpr uint32_t type_id_v<anim::AnimParam> = 2767010176u;
 template <> inline constexpr uint32_t type_id_v<anim::BonePose> = 615011289u;
 template <> inline constexpr uint32_t type_id_v<anim::SpineAnimState> = 1681902629u;
+template <> inline constexpr uint32_t type_id_v<anim::DbAnimState> = 3529795966u;
 template <> inline constexpr uint32_t type_id_v<anim::AnimationPlayer> = 429485613u;
 template <> inline constexpr uint32_t type_id_v<anim::Animator> = 2270324811u;
 template <> inline constexpr uint32_t type_id_v<anim::Skeleton> = 1938326681u;
 template <> inline constexpr uint32_t type_id_v<anim::ParticleEmitter> = 2345358130u;
 template <> inline constexpr uint32_t type_id_v<anim::AnimatedSprite> = 629660702u;
 template <> inline constexpr uint32_t type_id_v<anim::SpineSkeleton> = 2414443662u;
+template <> inline constexpr uint32_t type_id_v<anim::DragonBonesSkeleton> = 3015889267u;
 template <> inline constexpr uint32_t type_id_v<script::ScriptLanguage> = 3668652633u;
 template <> inline constexpr uint32_t type_id_v<script::ScriptCallback> = 3976240u;
 template <> inline constexpr uint32_t type_id_v<script::PropertyVariantType> = 1710326670u;
@@ -2967,12 +2997,14 @@ template <> struct type_of<14099437u> { using type = anim::Curve; };
 template <> struct type_of<2767010176u> { using type = anim::AnimParam; };
 template <> struct type_of<615011289u> { using type = anim::BonePose; };
 template <> struct type_of<1681902629u> { using type = anim::SpineAnimState; };
+template <> struct type_of<3529795966u> { using type = anim::DbAnimState; };
 template <> struct type_of<429485613u> { using type = anim::AnimationPlayer; };
 template <> struct type_of<2270324811u> { using type = anim::Animator; };
 template <> struct type_of<1938326681u> { using type = anim::Skeleton; };
 template <> struct type_of<2345358130u> { using type = anim::ParticleEmitter; };
 template <> struct type_of<629660702u> { using type = anim::AnimatedSprite; };
 template <> struct type_of<2414443662u> { using type = anim::SpineSkeleton; };
+template <> struct type_of<3015889267u> { using type = anim::DragonBonesSkeleton; };
 template <> struct type_of<3668652633u> { using type = script::ScriptLanguage; };
 template <> struct type_of<3976240u> { using type = script::ScriptCallback; };
 template <> struct type_of<1710326670u> { using type = script::PropertyVariantType; };

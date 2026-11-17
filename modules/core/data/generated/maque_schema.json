@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 263,
-  "api_count": 356,
+  "type_count": 265,
+  "api_count": 389,
   "control_count": 64,
   "callback_count": 11,
-  "module_count": 27,
+  "module_count": 28,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -620,6 +620,212 @@
           "count": 0,
           "offset": 12,
           "attrs": {}
+        }
+      ]
+    },
+    {
+      "name": "anim.DbAnimState",
+      "namespace": "anim",
+      "kind": "struct",
+      "type_id": 3529795966,
+      "size": 16,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "world/anim.yaml",
+      "fields": [
+        {
+          "name": "time",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 0,
+          "attrs": {
+            "unit": "s"
+          }
+        },
+        {
+          "name": "duration",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 4,
+          "attrs": {
+            "unit": "s"
+          }
+        },
+        {
+          "name": "play_times",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 8,
+          "attrs": {}
+        },
+        {
+          "name": "loop",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": 12,
+          "attrs": {}
+        },
+        {
+          "name": "complete",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": 13,
+          "attrs": {}
+        }
+      ]
+    },
+    {
+      "name": "anim.DragonBonesSkeleton",
+      "namespace": "anim",
+      "kind": "struct",
+      "type_id": 3015889267,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "world/anim.yaml",
+      "roles": [
+        "dragonbones_skeleton"
+      ],
+      "fields": [
+        {
+          "name": "skeleton",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "atlas",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "armature",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "skin",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "animation",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "autoplay",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "play_mode",
+          "type": "PlayMode",
+          "kind": "enum",
+          "type_id": 3819653223,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              100
+            ]
+          }
+        },
+        {
+          "name": "flip",
+          "type": "FlipMode",
+          "kind": "enum",
+          "type_id": 577626198,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "z_index",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "state",
+          "type": "DbAnimState",
+          "kind": "struct",
+          "type_id": 3529795966,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "instance",
+          "type": "uint64_t",
+          "kind": "u64",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
         }
       ]
     },
@@ -22756,6 +22962,614 @@
       "manual": null
     },
     {
+      "name": "host.dragonbones_animation_count",
+      "namespace": "host",
+      "fn": "dragonbones_animation_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "动画个数（无 DragonBonesSkeleton 组件 → 0）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_animation_name",
+      "namespace": "host",
+      "fn": "dragonbones_animation_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": "第 index 个动画名（声明序；越界 → \"\"）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_animation_index",
+      "namespace": "host",
+      "fn": "dragonbones_animation_index",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "动画名 → 下标（不存在 → -1）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_play",
+      "namespace": "host",
+      "fn": "dragonbones_play",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "loop",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "从头播动画（loop != 0 循环）；成功 0，失败 -1",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_stop",
+      "namespace": "host",
+      "fn": "dragonbones_stop",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "停止播放 → 回到**绑定姿势**（setup pose；诊断/定格用）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_current_animation",
+      "namespace": "host",
+      "fn": "dragonbones_current_animation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": "当前动画名（未播放 → \"\"）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_time",
+      "namespace": "host",
+      "fn": "dragonbones_time",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "播放头（秒）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_set_time",
+      "namespace": "host",
+      "fn": "dragonbones_set_time",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "t",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "设播放头并立刻重算姿势（定格/确定性截图用）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_duration",
+      "namespace": "host",
+      "fn": "dragonbones_duration",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "当前动画时长（秒；帧数 / frameRate）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_play_times",
+      "namespace": "host",
+      "fn": "dragonbones_play_times",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "已播完轮数（循环动画持续增长）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_complete",
+      "namespace": "host",
+      "fn": "dragonbones_complete",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "非循环动画是否播完（1/0）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_armature",
+      "namespace": "host",
+      "fn": "dragonbones_armature",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": "当前骨架名（一个 *_ske.json 可含多个 armature）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_skin_count",
+      "namespace": "host",
+      "fn": "dragonbones_skin_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_skin_name",
+      "namespace": "host",
+      "fn": "dragonbones_skin_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_set_skin",
+      "namespace": "host",
+      "fn": "dragonbones_set_skin",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "换皮肤（名字不存在 → -1）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_current_skin",
+      "namespace": "host",
+      "fn": "dragonbones_current_skin",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_bone_count",
+      "namespace": "host",
+      "fn": "dragonbones_bone_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_bone_name",
+      "namespace": "host",
+      "fn": "dragonbones_bone_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_bone_find",
+      "namespace": "host",
+      "fn": "dragonbones_bone_find",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "骨骼名 → 下标（-1 = 无）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_bone_x",
+      "namespace": "host",
+      "fn": "dragonbones_bone_x",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "骨骼世界位置 x（armature 空间，含实例缩放/翻转）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_bone_y",
+      "namespace": "host",
+      "fn": "dragonbones_bone_y",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_slot_count",
+      "namespace": "host",
+      "fn": "dragonbones_slot_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_slot_name",
+      "namespace": "host",
+      "fn": "dragonbones_slot_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_slot_index",
+      "namespace": "host",
+      "fn": "dragonbones_slot_index",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_slot_display",
+      "namespace": "host",
+      "fn": "dragonbones_slot_display",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "槽当前显示下标（-1 = 空槽）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_set_slot_display",
+      "namespace": "host",
+      "fn": "dragonbones_set_slot_display",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "display",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "手动换显示（换装/换武器/测试网格路径；动画下一帧会覆盖）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_pages",
+      "namespace": "host",
+      "fn": "dragonbones_pages",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_page_texture",
+      "namespace": "host",
+      "fn": "dragonbones_page_texture",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "第 index 页纹理句柄（-1 = 无/越界；确认纹理上传）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_page_width",
+      "namespace": "host",
+      "fn": "dragonbones_page_width",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_page_height",
+      "namespace": "host",
+      "fn": "dragonbones_page_height",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_vertex_count",
+      "namespace": "host",
+      "fn": "dragonbones_vertex_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "上一帧导出的顶点数（0 = 什么都没画；诊断用）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_batch_count",
+      "namespace": "host",
+      "fn": "dragonbones_batch_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "上一帧批次数（同页同混合模式合并后的绘制段数）",
+      "manual": null
+    },
+    {
+      "name": "host.dragonbones_bounds",
+      "namespace": "host",
+      "fn": "dragonbones_bounds",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "which",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "上一帧姿势包围盒：0=x 1=y 2=w 3=h（armature 空间，已含实例缩放/翻转）",
+      "manual": null
+    },
+    {
       "name": "host.imgui_ready",
       "namespace": "host",
       "fn": "imgui_ready",
@@ -30421,6 +31235,1091 @@
       ]
     },
     {
+      "module": "dragonbones",
+      "abi_name": "maque.dragonbones",
+      "version": 1,
+      "language": "c",
+      "header": "abi/dragonbones.h",
+      "fns": [
+        {
+          "name": "mq_db_abi_version",
+          "returns": "uint32_t",
+          "args": []
+        },
+        {
+          "name": "mq_db_data_create",
+          "returns": "mq_db_data*",
+          "args": [
+            {
+              "name": "skeleton_json",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "skeleton_size",
+              "type": "size_t",
+              "doc": null
+            },
+            {
+              "name": "texture_json",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "dir_hint",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "load_texture",
+              "type": "mq_db_texture_cb",
+              "doc": null
+            },
+            {
+              "name": "user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_frame_rate",
+          "returns": "float",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_armature_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_armature_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_armature_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_animation_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_animation",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_db_anim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_animation_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_skin_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_skin_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_skin_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_bone_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_bone_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_slot_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_slot_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_page_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_page",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_db_page*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_set_page_texture",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "texture",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_texture_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_mesh_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_weighted_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_nested_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_data_missing_texture_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_create",
+          "returns": "mq_db_instance*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_db_data*",
+              "doc": null
+            },
+            {
+              "name": "armature_index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_set_skin",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_skin_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_play",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "animation",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "loop",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_stop",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_set_time",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "time",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_time",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_duration",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_animation_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_play_times",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_complete",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_set_playing",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "playing",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_step",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "dt",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_set_transform",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "scale",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "flip_x",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "flip_y",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_set_color",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "r",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_bone_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_bone_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_bone_find",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_bone_world_position",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_slot_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_slot_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_slot_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_slot_display",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_set_slot_display",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "display",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_draw",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            },
+            {
+              "name": "vertices",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "uvs",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "colors",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "indices",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "batches",
+              "type": "mq_db_batch*",
+              "doc": null
+            },
+            {
+              "name": "max_vertices",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "max_indices",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "max_batches",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_db_draw*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_instance_packed",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_db_instance*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_db_page",
+          "fields": [
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": "页名（图集 imagePath，如 mecha_1004d_tex.png）"
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "doc": "像素宽（回填后有效；JSON 没写 width/height 时来自图片）"
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "texture",
+              "type": "uint64_t",
+              "doc": "引擎侧纹理句柄（回填；0 = 未回填）"
+            }
+          ]
+        },
+        {
+          "name": "mq_db_batch",
+          "fields": [
+            {
+              "name": "page",
+              "type": "int",
+              "doc": "mq_db_page 下标；-1 = 无纹理"
+            },
+            {
+              "name": "blend",
+              "type": "int",
+              "doc": "mq_db_blend"
+            },
+            {
+              "name": "first_index",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "index_count",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_db_draw",
+          "fields": [
+            {
+              "name": "vertex_count",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index_count",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "batch_count",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "bounds_x",
+              "type": "float",
+              "doc": "姿势包围盒（绘制数据空间）"
+            },
+            {
+              "name": "bounds_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "bounds_w",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "bounds_h",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "slot_count",
+              "type": "int",
+              "doc": "实际画出几何的槽数（诊断：0 = 一个附件都没有）"
+            }
+          ]
+        },
+        {
+          "name": "mq_db_anim",
+          "fields": [
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": "动画名（指向骨架数据内部，随 data 存活）"
+            },
+            {
+              "name": "duration",
+              "type": "float",
+              "doc": "秒"
+            },
+            {
+              "name": "play_times",
+              "type": "int",
+              "doc": "原始 playTimes（0 = 循环）"
+            },
+            {
+              "name": "frame_count",
+              "type": "int",
+              "doc": "关键帧总数（全部时间轴求和；诊断/断言用）"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_DB_OK",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_DB_ERR_ARG",
+              "value": 1,
+              "doc": "空指针/非法数值"
+            },
+            {
+              "name": "MQ_DB_ERR_FORMAT",
+              "value": 2,
+              "doc": "骨架/图集 JSON 解析失败（格式/版本不匹配）"
+            },
+            {
+              "name": "MQ_DB_ERR_NOTFOUND",
+              "value": 3,
+              "doc": "骨架/皮肤/动画名不存在"
+            },
+            {
+              "name": "MQ_DB_ERR_PAGE",
+              "value": 4,
+              "doc": "图集页纹理未回填"
+            },
+            {
+              "name": "MQ_DB_ERR_NOMEM",
+              "value": 5,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_DB_BLEND_NORMAL",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_DB_BLEND_ADD",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_DB_BLEND_MULTIPLY",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_DB_BLEND_SCREEN",
+              "value": 3,
+              "doc": null
+            }
+          ]
+        }
+      ]
+    },
+    {
       "module": "script",
       "abi_name": "maque.script",
       "version": 5,
@@ -37007,6 +38906,15 @@
       ]
     },
     {
+      "path": "world/dragonbones.yaml",
+      "namespaces": [
+        "dragonbones"
+      ],
+      "imports": [
+        "world/anim.yaml"
+      ]
+    },
+    {
       "path": "script.yaml",
       "namespaces": [
         "script"
@@ -37183,6 +39091,7 @@
         "data/zlib.yaml",
         "image.yaml",
         "world/anim.yaml",
+        "world/dragonbones.yaml",
         "script.yaml",
         "script_guest.yaml",
         "asset.yaml",

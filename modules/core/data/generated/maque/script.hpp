@@ -992,6 +992,112 @@ public:
         float spine_set_sequence_index(float id, float slot, float frame) const {
             return c.api_ptr()->host_spine_set_sequence_index(c.host_ctx(), id, slot, frame);
         }
+        float dragonbones_animation_count(float id) const {
+            return c.api_ptr()->host_dragonbones_animation_count(c.host_ctx(), id);
+        }
+        std::string dragonbones_animation_name(float id, float index) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_animation_name(c.host_ctx(), id, index));
+        }
+        float dragonbones_animation_index(float id, std::string_view name) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_animation_index(c.host_ctx(), id, _s0.c_str());
+        }
+        float dragonbones_play(float id, std::string_view name, float loop) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_play(c.host_ctx(), id, _s0.c_str(), loop);
+        }
+        float dragonbones_stop(float id) const {
+            return c.api_ptr()->host_dragonbones_stop(c.host_ctx(), id);
+        }
+        std::string dragonbones_current_animation(float id) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_current_animation(c.host_ctx(), id));
+        }
+        float dragonbones_time(float id) const {
+            return c.api_ptr()->host_dragonbones_time(c.host_ctx(), id);
+        }
+        float dragonbones_set_time(float id, float t) const {
+            return c.api_ptr()->host_dragonbones_set_time(c.host_ctx(), id, t);
+        }
+        float dragonbones_duration(float id) const {
+            return c.api_ptr()->host_dragonbones_duration(c.host_ctx(), id);
+        }
+        float dragonbones_play_times(float id) const {
+            return c.api_ptr()->host_dragonbones_play_times(c.host_ctx(), id);
+        }
+        float dragonbones_complete(float id) const {
+            return c.api_ptr()->host_dragonbones_complete(c.host_ctx(), id);
+        }
+        std::string dragonbones_armature(float id) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_armature(c.host_ctx(), id));
+        }
+        float dragonbones_skin_count(float id) const {
+            return c.api_ptr()->host_dragonbones_skin_count(c.host_ctx(), id);
+        }
+        std::string dragonbones_skin_name(float id, float index) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_skin_name(c.host_ctx(), id, index));
+        }
+        float dragonbones_set_skin(float id, std::string_view name) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_set_skin(c.host_ctx(), id, _s0.c_str());
+        }
+        std::string dragonbones_current_skin(float id) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_current_skin(c.host_ctx(), id));
+        }
+        float dragonbones_bone_count(float id) const {
+            return c.api_ptr()->host_dragonbones_bone_count(c.host_ctx(), id);
+        }
+        std::string dragonbones_bone_name(float id, float index) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_bone_name(c.host_ctx(), id, index));
+        }
+        float dragonbones_bone_find(float id, std::string_view name) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_bone_find(c.host_ctx(), id, _s0.c_str());
+        }
+        float dragonbones_bone_x(float id, std::string_view name) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_bone_x(c.host_ctx(), id, _s0.c_str());
+        }
+        float dragonbones_bone_y(float id, std::string_view name) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_bone_y(c.host_ctx(), id, _s0.c_str());
+        }
+        float dragonbones_slot_count(float id) const {
+            return c.api_ptr()->host_dragonbones_slot_count(c.host_ctx(), id);
+        }
+        std::string dragonbones_slot_name(float id, float index) const {
+            return ::maque::detail::to_string(c.api_ptr()->host_dragonbones_slot_name(c.host_ctx(), id, index));
+        }
+        float dragonbones_slot_index(float id, std::string_view name) const {
+            const std::string _s0(name);
+            return c.api_ptr()->host_dragonbones_slot_index(c.host_ctx(), id, _s0.c_str());
+        }
+        float dragonbones_slot_display(float id, float index) const {
+            return c.api_ptr()->host_dragonbones_slot_display(c.host_ctx(), id, index);
+        }
+        float dragonbones_set_slot_display(float id, float index, float display) const {
+            return c.api_ptr()->host_dragonbones_set_slot_display(c.host_ctx(), id, index, display);
+        }
+        float dragonbones_pages(float id) const {
+            return c.api_ptr()->host_dragonbones_pages(c.host_ctx(), id);
+        }
+        float dragonbones_page_texture(float id, float index) const {
+            return c.api_ptr()->host_dragonbones_page_texture(c.host_ctx(), id, index);
+        }
+        float dragonbones_page_width(float id, float index) const {
+            return c.api_ptr()->host_dragonbones_page_width(c.host_ctx(), id, index);
+        }
+        float dragonbones_page_height(float id, float index) const {
+            return c.api_ptr()->host_dragonbones_page_height(c.host_ctx(), id, index);
+        }
+        float dragonbones_vertex_count(float id) const {
+            return c.api_ptr()->host_dragonbones_vertex_count(c.host_ctx(), id);
+        }
+        float dragonbones_batch_count(float id) const {
+            return c.api_ptr()->host_dragonbones_batch_count(c.host_ctx(), id);
+        }
+        float dragonbones_bounds(float id, float which) const {
+            return c.api_ptr()->host_dragonbones_bounds(c.host_ctx(), id, which);
+        }
         float imgui_ready() const {
             return c.api_ptr()->host_imgui_ready(c.host_ctx());
         }

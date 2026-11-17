@@ -3,9 +3,9 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **263** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **265** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
-## anim（29） · `world/anim.yaml`
+## anim（31） · `world/anim.yaml`
 
 ### anim.AnimatedSprite — struct (变长（含动态成员）)
 
@@ -103,6 +103,36 @@
 | `value` | float | 0.0F |  |
 | `in_tangent` | float | 0.0F |  |
 | `out_tangent` | float | 0.0F |  |
+
+### anim.DbAnimState — struct (16B)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `time` | float | 0.0F | unit: s |
+| `duration` | float | 0.0F | unit: s |
+| `play_times` | int32_t | 0 |  |
+| `loop` | bool | false |  |
+| `complete` | bool | false |  |
+
+### anim.DragonBonesSkeleton — struct (变长（含动态成员）)
+
+role: `dragonbones_skeleton`
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `skeleton` | string |  |  |
+| `atlas` | string |  |  |
+| `armature` | string |  |  |
+| `skin` | uint32_t | 0 |  |
+| `animation` | uint32_t | 0 |  |
+| `autoplay` | bool | true |  |
+| `play_mode` | PlayMode | PlayMode::Loop |  |
+| `speed` | float | 1.0F | range: 0,100 |
+| `flip` | FlipMode | FlipMode::None |  |
+| `color` | math.Color | — |  |
+| `z_index` | int32_t | 0 |  |
+| `state` | DbAnimState | — | transient, readonly |
+| `instance` | uint64_t | 0 | transient, readonly |
 
 ### anim.FlipMode — enum
 

@@ -346,6 +346,17 @@ tools\win\build.cmd -Sanitize address -RunTests
   平级 `.scn` 实体 `"parent": "名字"` 现在生效（整树加载后解析；嵌套 `children` 优先）；
   程序化图元缓存上限 64 → 512。测试：`node_transform_api_e2e|gamepad_e2e|collision_e2e|orbit_toggle_e2e|
   cull_e2e|merge_static_meshes_e2e|audio`。
+- **DragonBones 2D 运行时（自研，docs/36）**：`anim.DragonBonesSkeleton` 组件（`skeleton` = `*_ske.json`、
+  `atlas` = `*_tex.json`、`armature` 名）+ `dragonbones_*` 脚本 API（动画/皮肤/骨骼/槽/图集/诊断）。
+  模块 `modules/anim/dragonbones`（C ABI 53 函数）只解析+求值+导出绘制数据，图集页由引擎
+  `load_texture_raw()` 上传后经回调回填句柄/尺寸；批次转 `mq_renderer_mesh`，与 Spine/ImGui **同一通道**。
+  **坐标系与 Spine 相反**：DragonBones 是 y **向下**，顶点映射 **不翻 y**（spine 必须翻）。
+  ⚠️ 语义坑：`inheritScale=false` **仍继承父旋转/平移**（只是不乘父缩放）；**动画帧的 `rotate/skew` 是角度制**
+  （setup transform 也是度；按弧度读会让关节反向甩）；图像只画**裁剪区**、pivot 用未裁剪帧尺寸算。
+  三条都有单测锁定（`test_synthetic_inherit/deg_rotate/trim`），并与官方 C++ 运行时逐骨骼数值对拍。
+  未支持（会打印计数、不静默）：带权重网格、嵌套子骨架、颜色 offset、IK/zOrder/事件、`.dbbin`、多页图集。
+  样例 `samples/dragonbones/mecha.scn`（官方 mecha_1004d，素材 CC BY-NC-SA 仅示例）；诊断
+  `MAQUE_TRACE_DRAGONBONES=1`；测试 `ctest -R dragonbones`（单测 + smoke/switch/determinism）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

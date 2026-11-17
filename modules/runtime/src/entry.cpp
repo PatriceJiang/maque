@@ -106,7 +106,7 @@ extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
     // 渲染该帧到宿主缓冲（step_frame 内部已渲染；这里补一次输出到调用方缓冲）
     std::vector<mq_renderer_item> draws;
     std::vector<mq_renderer_mesh> meshes;
-    if (e.scene) { e.scene->extract(e, draws); e.spine_extract(meshes); }
+    if (e.scene) { e.scene->extract(e, draws); e.spine_extract(meshes); e.dragonbones_extract(meshes); }
     /* 宿主缓冲尺寸就是当前实际渲染目标；无窗口时默认等于设计尺寸 × render_scale。 */
     const int SHpx = e.TH;
     if (!out || out_size < (size_t)e.TW * (size_t)SHpx * 4) return 2;

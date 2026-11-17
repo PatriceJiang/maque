@@ -439,6 +439,64 @@
     - { fn: spine_set_sequence_index, ctx: true, args: [ { name: id, type: float }, { name: slot, type: float }, { name: frame, type: float } ], returns: float,
         doc: "手动定格序列帧下标（-1 = setup 帧）" }
 
+    # ---- DragonBones 2D（docs/36、组件 anim.DragonBonesSkeleton）----
+    # 与 spine_* 同一套语义：按实体 id 寻址，**问引擎当前状态**（组件 + 实例是唯一真相）；
+    # 越界/无组件一律 0 / "" / -1，不崩。动画名/皮肤名是骨架内声明序的稳定路径（docs/10 D4）。
+    - { fn: dragonbones_animation_count, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "动画个数（无 DragonBonesSkeleton 组件 → 0）" }
+    - { fn: dragonbones_animation_name, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string,
+        doc: "第 index 个动画名（声明序；越界 → \"\"）" }
+    - { fn: dragonbones_animation_index, ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "动画名 → 下标（不存在 → -1）" }
+    - { fn: dragonbones_play, ctx: true, args: [ { name: id, type: float }, { name: name, type: string }, { name: loop, type: float } ], returns: float,
+        doc: "从头播动画（loop != 0 循环）；成功 0，失败 -1" }
+    - { fn: dragonbones_stop, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "停止播放 → 回到**绑定姿势**（setup pose；诊断/定格用）" }
+    - { fn: dragonbones_current_animation, ctx: true, args: [ { name: id, type: float } ], returns: string,
+        doc: "当前动画名（未播放 → \"\"）" }
+    - { fn: dragonbones_time, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "播放头（秒）" }
+    - { fn: dragonbones_set_time, ctx: true, args: [ { name: id, type: float }, { name: t, type: float } ], returns: float,
+        doc: "设播放头并立刻重算姿势（定格/确定性截图用）" }
+    - { fn: dragonbones_duration, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "当前动画时长（秒；帧数 / frameRate）" }
+    - { fn: dragonbones_play_times, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "已播完轮数（循环动画持续增长）" }
+    - { fn: dragonbones_complete, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "非循环动画是否播完（1/0）" }
+    - { fn: dragonbones_armature, ctx: true, args: [ { name: id, type: float } ], returns: string,
+        doc: "当前骨架名（一个 *_ske.json 可含多个 armature）" }
+    - { fn: dragonbones_skin_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: dragonbones_skin_name, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: dragonbones_set_skin, ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "换皮肤（名字不存在 → -1）" }
+    - { fn: dragonbones_current_skin, ctx: true, args: [ { name: id, type: float } ], returns: string }
+    - { fn: dragonbones_bone_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: dragonbones_bone_name, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: dragonbones_bone_find, ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "骨骼名 → 下标（-1 = 无）" }
+    - { fn: dragonbones_bone_x, ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "骨骼世界位置 x（armature 空间，含实例缩放/翻转）" }
+    - { fn: dragonbones_bone_y, ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float }
+    - { fn: dragonbones_slot_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: dragonbones_slot_name, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: dragonbones_slot_index, ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float }
+    - { fn: dragonbones_slot_display, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float,
+        doc: "槽当前显示下标（-1 = 空槽）" }
+    - { fn: dragonbones_set_slot_display, ctx: true, args: [ { name: id, type: float }, { name: index, type: float }, { name: display, type: float } ], returns: float,
+        doc: "手动换显示（换装/换武器/测试网格路径；动画下一帧会覆盖）" }
+    - { fn: dragonbones_pages, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: dragonbones_page_texture, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float,
+        doc: "第 index 页纹理句柄（-1 = 无/越界；确认纹理上传）" }
+    - { fn: dragonbones_page_width, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float }
+    - { fn: dragonbones_page_height, ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float }
+    - { fn: dragonbones_vertex_count, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "上一帧导出的顶点数（0 = 什么都没画；诊断用）" }
+    - { fn: dragonbones_batch_count, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "上一帧批次数（同页同混合模式合并后的绘制段数）" }
+    - { fn: dragonbones_bounds, ctx: true, args: [ { name: id, type: float }, { name: which, type: float } ], returns: float,
+        doc: "上一帧姿势包围盒：0=x 1=y 2=w 3=h（armature 空间，已含实例缩放/翻转）" }
+
     # ---- ImGui（引擎侧即时模式调试/调参 UI，docs/27 §ImGui）----
     # 定位：**开发工具**，不是游戏 UI。游戏内 HUD 用声明式的 ui.*（它们进场景/快照/可回放）；
     # ImGui 面板是视图层：**不进快照、不进校验和**（docs/10 确定性不受影响）。

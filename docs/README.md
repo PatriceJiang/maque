@@ -44,6 +44,7 @@
 | [33](33-RenderTexture相机离屏纹理.md) | **RenderTexture 相机离屏纹理**：2D/3D 相机挂载、纹理 URI、依赖顺序、截图脚本/控制面、生命周期、性能与排错 |
 | [34](34-脚本模块与实例上下文.md) | **脚本模块、包与实例上下文（重新设计）**：每语言一个 VM；`maque.package.json` 包清单 + 模块键；原生 ESM / Lua `require`；模块定义 + 每挂载点 `this`/`self` 上下文；`props` 持久化；包作用域 `global_*`；模块级热重载与迁移/测试影响面 |
 | [35](35-Linux采样剖析（perf）.md) | **Linux 采样剖析（perf）**：为什么选 perf 不选 oprofile；`MAQUE_PROFILE` 构建/环境/F5/控制面；`tools/perf/maque_perf.py` 的 check/record/report/parse/bench/compare；agent 的“采集→归因→改一处→回归门”自动优化闭环与权限/排错 |
+| [36](36-DragonBones运行时接入.md) | **DragonBones 2D 运行时接入**：自研 runtime（`*_ske.json` + `*_tex.json` 解析/求值/绘制数据）、`anim.DragonBonesSkeleton` 组件 + `dragonbones_*` 脚本 API、与 spine 的分层同构与 y 轴差异、`inheritScale=false` 等语义坑、官方运行时数值对拍与测试 |
 | [bugs/](bugs/README.md) | **Bug 档案（内存/崩溃/性能必录）**：症状、最小复现、根因、修复/状态、回归与证据 |
 | [api/](api/README.md) | **API 参考（自动生成，随仓库提交）**：脚本 API / 控制面 / 事件 / 插件 vtable / 模块 C ABI / 数据类型 |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |

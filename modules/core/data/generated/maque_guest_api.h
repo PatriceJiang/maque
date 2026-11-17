@@ -8,7 +8,7 @@
 #include "abi/script.h"
 
 #define MQ_SCRIPT_API_VERSION 1u
-#define MQ_SCRIPT_API_HASH 0x14f46ae5u
+#define MQ_SCRIPT_API_HASH 0xfb4c08e7u
 
 #ifdef __cplusplus
 extern "C" {
@@ -289,6 +289,39 @@ typedef struct mq_script_api_v1 {
     const char* (*host_spine_sequence_path)(void* ctx, float id, float slot);  /* 当前帧路径名（Sequence::getPath） */
     float (*host_spine_sequence_value)(void* ctx, float id, float slot, float what);  /* what: 0=u 1=v 2=u2 3=v2 4=width 5=height 6=setup_index（逐帧不同 → 可断言真的换图了） */
     float (*host_spine_set_sequence_index)(void* ctx, float id, float slot, float frame);  /* 手动定格序列帧下标（-1 = setup 帧） */
+    float (*host_dragonbones_animation_count)(void* ctx, float id);  /* 动画个数（无 DragonBonesSkeleton 组件 → 0） */
+    const char* (*host_dragonbones_animation_name)(void* ctx, float id, float index);  /* 第 index 个动画名（声明序；越界 → ""） */
+    float (*host_dragonbones_animation_index)(void* ctx, float id, const char* name);  /* 动画名 → 下标（不存在 → -1） */
+    float (*host_dragonbones_play)(void* ctx, float id, const char* name, float loop);  /* 从头播动画（loop != 0 循环）；成功 0，失败 -1 */
+    float (*host_dragonbones_stop)(void* ctx, float id);  /* 停止播放 → 回到**绑定姿势**（setup pose；诊断/定格用） */
+    const char* (*host_dragonbones_current_animation)(void* ctx, float id);  /* 当前动画名（未播放 → ""） */
+    float (*host_dragonbones_time)(void* ctx, float id);  /* 播放头（秒） */
+    float (*host_dragonbones_set_time)(void* ctx, float id, float t);  /* 设播放头并立刻重算姿势（定格/确定性截图用） */
+    float (*host_dragonbones_duration)(void* ctx, float id);  /* 当前动画时长（秒；帧数 / frameRate） */
+    float (*host_dragonbones_play_times)(void* ctx, float id);  /* 已播完轮数（循环动画持续增长） */
+    float (*host_dragonbones_complete)(void* ctx, float id);  /* 非循环动画是否播完（1/0） */
+    const char* (*host_dragonbones_armature)(void* ctx, float id);  /* 当前骨架名（一个 *_ske.json 可含多个 armature） */
+    float (*host_dragonbones_skin_count)(void* ctx, float id);
+    const char* (*host_dragonbones_skin_name)(void* ctx, float id, float index);
+    float (*host_dragonbones_set_skin)(void* ctx, float id, const char* name);  /* 换皮肤（名字不存在 → -1） */
+    const char* (*host_dragonbones_current_skin)(void* ctx, float id);
+    float (*host_dragonbones_bone_count)(void* ctx, float id);
+    const char* (*host_dragonbones_bone_name)(void* ctx, float id, float index);
+    float (*host_dragonbones_bone_find)(void* ctx, float id, const char* name);  /* 骨骼名 → 下标（-1 = 无） */
+    float (*host_dragonbones_bone_x)(void* ctx, float id, const char* name);  /* 骨骼世界位置 x（armature 空间，含实例缩放/翻转） */
+    float (*host_dragonbones_bone_y)(void* ctx, float id, const char* name);
+    float (*host_dragonbones_slot_count)(void* ctx, float id);
+    const char* (*host_dragonbones_slot_name)(void* ctx, float id, float index);
+    float (*host_dragonbones_slot_index)(void* ctx, float id, const char* name);
+    float (*host_dragonbones_slot_display)(void* ctx, float id, float index);  /* 槽当前显示下标（-1 = 空槽） */
+    float (*host_dragonbones_set_slot_display)(void* ctx, float id, float index, float display);  /* 手动换显示（换装/换武器/测试网格路径；动画下一帧会覆盖） */
+    float (*host_dragonbones_pages)(void* ctx, float id);
+    float (*host_dragonbones_page_texture)(void* ctx, float id, float index);  /* 第 index 页纹理句柄（-1 = 无/越界；确认纹理上传） */
+    float (*host_dragonbones_page_width)(void* ctx, float id, float index);
+    float (*host_dragonbones_page_height)(void* ctx, float id, float index);
+    float (*host_dragonbones_vertex_count)(void* ctx, float id);  /* 上一帧导出的顶点数（0 = 什么都没画；诊断用） */
+    float (*host_dragonbones_batch_count)(void* ctx, float id);  /* 上一帧批次数（同页同混合模式合并后的绘制段数） */
+    float (*host_dragonbones_bounds)(void* ctx, float id, float which);  /* 上一帧姿势包围盒：0=x 1=y 2=w 3=h（armature 空间，已含实例缩放/翻转） */
     float (*host_imgui_ready)(void* ctx);  /* ImGui 是否已初始化 */
     float (*host_imgui_enabled)(void* ctx);  /* 面板是否启用（MAQUE_IMGUI=0 可关；默认关） */
     float (*host_imgui_set_enabled)(void* ctx, float on);  /* 运行时开关面板（关掉后不再占 GPU/输入） */

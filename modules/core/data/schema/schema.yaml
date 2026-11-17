@@ -25,6 +25,7 @@
     - data/zlib.yaml
     - image.yaml
     - world/anim.yaml
+    - world/dragonbones.yaml
     - script.yaml
     - script_guest.yaml
     - asset.yaml

@@ -50,6 +50,36 @@ struct SpineRuntime {
     std::vector<Instance> items;   // 实例表（push_back 后定型：回调 user 指向元素）
 };
 
+/* DragonBones 2D（docs/36、组件 anim.DragonBonesSkeleton）：与 SpineRuntime 同构。
+ * 实例是**派生数据**（不进快照/校验和）：唯一真相 = 组件字段 + 骨架/图集资源。 */
+struct DragonBonesRuntime {
+    struct Instance {
+        int entity = -1;
+        Engine* eng = nullptr;
+        uint32_t comp = 0;
+        mq_db_data* data = nullptr;
+        mq_db_instance* inst = nullptr;
+        std::string skel_path;
+        std::string atlas_path;
+        std::string tex_dir;                       // 图集页所在 VFS 目录（含结尾 '/'）
+        std::string armature_name;
+        std::vector<std::string> anim_names;       // 动画清单快照（声明序，稳定）
+        std::vector<std::string> skin_names;
+        struct Page { std::string name; int width = 0, height = 0; uint64_t handle = 0; };
+        std::vector<Page> pages;
+        /* 每帧 CPU 绘制缓冲（复用；不够时下一帧扩容重试） */
+        std::vector<float> verts, uvs, cols, tverts;
+        std::vector<uint32_t> idxs;
+        std::vector<mq_db_batch> batches;
+        DbTexCtx tex_ctx;                          // 纹理回调 user（活到 data 销毁）
+        mq_db_draw draw{};
+        int last_anim = -1;                        // 上一帧播放的动画下标（检测组件字段变化）
+        int z = 0;                                 // 排序键（z_index*100000 + 实体 id）
+    };
+
+    std::vector<Instance> items;
+};
+
 struct SystemsRuntime {
     struct Tween { int entity; std::string path; float from, to, elapsed, duration; int easing; };
     std::vector<Tween> tweens;
@@ -308,6 +338,16 @@ struct Engine {
     void spine_extract(std::vector<mq_renderer_mesh>& out);   // 提取期：绘制数据 → 网格图元
     SpineRuntime::Instance* spine_of(int entity);               // 按实体 id 找实例（脚本 API 用）
     void spine_clear_events();                 // 帧边界（脚本之后、step 之前）：清事件记录
+
+    /* ---- DragonBones 2D（docs/36、组件 anim.DragonBonesSkeleton）----
+     * 与 Spine 同一条分层：模块只出 CPU 绘制数据，纹理由引擎按图集页读/解码/上传后回填。
+     * 坐标系差异：DragonBones 的 y **向下**（flash 系）→ 提取时**不翻 y**（spine 要翻）。 */
+    DragonBonesRuntime dragonbones_rt;
+    void dragonbones_setup();                  // 装配期：按 role 找组件 → 建数据/实例
+    void dragonbones_release();                // 释放全部实例（切场景/热重载/退出；幂等）
+    void dragonbones_step(float dt);           // 帧内：推进 + 出绘制数据 + 变换到屏幕像素
+    void dragonbones_extract(std::vector<mq_renderer_mesh>& out);   // 提取期：绘制数据 → 网格图元
+    DragonBonesRuntime::Instance* dragonbones_of(int entity);       // 按实体 id 找实例（脚本 API 用）
 
     /* ---- ImGui 调试面板（引擎侧；docs/27 §ImGui）----
      * 定位：**开发工具**，不是游戏 UI。游戏内 HUD 用声明式 ui.*（进场景/快照/可回放）；
@@ -953,7 +993,7 @@ struct Engine {
     int load_texture_impl(const std::string& path, bool atlas_ok, int* out_w, int* out_h);
     /* **不参与自动合图**的贴图（spine 图集页/骨骼页等）：走旧 create_texture，
      * 不置 gfx 的 `ui_atlas_src`，因此永远不进 2D/UI 图集。 */
-    int load_texture_raw(const std::string& path);
+    int load_texture_raw(const std::string& path, int* out_w = nullptr, int* out_h = nullptr);
     /* UI 图片（ui.Image）：与精灵共用同一条 2D 贴图通道（load_texture）。
      * gfx 侧只吸收 create_texture2 的 2D/RGBA8/单 mip/clamp 贴图；字体图集走 create_texture，
      * 两个图集因此天然分开。 */

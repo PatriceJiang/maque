@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **356** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **27** 个 · 插件接口 **1** 个。
+统计：脚本 API **389** 个 · 控制面方法 **64** 个 · 事件回调 **11** 个 · 模块 C ABI **28** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -312,6 +312,39 @@
 | `spine_sequence_path` | id: float, slot: float | string | ctx · 当前帧路径名（Sequence::getPath） |
 | `spine_sequence_value` | id: float, slot: float, what: float | float | ctx · what: 0=u 1=v 2=u2 3=v2 4=width 5=height 6=setup_index（逐帧不同 → 可断言真的换图了） |
 | `spine_set_sequence_index` | id: float, slot: float, frame: float | float | ctx · 手动定格序列帧下标（-1 = setup 帧） |
+| `dragonbones_animation_count` | id: float | float | ctx · 动画个数（无 DragonBonesSkeleton 组件 → 0） |
+| `dragonbones_animation_name` | id: float, index: float | string | ctx · 第 index 个动画名（声明序；越界 → ""） |
+| `dragonbones_animation_index` | id: float, name: string | float | ctx · 动画名 → 下标（不存在 → -1） |
+| `dragonbones_play` | id: float, name: string, loop: float | float | ctx · 从头播动画（loop != 0 循环）；成功 0，失败 -1 |
+| `dragonbones_stop` | id: float | float | ctx · 停止播放 → 回到**绑定姿势**（setup pose；诊断/定格用） |
+| `dragonbones_current_animation` | id: float | string | ctx · 当前动画名（未播放 → ""） |
+| `dragonbones_time` | id: float | float | ctx · 播放头（秒） |
+| `dragonbones_set_time` | id: float, t: float | float | ctx · 设播放头并立刻重算姿势（定格/确定性截图用） |
+| `dragonbones_duration` | id: float | float | ctx · 当前动画时长（秒；帧数 / frameRate） |
+| `dragonbones_play_times` | id: float | float | ctx · 已播完轮数（循环动画持续增长） |
+| `dragonbones_complete` | id: float | float | ctx · 非循环动画是否播完（1/0） |
+| `dragonbones_armature` | id: float | string | ctx · 当前骨架名（一个 *_ske.json 可含多个 armature） |
+| `dragonbones_skin_count` | id: float | float | ctx |
+| `dragonbones_skin_name` | id: float, index: float | string | ctx |
+| `dragonbones_set_skin` | id: float, name: string | float | ctx · 换皮肤（名字不存在 → -1） |
+| `dragonbones_current_skin` | id: float | string | ctx |
+| `dragonbones_bone_count` | id: float | float | ctx |
+| `dragonbones_bone_name` | id: float, index: float | string | ctx |
+| `dragonbones_bone_find` | id: float, name: string | float | ctx · 骨骼名 → 下标（-1 = 无） |
+| `dragonbones_bone_x` | id: float, name: string | float | ctx · 骨骼世界位置 x（armature 空间，含实例缩放/翻转） |
+| `dragonbones_bone_y` | id: float, name: string | float | ctx |
+| `dragonbones_slot_count` | id: float | float | ctx |
+| `dragonbones_slot_name` | id: float, index: float | string | ctx |
+| `dragonbones_slot_index` | id: float, name: string | float | ctx |
+| `dragonbones_slot_display` | id: float, index: float | float | ctx · 槽当前显示下标（-1 = 空槽） |
+| `dragonbones_set_slot_display` | id: float, index: float, display: float | float | ctx · 手动换显示（换装/换武器/测试网格路径；动画下一帧会覆盖） |
+| `dragonbones_pages` | id: float | float | ctx |
+| `dragonbones_page_texture` | id: float, index: float | float | ctx · 第 index 页纹理句柄（-1 = 无/越界；确认纹理上传） |
+| `dragonbones_page_width` | id: float, index: float | float | ctx |
+| `dragonbones_page_height` | id: float, index: float | float | ctx |
+| `dragonbones_vertex_count` | id: float | float | ctx · 上一帧导出的顶点数（0 = 什么都没画；诊断用） |
+| `dragonbones_batch_count` | id: float | float | ctx · 上一帧批次数（同页同混合模式合并后的绘制段数） |
+| `dragonbones_bounds` | id: float, which: float | float | ctx · 上一帧姿势包围盒：0=x 1=y 2=w 3=h（armature 空间，已含实例缩放/翻转） |
 | `imgui_ready` | — | float | ctx · ImGui 是否已初始化 |
 | `imgui_enabled` | — | float | ctx · 面板是否启用（MAQUE_IMGUI=0 可关；默认关） |
 | `imgui_set_enabled` | on: float | float | ctx · 运行时开关面板（关掉后不再占 GPU/输入） |
@@ -955,6 +988,80 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_spine_instance_physics_reset` | void | inst: mq_spine_instance* |
 | `mq_spine_attachment_sequence_info` | int | inst: mq_spine_instance*, slot_index: int, out: mq_spine_sequence_info* |
 | `mq_spine_instance_set_sequence_index` | int | inst: mq_spine_instance*, slot_index: int, frame: int |
+
+### dragonbones — `maque.dragonbones` v1
+
+头文件：`build/modules/core/data/generated/abi/dragonbones.h` · 宏：`MQ_DRAGONBONES_ABI_VERSION` / `_IFACE_NAME`
+
+DragonBones 5.x（*_ske.json + *_tex.json）解析/动画求值/绘制数据导出（docs/36）
+
+枚举：
+
+- (匿名)：MQ_DB_OK=0, MQ_DB_ERR_ARG=1, MQ_DB_ERR_FORMAT=2, MQ_DB_ERR_NOTFOUND=3, MQ_DB_ERR_PAGE=4, MQ_DB_ERR_NOMEM=5
+- (匿名)：MQ_DB_BLEND_NORMAL=0, MQ_DB_BLEND_ADD=1, MQ_DB_BLEND_MULTIPLY=2, MQ_DB_BLEND_SCREEN=3
+
+结构体：
+
+- `mq_db_page`：name: const char*, width: int, height: int, texture: uint64_t
+- `mq_db_batch`：page: int, blend: int, first_index: uint32_t, index_count: uint32_t
+- `mq_db_draw`：vertex_count: int, index_count: int, batch_count: int, bounds_x: float, bounds_y: float, bounds_w: float, bounds_h: float, slot_count: int
+- `mq_db_anim`：name: const char*, duration: float, play_times: int, frame_count: int
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_db_abi_version` | uint32_t | — |
+| `mq_db_data_create` | mq_db_data* | skeleton_json: const void*, skeleton_size: size_t, texture_json: const char*, dir_hint: const char*, load_texture: mq_db_texture_cb, user: void* |
+| `mq_db_data_destroy` | void | data: mq_db_data* |
+| `mq_db_data_name` | const char* | data: mq_db_data* |
+| `mq_db_data_frame_rate` | float | data: mq_db_data* |
+| `mq_db_data_armature_count` | int | data: mq_db_data* |
+| `mq_db_data_armature_name` | const char* | data: mq_db_data*, index: int |
+| `mq_db_data_armature_index` | int | data: mq_db_data*, name: const char* |
+| `mq_db_data_animation_count` | int | data: mq_db_data*, armature: int |
+| `mq_db_data_animation` | int | data: mq_db_data*, armature: int, index: int, out: mq_db_anim* |
+| `mq_db_data_animation_index` | int | data: mq_db_data*, armature: int, name: const char* |
+| `mq_db_data_skin_count` | int | data: mq_db_data*, armature: int |
+| `mq_db_data_skin_name` | const char* | data: mq_db_data*, armature: int, index: int |
+| `mq_db_data_skin_index` | int | data: mq_db_data*, armature: int, name: const char* |
+| `mq_db_data_bone_count` | int | data: mq_db_data*, armature: int |
+| `mq_db_data_bone_name` | const char* | data: mq_db_data*, armature: int, index: int |
+| `mq_db_data_slot_count` | int | data: mq_db_data*, armature: int |
+| `mq_db_data_slot_name` | const char* | data: mq_db_data*, armature: int, index: int |
+| `mq_db_data_page_count` | int | data: mq_db_data* |
+| `mq_db_data_page` | int | data: mq_db_data*, index: int, out: mq_db_page* |
+| `mq_db_data_set_page_texture` | int | data: mq_db_data*, index: int, texture: uint64_t, width: int, height: int |
+| `mq_db_data_texture_count` | int | data: mq_db_data* |
+| `mq_db_data_mesh_count` | int | data: mq_db_data* |
+| `mq_db_data_weighted_count` | int | data: mq_db_data* |
+| `mq_db_data_nested_count` | int | data: mq_db_data* |
+| `mq_db_data_missing_texture_count` | int | data: mq_db_data* |
+| `mq_db_instance_create` | mq_db_instance* | data: mq_db_data*, armature_index: int |
+| `mq_db_instance_destroy` | void | inst: mq_db_instance* |
+| `mq_db_instance_set_skin` | int | inst: mq_db_instance*, name: const char* |
+| `mq_db_instance_skin_name` | const char* | inst: mq_db_instance* |
+| `mq_db_instance_play` | int | inst: mq_db_instance*, animation: const char*, loop: int |
+| `mq_db_instance_stop` | void | inst: mq_db_instance* |
+| `mq_db_instance_set_time` | int | inst: mq_db_instance*, time: float |
+| `mq_db_instance_time` | float | inst: mq_db_instance* |
+| `mq_db_instance_duration` | float | inst: mq_db_instance* |
+| `mq_db_instance_animation_name` | const char* | inst: mq_db_instance* |
+| `mq_db_instance_play_times` | int | inst: mq_db_instance* |
+| `mq_db_instance_complete` | int | inst: mq_db_instance* |
+| `mq_db_instance_set_playing` | void | inst: mq_db_instance*, playing: int |
+| `mq_db_instance_step` | int | inst: mq_db_instance*, dt: float |
+| `mq_db_instance_set_transform` | void | inst: mq_db_instance*, scale: float, flip_x: int, flip_y: int |
+| `mq_db_instance_set_color` | void | inst: mq_db_instance*, r: float, g: float, b: float, a: float |
+| `mq_db_instance_bone_count` | int | inst: mq_db_instance* |
+| `mq_db_instance_bone_name` | const char* | inst: mq_db_instance*, index: int |
+| `mq_db_instance_bone_find` | int | inst: mq_db_instance*, name: const char* |
+| `mq_db_instance_bone_world_position` | int | inst: mq_db_instance*, index: int, x: float*, y: float* |
+| `mq_db_instance_slot_count` | int | inst: mq_db_instance* |
+| `mq_db_instance_slot_name` | const char* | inst: mq_db_instance*, index: int |
+| `mq_db_instance_slot_index` | int | inst: mq_db_instance*, name: const char* |
+| `mq_db_instance_slot_display` | int | inst: mq_db_instance*, index: int |
+| `mq_db_instance_set_slot_display` | int | inst: mq_db_instance*, index: int, display: int |
+| `mq_db_instance_draw` | int | inst: mq_db_instance*, vertices: float*, uvs: float*, colors: float*, indices: uint32_t*, batches: mq_db_batch*, max_vertices: int, max_indices: int, max_batches: int, out: mq_db_draw* |
+| `mq_db_instance_packed` | int | inst: mq_db_instance* |
 
 ### script — `maque.script` v5
 

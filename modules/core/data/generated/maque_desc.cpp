@@ -234,6 +234,94 @@ static const mq_field_desc mq_fields_anim_CurveKey[] = {
     { "out_tangent", (uint32_t)offsetof(anim::CurveKey, out_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_CurveKey[3] },
 };
 
+static double mq_acc_anim_DbAnimState_time_getf(const void* p) { const auto& s = *static_cast<const anim::DbAnimState*>(p); return static_cast<double>(s.time); }
+static void mq_acc_anim_DbAnimState_time_setf(void* p, double v) { auto& s = *static_cast<anim::DbAnimState*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static double mq_acc_anim_DbAnimState_duration_getf(const void* p) { const auto& s = *static_cast<const anim::DbAnimState*>(p); return static_cast<double>(s.duration); }
+static void mq_acc_anim_DbAnimState_duration_setf(void* p, double v) { auto& s = *static_cast<anim::DbAnimState*>(p); s.duration = static_cast<decltype(s.duration)>(v); }
+static double mq_acc_anim_DbAnimState_play_times_getf(const void* p) { const auto& s = *static_cast<const anim::DbAnimState*>(p); return static_cast<double>(s.play_times); }
+static void mq_acc_anim_DbAnimState_play_times_setf(void* p, double v) { auto& s = *static_cast<anim::DbAnimState*>(p); s.play_times = static_cast<decltype(s.play_times)>(v); }
+static double mq_acc_anim_DbAnimState_loop_getf(const void* p) { const auto& s = *static_cast<const anim::DbAnimState*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_anim_DbAnimState_loop_setf(void* p, double v) { auto& s = *static_cast<anim::DbAnimState*>(p); s.loop = v != 0.0; }
+static double mq_acc_anim_DbAnimState_complete_getf(const void* p) { const auto& s = *static_cast<const anim::DbAnimState*>(p); return s.complete ? 1.0 : 0.0; }
+static void mq_acc_anim_DbAnimState_complete_setf(void* p, double v) { auto& s = *static_cast<anim::DbAnimState*>(p); s.complete = v != 0.0; }
+static const mq_field_accessor mq_acc_anim_DbAnimState[] = {
+    { mq_acc_anim_DbAnimState_time_getf, mq_acc_anim_DbAnimState_time_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DbAnimState_duration_getf, mq_acc_anim_DbAnimState_duration_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DbAnimState_play_times_getf, mq_acc_anim_DbAnimState_play_times_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DbAnimState_loop_getf, mq_acc_anim_DbAnimState_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DbAnimState_complete_getf, mq_acc_anim_DbAnimState_complete_setf, 0, 0, 0, 0 },
+};
+static const mq_field_desc mq_fields_anim_DbAnimState[] = {
+    { "time", (uint32_t)offsetof(anim::DbAnimState, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DbAnimState[0] },
+    { "duration", (uint32_t)offsetof(anim::DbAnimState, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DbAnimState[1] },
+    { "play_times", (uint32_t)offsetof(anim::DbAnimState, play_times), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DbAnimState[2] },
+    { "loop", (uint32_t)offsetof(anim::DbAnimState, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DbAnimState[3] },
+    { "complete", (uint32_t)offsetof(anim::DbAnimState, complete), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DbAnimState[4] },
+};
+
+static const char* mq_acc_anim_DragonBonesSkeleton_skeleton_gets(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return s.skeleton.c_str(); }
+static void mq_acc_anim_DragonBonesSkeleton_skeleton_sets(void* p, const char* v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.skeleton = v ? v : ""; }
+static const void* mq_acc_anim_DragonBonesSkeleton_skeleton_getp(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return &s.skeleton; }
+static void* mq_acc_anim_DragonBonesSkeleton_skeleton_getmp(void* p) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); return &s.skeleton; }
+static const char* mq_acc_anim_DragonBonesSkeleton_atlas_gets(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return s.atlas.c_str(); }
+static void mq_acc_anim_DragonBonesSkeleton_atlas_sets(void* p, const char* v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.atlas = v ? v : ""; }
+static const void* mq_acc_anim_DragonBonesSkeleton_atlas_getp(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return &s.atlas; }
+static void* mq_acc_anim_DragonBonesSkeleton_atlas_getmp(void* p) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); return &s.atlas; }
+static const char* mq_acc_anim_DragonBonesSkeleton_armature_gets(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return s.armature.c_str(); }
+static void mq_acc_anim_DragonBonesSkeleton_armature_sets(void* p, const char* v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.armature = v ? v : ""; }
+static const void* mq_acc_anim_DragonBonesSkeleton_armature_getp(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return &s.armature; }
+static void* mq_acc_anim_DragonBonesSkeleton_armature_getmp(void* p) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); return &s.armature; }
+static double mq_acc_anim_DragonBonesSkeleton_skin_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(s.skin); }
+static void mq_acc_anim_DragonBonesSkeleton_skin_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.skin = static_cast<decltype(s.skin)>(v); }
+static double mq_acc_anim_DragonBonesSkeleton_animation_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(s.animation); }
+static void mq_acc_anim_DragonBonesSkeleton_animation_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.animation = static_cast<decltype(s.animation)>(v); }
+static double mq_acc_anim_DragonBonesSkeleton_autoplay_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return s.autoplay ? 1.0 : 0.0; }
+static void mq_acc_anim_DragonBonesSkeleton_autoplay_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.autoplay = v != 0.0; }
+static double mq_acc_anim_DragonBonesSkeleton_play_mode_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.play_mode)); }
+static void mq_acc_anim_DragonBonesSkeleton_play_mode_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.play_mode = static_cast<decltype(s.play_mode)>(v); }
+static double mq_acc_anim_DragonBonesSkeleton_speed_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_anim_DragonBonesSkeleton_speed_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_anim_DragonBonesSkeleton_flip_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.flip)); }
+static void mq_acc_anim_DragonBonesSkeleton_flip_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.flip = static_cast<decltype(s.flip)>(v); }
+static const void* mq_acc_anim_DragonBonesSkeleton_color_getp(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return &s.color; }
+static void* mq_acc_anim_DragonBonesSkeleton_color_getmp(void* p) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); return &s.color; }
+static double mq_acc_anim_DragonBonesSkeleton_z_index_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_anim_DragonBonesSkeleton_z_index_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static const void* mq_acc_anim_DragonBonesSkeleton_state_getp(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return &s.state; }
+static void* mq_acc_anim_DragonBonesSkeleton_state_getmp(void* p) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); return &s.state; }
+static double mq_acc_anim_DragonBonesSkeleton_instance_getf(const void* p) { const auto& s = *static_cast<const anim::DragonBonesSkeleton*>(p); return static_cast<double>(s.instance); }
+static void mq_acc_anim_DragonBonesSkeleton_instance_setf(void* p, double v) { auto& s = *static_cast<anim::DragonBonesSkeleton*>(p); s.instance = static_cast<decltype(s.instance)>(v); }
+static const mq_field_accessor mq_acc_anim_DragonBonesSkeleton[] = {
+    { 0, 0, mq_acc_anim_DragonBonesSkeleton_skeleton_gets, mq_acc_anim_DragonBonesSkeleton_skeleton_sets, mq_acc_anim_DragonBonesSkeleton_skeleton_getp, mq_acc_anim_DragonBonesSkeleton_skeleton_getmp },
+    { 0, 0, mq_acc_anim_DragonBonesSkeleton_atlas_gets, mq_acc_anim_DragonBonesSkeleton_atlas_sets, mq_acc_anim_DragonBonesSkeleton_atlas_getp, mq_acc_anim_DragonBonesSkeleton_atlas_getmp },
+    { 0, 0, mq_acc_anim_DragonBonesSkeleton_armature_gets, mq_acc_anim_DragonBonesSkeleton_armature_sets, mq_acc_anim_DragonBonesSkeleton_armature_getp, mq_acc_anim_DragonBonesSkeleton_armature_getmp },
+    { mq_acc_anim_DragonBonesSkeleton_skin_getf, mq_acc_anim_DragonBonesSkeleton_skin_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DragonBonesSkeleton_animation_getf, mq_acc_anim_DragonBonesSkeleton_animation_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DragonBonesSkeleton_autoplay_getf, mq_acc_anim_DragonBonesSkeleton_autoplay_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DragonBonesSkeleton_play_mode_getf, mq_acc_anim_DragonBonesSkeleton_play_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DragonBonesSkeleton_speed_getf, mq_acc_anim_DragonBonesSkeleton_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_DragonBonesSkeleton_flip_getf, mq_acc_anim_DragonBonesSkeleton_flip_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_DragonBonesSkeleton_color_getp, mq_acc_anim_DragonBonesSkeleton_color_getmp },
+    { mq_acc_anim_DragonBonesSkeleton_z_index_getf, mq_acc_anim_DragonBonesSkeleton_z_index_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_DragonBonesSkeleton_state_getp, mq_acc_anim_DragonBonesSkeleton_state_getmp },
+    { mq_acc_anim_DragonBonesSkeleton_instance_getf, mq_acc_anim_DragonBonesSkeleton_instance_setf, 0, 0, 0, 0 },
+};
+static const mq_field_desc mq_fields_anim_DragonBonesSkeleton[] = {
+    { "skeleton", (uint32_t)offsetof(anim::DragonBonesSkeleton, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[0] },
+    { "atlas", (uint32_t)offsetof(anim::DragonBonesSkeleton, atlas), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[1] },
+    { "armature", (uint32_t)offsetof(anim::DragonBonesSkeleton, armature), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[2] },
+    { "skin", (uint32_t)offsetof(anim::DragonBonesSkeleton, skin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[3] },
+    { "animation", (uint32_t)offsetof(anim::DragonBonesSkeleton, animation), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[4] },
+    { "autoplay", (uint32_t)offsetof(anim::DragonBonesSkeleton, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[5] },
+    { "play_mode", (uint32_t)offsetof(anim::DragonBonesSkeleton, play_mode), MQ_TK_ENUM, 3819653223u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[6] },
+    { "speed", (uint32_t)offsetof(anim::DragonBonesSkeleton, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[7] },
+    { "flip", (uint32_t)offsetof(anim::DragonBonesSkeleton, flip), MQ_TK_ENUM, 577626198u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[8] },
+    { "color", (uint32_t)offsetof(anim::DragonBonesSkeleton, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[9] },
+    { "z_index", (uint32_t)offsetof(anim::DragonBonesSkeleton, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[10] },
+    { "state", (uint32_t)offsetof(anim::DragonBonesSkeleton, state), MQ_TK_STRUCT, 3529795966u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[11] },
+    { "instance", (uint32_t)offsetof(anim::DragonBonesSkeleton, instance), MQ_TK_U64, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_DragonBonesSkeleton[12] },
+};
+
 static double mq_acc_anim_Gradient_count_getf(const void* p) { const auto& s = *static_cast<const anim::Gradient*>(p); return static_cast<double>(s.count); }
 static void mq_acc_anim_Gradient_count_setf(void* p, double v) { auto& s = *static_cast<anim::Gradient*>(p); s.count = static_cast<decltype(s.count)>(v); }
 static const void* mq_acc_anim_Gradient_stops_getp(const void* p) { const auto& s = *static_cast<const anim::Gradient*>(p); return &s.stops; }
@@ -6644,6 +6732,8 @@ static void mq_defaults_anim_BlendMode(void* p) { new (p) anim::BlendMode{}; }
 static void mq_defaults_anim_BonePose(void* p) { new (p) anim::BonePose{}; }
 static void mq_defaults_anim_Curve(void* p) { new (p) anim::Curve{}; }
 static void mq_defaults_anim_CurveKey(void* p) { new (p) anim::CurveKey{}; }
+static void mq_defaults_anim_DbAnimState(void* p) { new (p) anim::DbAnimState{}; }
+static void mq_defaults_anim_DragonBonesSkeleton(void* p) { new (p) anim::DragonBonesSkeleton{}; }
 static void mq_defaults_anim_FlipMode(void* p) { new (p) anim::FlipMode{}; }
 static void mq_defaults_anim_Gradient(void* p) { new (p) anim::Gradient{}; }
 static void mq_defaults_anim_GradientStop(void* p) { new (p) anim::GradientStop{}; }
@@ -7023,6 +7113,34 @@ extern const mq_type_desc mq_type_anim_CurveKey = {
     0,
     0u,
     mq_defaults_anim_CurveKey,
+};
+
+extern const mq_type_desc mq_type_anim_DbAnimState = {
+    "anim.DbAnimState",
+    3529795966u,
+    (uint32_t)sizeof(anim::DbAnimState),
+    (uint32_t)alignof(anim::DbAnimState),
+    5u,
+    mq_fields_anim_DbAnimState,
+    2u,
+    0u,
+    0,
+    0u,
+    mq_defaults_anim_DbAnimState,
+};
+
+extern const mq_type_desc mq_type_anim_DragonBonesSkeleton = {
+    "anim.DragonBonesSkeleton",
+    3015889267u,
+    (uint32_t)sizeof(anim::DragonBonesSkeleton),
+    (uint32_t)alignof(anim::DragonBonesSkeleton),
+    13u,
+    mq_fields_anim_DragonBonesSkeleton,
+    4u,
+    MQ_ROLE_DRAGONBONES,
+    0,
+    0u,
+    mq_defaults_anim_DragonBonesSkeleton,
 };
 
 extern const mq_type_desc mq_type_anim_FlipMode = {
@@ -10751,6 +10869,68 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
             break;
         case 1829518569u:
             if (std::strcmp(name, "out_tangent") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 3529795966u:
+        switch (h) {
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[0];
+            break;
+        case 799079693u:
+            if (std::strcmp(name, "duration") == 0) return &type->fields[1];
+            break;
+        case 395459730u:
+            if (std::strcmp(name, "play_times") == 0) return &type->fields[2];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[3];
+            break;
+        case 1439362434u:
+            if (std::strcmp(name, "complete") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 3015889267u:
+        switch (h) {
+        case 2974586734u:
+            if (std::strcmp(name, "skeleton") == 0) return &type->fields[0];
+            break;
+        case 3407328204u:
+            if (std::strcmp(name, "atlas") == 0) return &type->fields[1];
+            break;
+        case 2748988334u:
+            if (std::strcmp(name, "armature") == 0) return &type->fields[2];
+            break;
+        case 862676408u:
+            if (std::strcmp(name, "skin") == 0) return &type->fields[3];
+            break;
+        case 3779456605u:
+            if (std::strcmp(name, "animation") == 0) return &type->fields[4];
+            break;
+        case 287169096u:
+            if (std::strcmp(name, "autoplay") == 0) return &type->fields[5];
+            break;
+        case 422158775u:
+            if (std::strcmp(name, "play_mode") == 0) return &type->fields[6];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[7];
+            break;
+        case 3134659686u:
+            if (std::strcmp(name, "flip") == 0) return &type->fields[8];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[9];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[10];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[11];
+            break;
+        case 193386898u:
+            if (std::strcmp(name, "instance") == 0) return &type->fields[12];
             break;
         }
         break;
@@ -14775,6 +14955,8 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_anim_BonePose,
     &mq_type_anim_Curve,
     &mq_type_anim_CurveKey,
+    &mq_type_anim_DbAnimState,
+    &mq_type_anim_DragonBonesSkeleton,
     &mq_type_anim_FlipMode,
     &mq_type_anim_Gradient,
     &mq_type_anim_GradientStop,
@@ -15031,7 +15213,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 263u;
+const uint32_t mq_schema_type_count = 265u;
 
 #ifdef __cplusplus
 } // extern "C"
